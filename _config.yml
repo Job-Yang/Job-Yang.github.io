@@ -1,8 +1,8 @@
 # Basic
-title: Vno Jekyll
-subtitle: A blog-orientation theme for Jekyll
-welcome_message: <a href="https://github.com/onevcat/vno-jekyll" target="_blank">Download the theme</a>
-description: Vno Jekyll is a port of my Ghost theme vno.
+title: Job-Yang
+subtitle: iOS程序猿
+welcome_message: <a href="https://github.com/Job-Yang" target="_blank">充电中...</a>
+description: 努力成为一个优秀的全栈工程师
 creator: <a href="http://onev.cat">@onevcat</a>
 
 url: "https://github.com/Job-Yang/Job-Yang.github.io"
@@ -10,7 +10,7 @@ url: "https://github.com/Job-Yang/Job-Yang.github.io"
 permalink: /:year/:month/:title/
 
 # Format
-highlighter: plain
+highlighter: rouge
 markdown: redcarpet
 redcarpet:
   extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "strikethrough", "superscript", tables]
@@ -20,12 +20,12 @@ cover_color: red
 
 # The blog button should not be removed.
 blog_button:
-    title: Blog
-    description: Visit blog
+    title: 博客
+    description: 进入博客
 
 # Navigation buttons in the front page.
 nav:
-    - {title: Projects, description: My Projects, url: 'http://project.onevcat.com'}
+    - {title: 项目, description: 我的项目, url: 'https://github.com/Job-Yang/'}
     # - {title: Another Button, description: A button, url: 'http://example.com'}
 
 # Pagination
