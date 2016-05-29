@@ -1,6 +1,6 @@
 # Basic
 title: Job-Yang
-subtitle: 清醒时做事，糊涂时读书。大怒时睡觉，独处时思考
+subtitle: 清醒时做事，独处时思考
 welcome_message: <a href="https://github.com/Job-Yang" target="_blank">努力成为一个优秀的全栈工程师</a>
 description: 目前是一名iOS程序猿
 creator: <a href="https://github.com/Job-Yang">@Job-Yang</a>
@@ -35,7 +35,7 @@ paginate_path: "page/:num/"
 
 # Comment
 comment:
-    disqus: Job-Yang
+    disqus: job-yang
     # duoshuo: 
 
 # Social
