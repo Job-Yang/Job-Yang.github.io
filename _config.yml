@@ -1,9 +1,9 @@
 # Basic
 title: Job-Yang
-subtitle: iOS程序猿
-welcome_message: <a href="https://github.com/Job-Yang" target="_blank">充电中...</a>
-description: 努力成为一个优秀的全栈工程师
-creator: <a href="http://onev.cat">@onevcat</a>
+subtitle: 清醒时做事，糊涂时读书。大怒时睡觉，独处时思考
+welcome_message: <a href="https://github.com/Job-Yang" target="_blank">努力成为一个优秀的全栈工程师</a>
+description: 目前是一名iOS程序猿
+creator: <a href="https://github.com/Job-Yang">@Job-Yang</a>
 
 url: "https://github.com/Job-Yang/Job-Yang.github.io"
 
@@ -35,9 +35,9 @@ paginate_path: "page/:num/"
 
 # Comment
 comment:
-    disqus: vno-jekyll
+    disqus: Job-Yang
     # duoshuo: 
-    
+
 # Social
 social:
     github: Job-Yang
