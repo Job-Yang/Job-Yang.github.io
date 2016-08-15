@@ -5,7 +5,7 @@
 
 # 访问
 
-[点击这里](http://job-yang.github.io/)浏览本站，或者直接访问[http://job-yang.github.io/](http://job-yang.github.io/)
+[点击这里](https://job-yang.github.io/)浏览本站，或者直接访问[http://job-yang.github.io/](https://job-yang.github.io/)
 
 
 
