@@ -1,0 +1,35 @@
+
+---
+layout: post
+title: iOS 9.3 官方文档（翻译）
+date: 2016-03-22 16:13:00.000000000 +08:00
+---
+###iOS 9.3###
+　　本文总结了在iOS 9.3中引入的开发者相关的特性,它运行在目前已推出的iOS设备上。本文还详细的列出文档中描述的新功能。
+
+　　对于最新消息和相关信息，请查看[链接](https://developer.apple.com/ios/download/).对于iOS 9.2中新增的API详细列表，请查看[iOS 9.3 API差异](https://developer.apple.com/library/ios/releasenotes/General/iOS93APIDiffs/index.html). 。有关新设备的详细信息，请参阅[iOS设备兼容性参考](https://developer.apple.com/library/ios/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Introduction/Introduction.html#//apple_ref/doc/uid/TP40013599).
+
+------------
+
+#####访问音乐库#####
+　　在Media Player和StoreKit frameworks中的新方法能够让你在Apple Music添加曲目到音乐库中或者播放它。首先，使用[SKCloudServiceController](https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKCloudServiceController_Class/index.html#//apple_ref/occ/cl/SKCloudServiceController) API来确定当前是否支持一些功能，例如，如果该设备已经支持Apple Music目录音轨的播放并增加到曲目库中。您就可以使用[MPMediaLibrary](https://developer.apple.com/library/ios/documentation/MediaPlayer/Reference/MPMediaLibrary_ClassReference/index.html#//apple_ref/occ/cl/MPMediaLibrary)中的addItemWithProductID:completionHandler:方法添加到曲目库中，使用[MPMusicPlayerController](https://developer.apple.com/library/ios/documentation/MediaPlayer/Reference/MPMusicPlayerController_ClassReference/index.html#//apple_ref/occ/cl/MPMusicPlayerController)中的 setQueueWithStoreIDs:方法播放该曲目。
+
+#####CloudKit Framework#####
+　　CloudKit framework (CloudKit.framework)引入了长生命周期（long-lived）操作，即使你的进程退出该操作也会继续执行。当你在的应用程序不运行时继续大量的下载或想尽快坚持用户更改为你的服务器时你可能需要使用长生命周期（long-lived）操作。如果标记[CKModifyRecordsOperation](https://developer.apple.com/library/ios/documentation/CloudKit/Reference/CKModifyRecordsOperation_class/index.html#//apple_ref/occ/cl/CKModifyRecordsOperation)对象为长生命周期，注意，由于操作可能以后运行，它发生冲突的机会增加。为了解决潜在的冲突，你可以：
+
+- 创建一个“日记”记录,写一次(没有冲突)和调和这记录阅读时间
+- 当你解决冲突的记录或记录后，回放下次启动应用程序操作
+
+#####HealthKit Framework#####
+　　HealthKit Framework（HealthKit.framework）包括以下增强功能。
+　　[KActivitySummary](https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKActivitySummary_Class/index.html#//apple_ref/occ/cl/HKActivitySummary)类定义一个活动摘要对象包含对于一个给定日期用户的活动摘要。摘要包括活跃的能量消耗,锻炼的时间（即所花费的时间在轻量散步或更高能的运动），站立时间。Apple Watch会保存活动摘要对象到HealthKit商店中。你可以创建自己的摘要对象（例如，在你的iPhone app上显示[HKActivityRingView](https://developer.apple.com/library/ios/documentation/HealthKitUI/Reference/HKActivityRingView_Class/index.html#//apple_ref/occ/cl/HKActivityRingView)控件），但你不能将它们保存到HealthKit商店中。你可以使用一个[HKActivitySummaryQuery](https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKActivitySummaryQuery_Class/index.html#//apple_ref/occ/cl/HKActivitySummaryQuery)对象读取HealthKit商店中的HKActivitySummary对象。
+
+#####HealthKit Framework#####
+　　iOS 9.3引入了HealthKitUI Framework(HealthKitUI.framework),可以让你访问到活动环视图。[HKActivityRingView](https://developer.apple.com/library/ios/documentation/HealthKitUI/Reference/HKActivityRingView_Class/index.html#//apple_ref/occ/cl/HKActivityRingView)对象从一个[HKActivitySummary](https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKActivitySummary_Class/index.html#//apple_ref/occ/cl/HKActivitySummary)对象的数据中显示黑色背景的活动环，移动显示红色环，运动显示蓝色环，站立显示绿色环。
+
+#####Watch Connectivity Framework#####
+　　HealthKit Framework（HealthKit.framework）包括以下增强功能。
+　　在iOS 9.3中,用户可以在同一个iPhone上同时配对多个Apple Watch。如果你的iOS app使用Watch Connectivity Framework与配对Apple Watch通信,那么你必须采用新的接口，支持多种Watch会话的配置和管理。这些新的接口提供更多连接状态的信息和提供给你的iOS app来检测新苹果的手表在使用的方式。不采用这些新接口的app切换时可能会意外终止。要了解更多信息，请参阅[多Apple Watches通信支持](https://developer.apple.com/library/ios/documentation/WatchConnectivity/Reference/WCSession_class/index.html#//apple_ref/doc/uid/TP40015237-CH1-SW56).
+
+----------
+原文地址：[iOS 9.3官方文档](https://developer.apple.com/library/ios/releasenotes/General/WhatsNewIniOS/Articles/iOS9_3.html#//apple_ref/doc/uid/TP40016661-SW1)
