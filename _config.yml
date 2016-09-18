@@ -5,7 +5,7 @@ welcome_message: <a href="https://github.com/Job-Yang" target="_blank">努力成
 description: 目前是一名iOS程序猿
 creator: <a href="https://github.com/Job-Yang">@Job-Yang</a>
 
-url: "https://github.com/Job-Yang/Job-Yang.github.io"
+url: "http://jobyang.com/"
 
 permalink: /:year/:month/:title/
 
@@ -25,7 +25,7 @@ blog_button:
 
 # Navigation buttons in the front page.
 nav:
-    - {title: 项目, description: 我的项目, url: 'https://job-yang.github.io/MyProject/'}
+    - {title: 项目, description: 我的项目, url: 'http://jobyang.com/MyProject/'}
     # - {title: Another Button, description: A button, url: 'http://example.com'}
 
 # Pagination
