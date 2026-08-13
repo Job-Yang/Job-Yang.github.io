@@ -4,7 +4,7 @@ description: "Skill 无需手动调用，Agent 根据上下文自动激活对应
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-73278c5ced"
 migration_classification: "needs_refactor"

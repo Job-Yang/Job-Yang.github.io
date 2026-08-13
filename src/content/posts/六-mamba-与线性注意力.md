@@ -4,7 +4,7 @@ description: "传统的 Transformer 读小说，每读一个新字，都要把�
 publishedAt: 2026-08-13
 category: "AI 底层原理连载"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-bb7b43bf49"
 migration_classification: "ready_for_editorial_review"

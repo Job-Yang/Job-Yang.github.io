@@ -4,7 +4,7 @@ description: "上一轮我们已经知道 Opus 5 跑分涨得很凶——SWE-ben
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-c73733fa05"
 migration_classification: "needs_semantic_redaction"

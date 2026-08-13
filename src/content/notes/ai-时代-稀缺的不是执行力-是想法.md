@@ -2,7 +2,7 @@
 title: "AI 时代,稀缺的不是执行力,是想法"
 order: 8
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-841c402bd174"
 review_required: true

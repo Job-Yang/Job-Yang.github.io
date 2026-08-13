@@ -2,7 +2,7 @@
 title: "给AI一个瑞士军刀"
 order: 12
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-5a091bc51aa2"
 review_required: true

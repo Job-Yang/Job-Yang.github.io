@@ -2,7 +2,7 @@
 title: "AGI后的未来"
 order: 14
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-8340dd1500ff"
 review_required: true

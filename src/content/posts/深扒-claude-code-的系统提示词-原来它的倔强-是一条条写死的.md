@@ -4,7 +4,7 @@ description: "先看一个具体画面。"
 publishedAt: 2026-08-13
 category: "【汤山·畅想】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-5539c8896d"
 migration_classification: "needs_image_review"

@@ -4,7 +4,7 @@ description: "这是《写给客户端工程师的 AI 底层原理》系列的�
 publishedAt: 2026-08-13
 category: "AI 底层原理连载"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-8f7f3ad269"
 migration_classification: "awaiting_human_approval"

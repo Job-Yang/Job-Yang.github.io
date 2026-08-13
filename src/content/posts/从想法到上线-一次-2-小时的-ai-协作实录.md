@@ -4,7 +4,7 @@ description: "那天和 AI 在拉一份「防御科技树」的清单，写到�
 publishedAt: 2026-08-13
 category: "【费曼·实战复盘】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-383683eda7"
 migration_classification: "needs_refactor"

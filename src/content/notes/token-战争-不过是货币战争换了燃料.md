@@ -2,7 +2,7 @@
 title: "Token 战争,不过是货币战争换了燃料"
 order: 22
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-fc6c40153b60"
 review_required: true

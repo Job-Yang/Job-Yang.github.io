@@ -4,7 +4,7 @@ description: "大模型本身是没有记忆的。每次调用，它只能看到
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-8930b0176e"
 migration_classification: "ready_for_editorial_review"

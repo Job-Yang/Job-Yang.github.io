@@ -4,7 +4,7 @@ description: "① 按安全性保序分批:只读工具(Read/Grep)合并并行,�
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-ed0ce8d1b3"
 migration_classification: "needs_format_review"

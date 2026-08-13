@@ -4,7 +4,7 @@ description: "调研对象：xAI 官方开源的终端编码 Agent grok-build(�
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-b3827c3f3b"
 migration_classification: "needs_refactor"

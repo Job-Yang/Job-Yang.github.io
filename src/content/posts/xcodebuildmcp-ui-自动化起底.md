@@ -4,7 +4,7 @@ description: "iOS 做 UI 自动化,能用的手段本来就只有两个:靠无�
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-4612c4fafe"
 migration_classification: "needs_format_review"

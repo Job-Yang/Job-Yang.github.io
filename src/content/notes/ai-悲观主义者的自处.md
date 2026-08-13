@@ -2,7 +2,7 @@
 title: "AI 悲观主义者的自处"
 order: 7
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-ae04b39f3418"
 review_required: true

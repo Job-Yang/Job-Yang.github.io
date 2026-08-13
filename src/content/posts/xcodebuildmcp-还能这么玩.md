@@ -4,7 +4,7 @@ description: "整体分四层,从下往上各管一段:"
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-cb5dd2f91d"
 migration_classification: "needs_semantic_redaction"

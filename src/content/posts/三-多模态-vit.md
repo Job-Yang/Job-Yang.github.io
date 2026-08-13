@@ -4,7 +4,7 @@ description: "大模型怎么看懂一张猫的图片？对客户端开发来说
 publishedAt: 2026-08-13
 category: "AI 底层原理连载"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-04aec93f9d"
 migration_classification: "needs_semantic_redaction"

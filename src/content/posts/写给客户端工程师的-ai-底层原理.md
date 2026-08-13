@@ -4,7 +4,7 @@ description: "作为客户端/前端工程师，我们每天处理的是 UI 渲�
 publishedAt: 2026-08-13
 category: "AI 底层原理连载 · 合集"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-ea0c7e1ff3"
 migration_classification: "needs_semantic_redaction"

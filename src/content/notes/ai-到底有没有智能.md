@@ -2,7 +2,7 @@
 title: "AI 到底有没有智能"
 order: 17
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-4ac99f0d3259"
 review_required: true

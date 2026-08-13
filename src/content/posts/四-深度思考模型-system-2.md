@@ -4,7 +4,7 @@ description: "以前的模型（GPT-4、Claude 3.5）像在做\"快问快答\"�
 publishedAt: 2026-08-13
 category: "AI 底层原理连载"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-b270dc397b"
 migration_classification: "ready_for_editorial_review"

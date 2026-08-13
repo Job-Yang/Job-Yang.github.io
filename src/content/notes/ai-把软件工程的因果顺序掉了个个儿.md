@@ -2,7 +2,7 @@
 title: "AI 把软件工程的因果顺序掉了个个儿"
 order: 24
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-2fd8c33537a9"
 review_required: true

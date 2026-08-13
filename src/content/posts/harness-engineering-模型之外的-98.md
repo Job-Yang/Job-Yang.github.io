@@ -4,7 +4,7 @@ description: "本文回答两个问题：Harness Engineering 到底是什么，�
 publishedAt: 2026-08-13
 category: "【费曼·实战复盘】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-30840786fa"
 migration_classification: "needs_semantic_redaction"

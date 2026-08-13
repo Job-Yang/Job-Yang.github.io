@@ -4,7 +4,7 @@ description: "仓库地址：cobusgreyling/loop-engineering。作者是写 AI �
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-c66a27b1d2"
 migration_classification: "needs_semantic_redaction"

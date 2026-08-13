@@ -4,7 +4,7 @@ description: "老实说，大部分人（包括很多天天调 API 的人）对�
 publishedAt: 2026-08-13
 category: "AI 底层原理连载"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-97b14c4f27"
 migration_classification: "ready_for_editorial_review"

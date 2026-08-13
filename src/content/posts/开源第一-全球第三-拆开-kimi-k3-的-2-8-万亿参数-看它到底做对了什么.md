@@ -4,7 +4,7 @@ description: "月之暗面刚开源了 Kimi K3——2.8 万亿参数，综合能
 publishedAt: 2026-08-13
 category: "锻造手记"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-839246786f"
 migration_classification: "needs_image_review"

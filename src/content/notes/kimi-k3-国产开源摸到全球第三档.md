@@ -2,7 +2,7 @@
 title: "Kimi K3:国产开源摸到全球第三档"
 order: 23
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-85ca2e8f8ab9"
 review_required: true

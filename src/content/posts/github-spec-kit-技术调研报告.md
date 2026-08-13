@@ -4,7 +4,7 @@ description: "调研对象：GitHub Spec Kit 官方文档"
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-69d3aca213"
 migration_classification: "needs_semantic_redaction"

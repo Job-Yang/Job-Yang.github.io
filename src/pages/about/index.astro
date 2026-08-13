@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="关于"
-  description="关于杨全、写作原则，以及微信公众号「老羊只是电子羊」。"
+  description="关于杨全，以及微信公众号「老羊只是电子羊」。"
   active="about"
 >
   <div class="space-fallback" slot="background"></div>
@@ -14,9 +14,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div class="eyebrow">About Job Yang</div>
         <h1 class="display">关于我，<br />以及在这里写什么。</h1>
         <div class="copy">
-          <p>我是杨全，也可以叫我老羊。iOS 工程师出身，现在主要研究 AI Agent、自演化系统和真实工程里的反馈闭环。</p>
+          <p>我是杨全，也可以叫我老羊。资深 iOS 工程师，先后在美团、字节跳动做客户端，现在主要研究 AI Agent、自演化系统和真实工程里的反馈闭环。</p>
           <p>
-            我相信“分享要平视”。这里不包装专家人设，尽量保留问题怎么出现、假设怎么被推翻、最后靠什么证据收口。
+            这里没什么宏大目标，主要就是记录：问题怎么出现、假设怎么被推翻、最后靠什么证据收口。
           </p>
           <p>这个网站主要放两类内容：</p>
           <ul>
@@ -37,23 +37,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>
             网站是可搜索、可长期引用的公开档案；微信公众号是订阅入口，会同步新文章和更及时的短分享。
           </p>
-          <p>二维码将在正式发布前补入。首版不会使用占位二维码，也不会生成假的公众号入口。</p>
+          <p>扫码关注，或搜索公众号「老羊只是电子羊」。</p>
         </div>
-        <div class="qr-pending" aria-label="公众号二维码待补充">
-          <span>QR 待补</span>
+        <div class="qr-code">
+          <img src="/images/wechat-qr.jpg" alt="微信公众号「老羊只是电子羊」二维码" width="180" height="180" />
         </div>
-      </section>
-
-      <section class="principles section-rule">
-        <div class="eyebrow">Publishing Policy</div>
-        <h2 class="display">公开内容怎么来</h2>
-        <ol>
-          <li>从飞书对外内容总表选择已成稿或值得公开的主题。</li>
-          <li>导出源文档，但原始文件只保存在本地私有 DATA。</li>
-          <li>删除内部链接、人员信息、业务数据、日志、Token 与未公开项目细节。</li>
-          <li>把公司语境改写成公开读者能理解、能独立验证的表达。</li>
-          <li>人工确认后才进入网站仓库。</li>
-        </ol>
       </section>
     </div>
   </div>
@@ -107,40 +95,28 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     gap: 52px;
   }
 
-  .wechat h2,
-  .principles h2 {
+  .wechat h2 {
     margin: 14px 0 20px;
     font-size: 32px;
   }
 
-  .wechat p,
-  .principles li {
+  .wechat p {
     color: var(--ink-dim);
   }
 
-  .qr-pending {
-    display: grid;
+  .qr-code {
     width: 180px;
     height: 180px;
-    place-items: center;
-    border: 1px dashed var(--line);
     border-radius: 14px;
-    background: var(--glass);
-    color: var(--ink-faint);
-    font: 12px var(--mono);
+    overflow: hidden;
+    background: #fff;
   }
 
-  .principles {
-    margin-top: 72px;
-    padding-top: 58px;
-  }
-
-  .principles ol {
-    padding-left: 1.3em;
-  }
-
-  .principles li {
-    margin-bottom: 12px;
+  .qr-code img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   @media (max-width: 620px) {

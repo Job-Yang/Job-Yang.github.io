@@ -2,7 +2,7 @@
 title: "面向AI友好型的系统"
 order: 6
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-d1869959eef9"
 review_required: true

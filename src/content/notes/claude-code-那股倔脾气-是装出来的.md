@@ -2,7 +2,7 @@
 title: "Claude Code 那股倔脾气,是装出来的"
 order: 26
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "note-1dabdefcdd41"
 review_required: true

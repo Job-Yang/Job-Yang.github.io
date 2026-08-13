@@ -4,7 +4,7 @@ description: "如何让一个大模型摆脱聊天框,变成一个能持续干�
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-321a82ba84"
 migration_classification: "needs_refactor"

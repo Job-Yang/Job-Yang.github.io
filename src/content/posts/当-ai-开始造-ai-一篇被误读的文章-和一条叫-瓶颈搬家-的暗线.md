@@ -4,7 +4,7 @@ description: "一个 Anthropic 工程师说,他已经差不多五个月没亲手
 publishedAt: 2026-08-13
 category: "【费曼·调研】"
 tags: []
-draft: true
+draft: false
 source: public-rewrite
 source_id: "article-b5882c3394"
 migration_classification: "ready_for_editorial_review"
