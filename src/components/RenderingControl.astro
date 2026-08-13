@@ -1,0 +1,455 @@
+<div class="render-control" data-render-control>
+  <section class="render-panel" data-render-panel hidden aria-label="黑洞渲染设置">
+    <header>
+      <div>
+        <span class="live-dot"></span>
+        <span class="panel-kicker">WebGPU Observatory</span>
+      </div>
+      <button type="button" class="icon-button" data-render-close aria-label="关闭渲染设置">×</button>
+    </header>
+
+    <div class="metrics" aria-live="polite">
+      <div><span>状态</span><strong data-metric-status>初始化</strong></div>
+      <div><span>FPS</span><strong data-metric-fps>--</strong></div>
+      <div><span>画布</span><strong data-metric-resolution>--</strong></div>
+    </div>
+
+    <div class="control-section">
+      <div class="section-label">渲染预设</div>
+      <div class="presets" role="group" aria-label="渲染预设">
+        <button type="button" data-preset="saver">省电</button>
+        <button type="button" data-preset="default" class="active">默认</button>
+        <button type="button" data-preset="cinema">电影</button>
+        <button type="button" data-preset="extreme" class="extreme">极限</button>
+      </div>
+      <p class="warning" data-extreme-warning hidden>极限模式会明显增加 GPU 占用、耗电与发热。</p>
+    </div>
+
+    <details class="advanced">
+      <summary>高级参数</summary>
+      <div class="sliders">
+        <label>
+          <span><b>清晰度</b><output data-output="clarity">1.25×</output></span>
+          <input data-setting="clarity" type="range" min="0.6" max="2" step="0.05" value="1.25" />
+        </label>
+        <label>
+          <span><b>光线步进精度</b><output data-output="precision">45%</output></span>
+          <input data-setting="precision" type="range" min="0" max="100" step="1" value="45" />
+        </label>
+        <label>
+          <span><b>引力透镜</b><output data-output="lensing">2.4×</output></span>
+          <input data-setting="lensing" type="range" min="1.2" max="3.5" step="0.1" value="2.4" />
+        </label>
+        <label>
+          <span><b>光晕强度</b><output data-output="bloom">0.55</output></span>
+          <input data-setting="bloom" type="range" min="0" max="1.2" step="0.05" value="0.55" />
+        </label>
+        <label>
+          <span><b>背景细节</b><output data-output="detail">60%</output></span>
+          <input data-setting="detail" type="range" min="0" max="1" step="0.05" value="0.6" />
+        </label>
+      </div>
+    </details>
+
+    <footer>
+      <button type="button" data-render-reset>恢复默认</button>
+      <button type="button" class="pause" data-render-pause aria-pressed="false">暂停</button>
+    </footer>
+  </section>
+
+  <button
+    type="button"
+    class="render-trigger"
+    data-render-trigger
+    aria-expanded="false"
+    aria-label="打开实时渲染设置"
+  >
+    <span class="live-dot"></span>
+    <span>WebGPU 实时渲染</span>
+    <i></i>
+    <b data-trigger-fps>-- FPS</b>
+  </button>
+</div>
+
+<script is:inline>
+  const root = document.querySelector('[data-render-control]');
+  if (root) {
+    const panel = root.querySelector('[data-render-panel]');
+    const trigger = root.querySelector('[data-render-trigger]');
+    const close = root.querySelector('[data-render-close]');
+    const reset = root.querySelector('[data-render-reset]');
+    const pause = root.querySelector('[data-render-pause]');
+    const warning = root.querySelector('[data-extreme-warning]');
+    const presets = [...root.querySelectorAll('[data-preset]')];
+    const inputs = [...root.querySelectorAll('[data-setting]')];
+
+    const setExpanded = (expanded) => {
+      panel.hidden = !expanded;
+      trigger.setAttribute('aria-expanded', String(expanded));
+    };
+
+    const formatValue = (name, value) => {
+      if (name === 'clarity' || name === 'lensing') return `${Number(value).toFixed(name === 'clarity' ? 2 : 1)}×`;
+      if (name === 'precision' || name === 'detail') return `${Math.round(Number(value) * (name === 'detail' ? 100 : 1))}%`;
+      return Number(value).toFixed(2);
+    };
+
+    const syncInputs = (settings) => {
+      inputs.forEach((input) => {
+        const name = input.dataset.setting;
+        if (settings[name] === undefined) return;
+        input.value = String(settings[name]);
+        const output = root.querySelector(`[data-output="${name}"]`);
+        if (output) output.value = formatValue(name, settings[name]);
+      });
+      presets.forEach((button) => button.classList.toggle('active', button.dataset.preset === settings.preset));
+      warning.hidden = settings.preset !== 'extreme';
+      pause.textContent = settings.paused ? '继续' : '暂停';
+      pause.setAttribute('aria-pressed', String(settings.paused));
+    };
+
+    const withController = (callback) => {
+      if (window.blackHoleControls) callback(window.blackHoleControls);
+    };
+
+    trigger.addEventListener('click', () => setExpanded(panel.hidden));
+    close.addEventListener('click', () => setExpanded(false));
+
+    presets.forEach((button) => {
+      button.addEventListener('click', () => {
+        withController((controller) => syncInputs(controller.applyPreset(button.dataset.preset)));
+      });
+    });
+
+    inputs.forEach((input) => {
+      input.addEventListener('input', () => {
+        const name = input.dataset.setting;
+        withController((controller) => {
+          const settings = controller.applySettings({ [name]: Number(input.value), preset: 'custom' });
+          syncInputs(settings);
+        });
+      });
+    });
+
+    reset.addEventListener('click', () => {
+      withController((controller) => syncInputs(controller.reset()));
+    });
+
+    pause.addEventListener('click', () => {
+      withController((controller) => syncInputs(controller.togglePause()));
+    });
+
+    window.addEventListener('blackhole:ready', (event) => syncInputs(event.detail));
+    window.addEventListener('blackhole:metrics', (event) => {
+      const { fps, resolution, status } = event.detail;
+      root.querySelector('[data-metric-status]').textContent = status;
+      root.querySelector('[data-metric-fps]').textContent = fps.toFixed(0);
+      root.querySelector('[data-metric-resolution]').textContent = resolution;
+      root.querySelector('[data-trigger-fps]').textContent = `${fps.toFixed(0)} FPS`;
+    });
+    window.addEventListener('blackhole:unavailable', () => {
+      root.querySelector('[data-metric-status]').textContent = '不可用';
+      root.querySelector('[data-trigger-fps]').textContent = 'Fallback';
+      root.classList.add('unavailable');
+    });
+
+    if (window.blackHoleControls) syncInputs(window.blackHoleControls.getState());
+  }
+</script>
+
+<style>
+  .render-control {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 70;
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 12px;
+    font-family: var(--sans);
+  }
+
+  .render-panel {
+    width: 340px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 16px;
+    background: rgba(3, 3, 3, 0.9);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(22px) saturate(140%);
+  }
+
+  .render-panel[hidden] {
+    display: none;
+  }
+
+  .render-panel > header,
+  .render-panel > footer {
+    display: flex;
+    padding: 13px 16px;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .render-panel > header {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .render-panel > header > div,
+  .render-trigger {
+    display: flex;
+    align-items: center;
+  }
+
+  .panel-kicker,
+  .section-label,
+  .metrics span,
+  summary,
+  output,
+  .render-trigger b {
+    font-family: var(--mono);
+  }
+
+  .panel-kicker,
+  .section-label {
+    color: var(--ink-faint);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    margin-right: 9px;
+    border-radius: 50%;
+    background: #6ed28a;
+    box-shadow: 0 0 10px rgba(110, 210, 138, 0.55);
+  }
+
+  .unavailable .live-dot {
+    background: var(--ink-faint);
+    box-shadow: none;
+  }
+
+  button {
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .icon-button {
+    padding: 3px 7px;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 20px;
+  }
+
+  .metrics {
+    display: grid;
+    padding: 15px 16px;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .metrics div {
+    display: grid;
+    gap: 3px;
+  }
+
+  .metrics span {
+    color: var(--ink-faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .metrics strong {
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .control-section {
+    padding: 16px;
+  }
+
+  .section-label {
+    margin-bottom: 10px;
+  }
+
+  .presets {
+    display: grid;
+    padding: 3px;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .presets button {
+    min-height: 32px;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-dim);
+    font-size: 12px;
+  }
+
+  .presets button:hover,
+  .presets button.active {
+    background: var(--glass-hi);
+    color: var(--ink);
+  }
+
+  .presets button.extreme {
+    color: var(--accent);
+  }
+
+  .presets button.extreme.active {
+    outline: 1px solid rgba(245, 185, 113, 0.28);
+    background: rgba(245, 185, 113, 0.1);
+  }
+
+  .warning {
+    margin: 10px 0 0;
+    color: var(--accent);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .advanced {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  summary {
+    padding: 13px 16px;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font-size: 11px;
+    list-style-position: inside;
+  }
+
+  .sliders {
+    display: grid;
+    padding: 4px 16px 18px;
+    gap: 15px;
+  }
+
+  .sliders label {
+    display: grid;
+    gap: 7px;
+  }
+
+  .sliders label > span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sliders b {
+    color: var(--ink-dim);
+    font-size: 11px;
+    font-weight: 450;
+  }
+
+  output {
+    color: var(--ink-faint);
+    font-size: 10px;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 2px;
+    margin: 4px 0;
+    appearance: none;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.13);
+    accent-color: var(--accent);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    appearance: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(245, 185, 113, 0.4);
+    cursor: pointer;
+  }
+
+  .render-panel > footer {
+    gap: 9px;
+    border-top: 1px solid var(--line);
+  }
+
+  .render-panel > footer button {
+    min-height: 34px;
+    padding: 0 13px;
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-dim);
+    font-size: 11px;
+  }
+
+  .render-panel > footer button:hover {
+    background: var(--glass-hi);
+    color: var(--ink);
+  }
+
+  .render-panel > footer .pause {
+    flex: 0 0 68px;
+  }
+
+  .render-trigger {
+    min-height: 42px;
+    padding: 0 16px;
+    gap: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(3, 3, 3, 0.88);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3);
+    color: var(--ink);
+    backdrop-filter: blur(18px);
+  }
+
+  .render-trigger:hover {
+    border-color: rgba(245, 185, 113, 0.5);
+  }
+
+  .render-trigger span:not(.live-dot) {
+    font-size: 12px;
+  }
+
+  .render-trigger i {
+    width: 1px;
+    height: 13px;
+    background: var(--line);
+  }
+
+  .render-trigger b {
+    color: var(--ink-dim);
+    font-size: 10px;
+    font-weight: 400;
+  }
+
+  @media (max-width: 720px) {
+    .render-control {
+      right: 12px;
+      bottom: 14px;
+    }
+
+    .render-panel {
+      width: min(340px, calc(100vw - 24px));
+      max-height: min(680px, calc(100vh - 82px));
+      overflow-y: auto;
+    }
+
+    .render-trigger {
+      min-height: 40px;
+    }
+  }
+</style>

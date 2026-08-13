@@ -1,0 +1,223 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLegacyPosts } from '../../lib/legacy';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
+);
+const legacyPosts = await getLegacyPosts();
+const categories = [...new Set(posts.map((post) => post.data.category))];
+---
+
+<BaseLayout
+  title="写作"
+  description="关于 AI Agent、iOS、软件工程与实验记录的公开文章索引。"
+  active="writing"
+>
+  <div class="space-fallback" slot="background"></div>
+  <div class="page-shell">
+    <header class="page-intro reading">
+      <div class="eyebrow">Writing Index</div>
+      <h1 class="display">记录思考，<br />对抗时间的熵增。</h1>
+      <p>这里收录经过公开化改写的文章。内部文档不会自动同步，每一篇都先脱敏、校对，再进入这个索引。</p>
+    </header>
+
+    <section class="reading filters" aria-label="文章分类">
+      <button class="active" type="button" data-filter="all">全部</button>
+      {categories.map((category) => (
+        <button type="button" data-filter={category}>{category}</button>
+      ))}
+    </section>
+
+    <section class="reading current">
+      <div class="section-title"><span>Current Writing</span></div>
+      <div class="post-list">
+        {posts.map((post) => (
+          <article data-category={post.data.category}>
+            <a href={`/writing/${post.id}/`}>
+              <div class="post-meta">
+                <time datetime={post.data.publishedAt.toISOString()}>
+                  {post.data.publishedAt.toISOString().slice(0, 10)}
+                </time>
+                <span>{post.data.category}</span>
+                {post.data.readingMinutes && <span>{post.data.readingMinutes} min</span>}
+              </div>
+              <h2>{post.data.title}</h2>
+              <p>{post.data.description}</p>
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="reading archive section-rule">
+      <div class="section-title">
+        <span>Early Archive · 2015–2016</span>
+      </div>
+      <p class="archive-note">早期 iOS 学习与开发记录。保留原貌和旧链接，不与当前文章混排。</p>
+      <div class="legacy-list">
+        {legacyPosts.map((post) => (
+          <a href={`/${post.year}/${post.month}/${post.slug}/`}>
+            <time datetime={post.date.toISOString()}>
+              {post.date.toISOString().slice(0, 10)}
+            </time>
+            <span>{post.title}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll('[data-filter]');
+  const articles = document.querySelectorAll('[data-category]');
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const filter = button.getAttribute('data-filter');
+      buttons.forEach((item) => item.classList.toggle('active', item === button));
+      articles.forEach((article) => {
+        article.toggleAttribute(
+          'hidden',
+          filter !== 'all' && article.getAttribute('data-category') !== filter,
+        );
+      });
+    });
+  });
+</script>
+
+<style>
+  .filters {
+    display: flex;
+    gap: 10px;
+    padding-bottom: 30px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .filters button {
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .filters button:hover,
+  .filters button.active {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .current,
+  .archive {
+    padding-block: 58px 90px;
+  }
+
+  .section-title {
+    display: flex;
+    margin-bottom: 30px;
+    align-items: center;
+    gap: 16px;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .section-title::after {
+    height: 1px;
+    flex: 1;
+    background: var(--line);
+    content: "";
+  }
+
+  .post-list {
+    display: grid;
+    gap: 0;
+  }
+
+  article {
+    border-bottom: 1px solid var(--line);
+  }
+
+  article[hidden] {
+    display: none;
+  }
+
+  article a {
+    display: block;
+    padding: 28px 0;
+    text-decoration: none;
+  }
+
+  article h2 {
+    margin: 7px 0 8px;
+    color: var(--ink);
+    font-size: 21px;
+    line-height: 1.45;
+    transition: color 180ms ease;
+  }
+
+  article a:hover h2 {
+    color: var(--accent);
+  }
+
+  article p,
+  .archive-note {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 15px;
+  }
+
+  .post-meta {
+    display: flex;
+    gap: 12px;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .post-meta span:first-of-type {
+    color: var(--accent);
+  }
+
+  .archive {
+    opacity: 0.72;
+  }
+
+  .archive-note {
+    margin: -12px 0 28px;
+  }
+
+  .legacy-list {
+    display: grid;
+  }
+
+  .legacy-list a {
+    display: grid;
+    padding: 15px 0;
+    grid-template-columns: 112px 1fr;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .legacy-list a:hover {
+    color: var(--ink);
+  }
+
+  .legacy-list time {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  @media (max-width: 580px) {
+    .legacy-list a {
+      gap: 5px;
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,85 @@
+---
+interface Props {
+  active?: 'writing' | 'notes' | 'about';
+  minimal?: boolean;
+}
+
+const { active, minimal = false } = Astro.props;
+---
+
+<nav class:list={['site-nav', { minimal }]} aria-label="主导航">
+  <div class="nav-inner">
+    <a class="brand" href="/">Job Yang<span>.</span></a>
+    <div class="links">
+      <a class:list={{ active: active === 'writing' }} href="/writing/">写作</a>
+      {!minimal && <a class:list={{ active: active === 'notes' }} href="/notes/">手记</a>}
+      {!minimal && <a class:list={{ active: active === 'about' }} href="/about/">关于</a>}
+      <a href="/rss.xml">RSS</a>
+    </div>
+  </div>
+</nav>
+
+<style>
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--line);
+    background: rgba(3, 3, 3, 0.72);
+    backdrop-filter: saturate(160%) blur(16px);
+    view-transition-name: site-nav;
+  }
+
+  .nav-inner {
+    display: flex;
+    width: min(calc(100% - 96px), var(--wide));
+    min-height: 58px;
+    margin-inline: auto;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .brand span {
+    color: var(--accent);
+  }
+
+  .links {
+    display: flex;
+    gap: 26px;
+  }
+
+  .links a {
+    border-bottom: 1px solid transparent;
+    color: var(--ink-dim);
+    font-size: 14px;
+    text-decoration: none;
+    transition: color 180ms ease;
+  }
+
+  .links a:hover,
+  .links a.active {
+    color: var(--ink);
+  }
+
+  .links a.active {
+    border-color: var(--accent);
+  }
+
+  @media (max-width: 720px) {
+    .nav-inner {
+      width: min(calc(100% - 36px), var(--wide));
+    }
+
+    .links {
+      gap: 14px;
+    }
+  }
+</style>

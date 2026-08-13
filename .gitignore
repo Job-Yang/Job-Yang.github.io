@@ -1,0 +1,7 @@
+.astro/
+.superdesign/
+.trae/
+dist/
+node_modules/
+.DS_Store
+*.log

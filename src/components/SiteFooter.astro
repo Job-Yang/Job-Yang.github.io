@@ -1,0 +1,52 @@
+<footer>
+  <div class="wide inner">
+    <div>© 2026 Job Yang · 清醒时做事，独处时思考</div>
+    <div class="links">
+      <a href="https://github.com/Job-Yang" rel="me">GitHub</a>
+      <a href="/about/#wechat">公众号</a>
+      <a href="/rss.xml">RSS</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  footer {
+    position: relative;
+    z-index: 2;
+    padding: 52px 0 78px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-faint);
+    font-size: 13px;
+  }
+
+  .inner,
+  .links {
+    display: flex;
+    align-items: center;
+  }
+
+  .inner {
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .links {
+    gap: 20px;
+  }
+
+  a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  @media (max-width: 620px) {
+    .inner {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

@@ -1,0 +1,118 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort((a, b) => {
+  const da = a.data.publishedAt?.valueOf();
+  const db = b.data.publishedAt?.valueOf();
+  if (da != null && db != null && da !== db) return db - da;
+  if (da != null && db == null) return -1;
+  if (da == null && db != null) return 1;
+  return (a.data.order ?? 0) - (b.data.order ?? 0);
+});
+const rendered = await Promise.all(
+  notes.map(async (note) => ({ note, Content: (await render(note)).Content })),
+);
+---
+
+<BaseLayout
+  title="手记"
+  description="短想法、片段和正在成形的念头。比文章轻，比推文有据。"
+  active="notes"
+>
+  <div class="space-fallback" slot="background"></div>
+  <div class="page-shell">
+    <header class="page-intro reading">
+      <div class="eyebrow">Forge Notes</div>
+      <h1 class="display">手记<span>。</span></h1>
+      <p>还没长成文章的想法，先记在这里。短的一句，长的一段，都是过程。</p>
+    </header>
+
+    <section class="reading notes-stream">
+      {rendered.length === 0 && (
+        <p class="empty">还没有公开的手记。</p>
+      )}
+      {rendered.map(({ note, Content }) => (
+        <article>
+          {note.data.publishedAt ? (
+            <time datetime={note.data.publishedAt.toISOString()}>
+              {note.data.publishedAt.toISOString().slice(0, 10)}
+            </time>
+          ) : (
+            <span class="no-date" aria-hidden="true"></span>
+          )}
+          <div class="note-body">
+            {note.data.title && <h2>{note.data.title}</h2>}
+            <Content />
+            {note.data.tags.length > 0 && (
+              <div class="tags">
+                {note.data.tags.map((tag) => <span>#{tag}</span>)}
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .notes-stream {
+    padding-block: 48px 90px;
+  }
+
+  .empty {
+    color: var(--ink-faint);
+    font-size: 15px;
+  }
+
+  article {
+    display: grid;
+    padding: 26px 0;
+    grid-template-columns: 112px 1fr;
+    border-bottom: 1px solid var(--line);
+  }
+
+  article time {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+    padding-top: 4px;
+  }
+
+  .note-body h2 {
+    margin: 0 0 10px;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .note-body :global(p) {
+    margin: 0 0 12px;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .note-body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .tags {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .tags span {
+    color: var(--accent);
+    font: 12px var(--mono);
+  }
+
+  @media (max-width: 580px) {
+    article {
+      gap: 6px;
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

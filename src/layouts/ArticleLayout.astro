@@ -1,0 +1,218 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  category: string;
+  publishedAt: Date;
+  readingMinutes?: number;
+}
+
+const { title, description, category, publishedAt, readingMinutes } = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  active="writing"
+  minimalNav
+  article
+>
+  <article class="article reading">
+    <header>
+      <a class="back" href="/writing/">← 返回全部文章</a>
+      <div class="eyebrow">{category} · {publishedAt.toISOString().slice(0, 10)}</div>
+      <h1 class="display">{title}</h1>
+      <p class="description">{description}</p>
+      <div class="meta">
+        {readingMinutes && <span>{readingMinutes} min read</span>}
+        <span>公开脱敏版本</span>
+      </div>
+    </header>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    <footer class="article-end">
+      <div>
+        <div class="eyebrow">Subscription</div>
+        <h2 class="display">继续关注这些实验</h2>
+        <p>网站保存可搜索的长文；公众号「老羊只是电子羊」用于订阅更新。</p>
+      </div>
+      <a class="pill" href="/about/#wechat">公众号入口 →</a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style is:global>
+  .article {
+    padding: 70px 0 110px;
+  }
+
+  .article header {
+    margin-bottom: 62px;
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 50px;
+    color: var(--accent);
+    font-size: 14px;
+    text-decoration: none;
+  }
+
+  .article h1 {
+    margin: 18px 0 24px;
+    font-size: clamp(40px, 6vw, 60px);
+    line-height: 1.18;
+  }
+
+  .description {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 17px;
+    line-height: 1.75;
+  }
+
+  .meta {
+    display: flex;
+    gap: 18px;
+    margin-top: 24px;
+    color: var(--ink-faint);
+    font: 12px var(--mono);
+  }
+
+  .prose {
+    color: #c5c3bf;
+    font-size: 17.5px;
+    line-height: 1.9;
+  }
+
+  .prose h2,
+  .prose h3 {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-synthesis: none;
+    font-weight: 400;
+    scroll-margin-top: 90px;
+  }
+
+  .prose h2 {
+    margin: 64px 0 22px;
+    font-size: 30px;
+    line-height: 1.4;
+  }
+
+  .prose h3 {
+    margin: 42px 0 18px;
+    font-size: 23px;
+  }
+
+  .prose p {
+    margin: 0 0 28px;
+  }
+
+  .prose strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .prose a {
+    color: var(--accent);
+    text-underline-offset: 3px;
+  }
+
+  .prose ul,
+  .prose ol {
+    margin: 0 0 30px;
+    padding-left: 1.4em;
+  }
+
+  .prose li {
+    margin-bottom: 10px;
+  }
+
+  .prose blockquote {
+    margin: 36px 0;
+    padding: 2px 0 2px 24px;
+    border-left: 2px solid var(--accent);
+    color: var(--ink-dim);
+  }
+
+  .prose code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--ink);
+    font: 0.88em var(--mono);
+  }
+
+  .prose pre {
+    margin: 34px 0;
+    padding: 22px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #0a0a0a;
+  }
+
+  .prose pre code {
+    padding: 0;
+    background: none;
+  }
+
+  .prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+  }
+
+  .prose hr {
+    margin: 58px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .article-end {
+    display: flex;
+    margin-top: 90px;
+    padding-top: 40px;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .article-end h2 {
+    margin: 12px 0 6px;
+    font-size: 25px;
+  }
+
+  .article-end p {
+    max-width: 470px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  @media (max-width: 620px) {
+    .article {
+      padding-top: 48px;
+    }
+
+    .article h1 {
+      font-size: 40px;
+    }
+
+    .prose {
+      font-size: 16.5px;
+    }
+
+    .article-end {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

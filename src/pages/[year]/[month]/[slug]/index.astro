@@ -1,0 +1,105 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { getLegacyPosts } from '../../../../lib/legacy';
+
+export async function getStaticPaths() {
+  const posts = await getLegacyPosts();
+  return posts.map((post) => ({
+    params: {
+      year: post.year,
+      month: post.month,
+      slug: post.slug,
+    },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+---
+
+<BaseLayout
+  title={post.title}
+  description={`Job Yang 的早期 iOS 技术存档，发布于 ${post.date.toISOString().slice(0, 10)}。`}
+  active="writing"
+  minimalNav
+  article
+>
+  <article class="legacy reading">
+    <header>
+      <a href="/writing/">← 返回文章索引</a>
+      <div class="eyebrow">Early Archive · {post.date.toISOString().slice(0, 10)}</div>
+      <h1 class="display">{post.title}</h1>
+      <p>这是一篇 2015–2016 年间的早期文章，按原貌存档，部分 API 与外部链接可能已经过时。</p>
+    </header>
+    <div class="legacy-body" set:html={post.html}></div>
+  </article>
+</BaseLayout>
+
+<style is:global>
+  .legacy {
+    padding: 70px 0 110px;
+  }
+
+  .legacy header {
+    margin-bottom: 60px;
+  }
+
+  .legacy header > a {
+    display: inline-block;
+    margin-bottom: 45px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .legacy h1 {
+    margin: 18px 0 20px;
+    font-size: clamp(38px, 6vw, 58px);
+    line-height: 1.2;
+  }
+
+  .legacy header p,
+  .legacy-body {
+    color: var(--ink-dim);
+  }
+
+  .legacy-body {
+    font-size: 16.5px;
+    line-height: 1.85;
+  }
+
+  .legacy-body h1,
+  .legacy-body h2,
+  .legacy-body h3,
+  .legacy-body h4,
+  .legacy-body h5 {
+    margin: 48px 0 18px;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-weight: 400;
+  }
+
+  .legacy-body p {
+    margin: 0 0 24px;
+  }
+
+  .legacy-body a {
+    color: var(--accent);
+  }
+
+  .legacy-body pre {
+    padding: 20px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #0a0a0a;
+  }
+
+  .legacy-body code {
+    font-family: var(--mono);
+  }
+
+  .legacy-body img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>

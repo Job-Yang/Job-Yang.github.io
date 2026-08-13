@@ -1,0 +1,59 @@
+---
+import RenderingControl from './RenderingControl.astro';
+---
+
+<div class="space-static" aria-hidden="true"></div>
+<canvas id="black-hole-canvas" aria-hidden="true"></canvas>
+<div class="space-scrim" aria-hidden="true"></div>
+<RenderingControl />
+
+<script>
+  import '../scripts/blackhole/scene.js';
+</script>
+
+<style>
+  #black-hole-canvas,
+  .space-static,
+  .space-scrim {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+  }
+
+  .space-static {
+    z-index: 0;
+    background:
+      radial-gradient(54% 46% at 70% 38%, rgba(245, 185, 113, 0.12), transparent 64%),
+      #030303;
+  }
+
+  #black-hole-canvas {
+    z-index: 0;
+    display: block;
+    opacity: calc(1 - var(--space-fade, 0) * 0.66);
+    transition: opacity 120ms linear;
+  }
+
+  .space-scrim {
+    z-index: 1;
+    background: linear-gradient(
+      90deg,
+      rgba(3, 3, 3, 0.94) 0%,
+      rgba(3, 3, 3, 0.72) 34%,
+      rgba(3, 3, 3, 0.16) 62%,
+      transparent 100%
+    );
+  }
+
+  :global(body.no-webgpu #black-hole-canvas) {
+    display: none;
+  }
+
+  @media (max-width: 720px) {
+    .space-scrim {
+      background: linear-gradient(180deg, rgba(3, 3, 3, 0.5), rgba(3, 3, 3, 0.9));
+    }
+  }
+</style>
