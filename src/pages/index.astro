@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BlackHoleBackdrop from '../components/BlackHoleBackdrop.astro';
 
@@ -16,9 +16,23 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft))
     return (a.data.order ?? 0) - (b.data.order ?? 0);
   })
   .slice(0, 4);
-const renderedNotes = await Promise.all(
-  notes.map(async (note) => ({ note, Content: (await render(note)).Content })),
-);
+
+function excerpt(body: string, max = 90): string {
+  const text = body
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*`_\-|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > max ? text.slice(0, max) + '…' : text;
+}
+
+const noteTeasers = notes.map((note) => ({
+  note,
+  title: note.data.title ?? '',
+  excerpt: excerpt(note.body ?? ''),
+}));
 ---
 
 <BaseLayout>
@@ -29,7 +43,7 @@ const renderedNotes = await Promise.all(
       <div class="eyebrow kicker">Engineer · Writer · Builder</div>
       <h1 class="display">清醒时做事，<br />独处时<em>思考</em>。</h1>
       <p>
-        我是杨全。曾经写 iOS，现在更多在折腾 <strong>AI Agent 的自演化</strong>——让工具从「会写代码」
+        我是老羊。曾经写 iOS，现在更多在折腾 <strong>AI Agent 的自演化</strong>——让工具从「会写代码」
         变成「能持续交付」。这里记录文章、手记与长期思考。
       </p>
       <div class="actions">
@@ -61,15 +75,15 @@ const renderedNotes = await Promise.all(
         </div>
       </section>
 
-      {renderedNotes.length > 0 && (
+      {noteTeasers.length > 0 && (
         <section class="content-section wide">
           <div class="section-head">
             <h2>最近在想</h2>
             <a class="pill" href="/notes/">全部手记 →</a>
           </div>
           <div class="reading-column note-flow">
-            {renderedNotes.map(({ note, Content }) => (
-              <div class="note-line">
+            {noteTeasers.map(({ note, title, excerpt }) => (
+              <a class="note-line" href="/notes/">
                 {note.data.publishedAt ? (
                   <time datetime={note.data.publishedAt.toISOString()}>
                     {note.data.publishedAt.toISOString().slice(0, 10)}
@@ -77,8 +91,11 @@ const renderedNotes = await Promise.all(
                 ) : (
                   <span></span>
                 )}
-                <div class="note-text"><Content /></div>
-              </div>
+                <div class="note-text">
+                  {title && <strong>{title}</strong>}
+                  <span>{excerpt}</span>
+                </div>
+              </a>
             ))}
           </div>
         </section>
@@ -262,6 +279,12 @@ const renderedNotes = await Promise.all(
     padding: 18px 0;
     grid-template-columns: 100px 1fr;
     border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    transition: opacity 180ms ease;
+  }
+
+  .note-line:hover {
+    opacity: 0.72;
   }
 
   .note-line:last-child {
@@ -274,11 +297,29 @@ const renderedNotes = await Promise.all(
     padding-top: 3px;
   }
 
-  .note-text :global(p) {
-    margin: 0;
-    color: var(--ink-dim);
+  .note-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .note-text strong {
+    color: var(--ink);
     font-size: 15px;
-    line-height: 1.7;
+    font-weight: 600;
+  }
+
+  .note-text span {
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 580px) {
+    .note-line {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
   }
 
   .about > a {

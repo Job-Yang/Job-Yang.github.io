@@ -11,11 +11,11 @@ migration_classification: "needs_refactor"
 review_required: true
 ---
 > [!NOTE]
-> **核心结论：**CodeGraph 是一个预索引代码知识图谱工具，通过 tree-sitter + SQLite FTS5 构建代码结构索引，以 MCP Server 形式为 AI 编码 Agent 提供精准的代码上下文检索能力。实测可降低 \~35% 成本、减少 \~59% token 消耗、提升 \~49% 速度、减少 \~70% 工具调用次数。
+> **核心结论**：CodeGraph 是一个预索引代码知识图谱工具，通过 tree-sitter + SQLite FTS5 构建代码结构索引，以 MCP Server 形式为 AI 编码 Agent 提供精准的代码上下文检索能力。实测可降低 \~35% 成本、减少 \~59% token 消耗、提升 \~49% 速度、减少 \~70% 工具调用次数。
 
 # 一、项目概述
 
-CodeGraph 由 **colbymchenry** 开源，GitHub 地址为 [github.com/colbymchenry/codegraph](https://github.com/colbymchenry/codegraph)。项目核心理念：**让 AI Agent 在编码前先"理解"代码库的结构与依赖关系**，而非每次都从零开始全文检索（grep 仍是不可替代的广度兜底，详见第二章后的对比）。
+CodeGraph 由 **colbymchenry** 开源，GitHub 地址为 [github.com/colbymchenry/codegraph](https://github.com/colbymchenry/codegraph)。项目核心理念**：让 AI Agent 在编码前先"理解"代码库的结构与依赖关系**，而非每次都从零开始全文检索（grep 仍是不可替代的广度兜底，详见第二章后的对比）。
 
 | 属性 | 说明 |
 |-|-|
@@ -30,7 +30,7 @@ CodeGraph 由 **colbymchenry** 开源，GitHub 地址为 [github.com/colbymchenr
 # 二、解决的核心问题
 
 > [!NOTE]
-> **痛点：**传统 AI 编码 Agent 在大型代码库中工作时，需要大量 `grep`、`find`、`read_file` 调用来定位代码，导致 token 消耗高、响应慢、成本贵。注意：这不是说 grep 该被淘汰，而是缺少一层"语义索引"来分担定位压力——两者如何分工，见下一节。
+> **痛点**：传统 AI 编码 Agent 在大型代码库中工作时，需要大量 `grep`、`find`、`read_file` 调用来定位代码，导致 token 消耗高、响应慢、成本贵。注意：这不是说 grep 该被淘汰，而是缺少一层"语义索引"来分担定位压力——两者如何分工，见下一节。
 
 CodeGraph 的解决思路：
 
@@ -43,7 +43,7 @@ CodeGraph 的解决思路：
 # 二· CodeGraph 与 grep：不是替代，是分层协作
 
 > [!NOTE]
-> **一句话定调：**CodeGraph 让 Agent 从"按字面找"升级到"按语义找"，但它依赖解析器和预索引，有覆盖盲区和时效成本；grep 笨，但零依赖、实时、什么都能搜。不是谁淘汰谁，而是 grep 当广度兜底的"万能搜"，CodeGraph 当深度跳转的"语义透镜"。
+> **一句话定调**：CodeGraph 让 Agent 从"按字面找"升级到"按语义找"，但它依赖解析器和预索引，有覆盖盲区和时效成本；grep 笨，但零依赖、实时、什么都能搜。不是谁淘汰谁，而是 grep 当广度兜底的"万能搜"，CodeGraph 当深度跳转的"语义透镜"。
 
 ## 检索栈的分层结构
 
@@ -78,7 +78,7 @@ flowchart TB
 | 刚改完、索引未更新的最新代码 | ⚠️ 可能过期 | ✅ 实时 |
 
 > [!NOTE]
-> **行业现状佐证：**Sourcegraph、GitHub 的代码导航都是"图谱做精确跳转 + 全文检索做兜底"双轨并行，没有任何一家敢只留一个——这本身就说明了问题。所以 CodeGraph 上线后，`grep` / `find` 的调用次数会大幅下降，但不会归零。
+> **行业现状佐证**：Sourcegraph、GitHub 的代码导航都是"图谱做精确跳转 + 全文检索做兜底"双轨并行，没有任何一家敢只留一个——这本身就说明了问题。所以 CodeGraph 上线后，`grep` / `find` 的调用次数会大幅下降，但不会归零。
 
 ---
 
@@ -94,13 +94,13 @@ flowchart TB
 | 工具调用次数 | \~70% ↓ | Agent 探索步骤减少 |
 
 > [!NOTE]
-> **Swift/iOS 开发者关注：**CodeGraph 已完整支持 Swift 语言。在 Alamofire 项目上实测：成本降低 38%，工具调用减少 77%。对大型 iOS 项目效果显著。
+> **Swift/iOS 开发者关注**：CodeGraph 已完整支持 Swift 语言。在 Alamofire 项目上实测：成本降低 38%，工具调用减少 77%。对大型 iOS 项目效果显著。
 
 ---
 
 # 四、支持的语言
 
-**完整支持（有专用 tree-sitter grammar）：**
+**完整支持（有专用 tree-sitter grammar）**：
 - Swift
 - TypeScript / JavaScript
 - Python
@@ -111,7 +111,7 @@ flowchart TB
 - Ruby
 - PHP
 
-**社区贡献 / 实验性：**
+**社区贡献 / 实验性**：
 - C#
 - Dart
 - Elixir
@@ -176,7 +176,7 @@ CodeGraph MCP Server 暴露以下工具供 AI Agent 调用：
 | `get_call_graph` | 获取函数调用图（谁调用了谁） |
 
 > [!NOTE]
-> **与 IDE 的区别：**CodeGraph 不是给人用的 IDE 插件，而是给 AI Agent 提供结构化的代码理解能力。Agent 通过 MCP 协议调用这些工具，就像拥有了一个"代码 GPS"。
+> **与 IDE 的区别**：CodeGraph 不是给人用的 IDE 插件，而是给 AI Agent 提供结构化的代码理解能力。Agent 通过 MCP 协议调用这些工具，就像拥有了一个"代码 GPS"。
 
 ---
 
@@ -195,7 +195,7 @@ codegraph affected --since $CI_MERGE_REQUEST_DIFF_BASE_SHA | xargs xcodebuild te
 ```
 
 > [!NOTE]
-> **iOS 场景价值：**大型 iOS 项目全量跑测试可能需要 30-60 分钟，通过 `affected` 只运行被变更影响的测试，CI 时间可缩短 60-80%。
+> **iOS 场景价值**：大型 iOS 项目全量跑测试可能需要 30-60 分钟，通过 `affected` 只运行被变更影响的测试，CI 时间可缩短 60-80%。
 
 ## 7.2 自定义索引规则
 
@@ -239,14 +239,14 @@ codegraph index . --incremental
 
 # 八、适用场景与工具链集成
 
-**最佳适用场景：**
+**最佳适用场景**：
 - 大型代码库（> 500 文件）
 - 复杂依赖关系的模块化架构
 - 频繁重构需要影响分析
 - CI/CD 测试优化
 - 多人协作的团队项目
 
-**支持的 AI 客户端：**
+**支持的 AI 客户端**：
 - Claude Code（官方推荐）
 - Cursor（通过 MCP）
 - Windsurf（通过 MCP）
@@ -258,7 +258,7 @@ codegraph index . --incremental
 # 九、注意事项与局限
 
 > [!NOTE]
-> **注意：**
+> **注意**：
 > - 首次索引大型项目可能需要数分钟（取决于文件数量）
 > - 索引产物（`.codegraph/`）建议加入 `.gitignore`
 > - 动态语言（如 ObjC runtime 特性）的符号解析准确度低于静态类型语言（Swift）
@@ -278,4 +278,4 @@ codegraph index . --incremental
 | 社区活跃 | 高 ↑ — GitHub 星标快速增长，贡献者活跃 |
 
 > [!NOTE]
-> **推荐行动：**建议在你的 iOS 项目中试用 CodeGraph，从 `codegraph index` + Claude Code MCP 配置开始，先在日常编码中感受效果；效果满意后再引入 `codegraph affected` 优化 CI 流水线。
+> **推荐行动**：建议在你的 iOS 项目中试用 CodeGraph，从 `codegraph index` + Claude Code MCP 配置开始，先在日常编码中感受效果；效果满意后再引入 `codegraph affected` 优化 CI 流水线。

@@ -11,7 +11,7 @@ migration_classification: "needs_refactor"
 review_required: true
 ---
 > [!NOTE]
-> **一句话总结：**[Multi-Agent Wiki](https://multi-agent.wiki/) 是一个面向工程师的多智能体系统知识库，不是论文综述，也不是某个框架的宣传册。它用 **5 个工程维度**给 **29 个交互模式**做坐标系，并配套 **6 篇生产落地指南**，回答一个核心问题：**"我这个任务，到底要不要、以及怎么用多智能体？"**
+> **一句话总结**：[Multi-Agent Wiki](https://multi-agent.wiki/) 是一个面向工程师的多智能体系统知识库，不是论文综述，也不是某个框架的宣传册。它用 **5 个工程维度**给 **29 个交互模式**做坐标系，并配套 **6 篇生产落地指南**，回答一个核心问题**："我这个任务，到底要不要、以及怎么用多智能体？"**
 
 ---
 
@@ -32,13 +32,13 @@ review_required: true
 > - 不是"多智能体很厉害"的鼓吹文
 
 > [!NOTE]
-> **作者的核心观点：**不要问"哪种多智能体最强"，而要问——任务能否拆解？子任务能否并行？是否需要专家接管？是否要审核回滚？是否跨系统互通？是否要长生命周期状态？**如果大多回答是 No，请先用单 Agent + 合适工具，更可靠。**
+> **作者的核心观点**：不要问"哪种多智能体最强"，而要问——任务能否拆解？子任务能否并行？是否需要专家接管？是否要审核回滚？是否跨系统互通？是否要长生命周期状态？**如果大多回答是 No，请先用单 Agent + 合适工具，更可靠。**
 
 ---
 
 # 二、五维分类法（Taxonomy）
 
-作者拒绝按厂商名分类，主张用 **5 个工程维度**给所有模式建坐标系。任何真实系统通常是多个维度的组合，例如：**Supervisor + Parallel Fan-out + Blackboard + Verifier + HITL + MCP**。
+作者拒绝按厂商名分类，主张用 **5 个工程维度**给所有模式建坐标系。任何真实系统通常是多个维度的组合，例如**：Supervisor + Parallel Fan-out + Blackboard + Verifier + HITL + MCP**。
 
 | 维度 | 关注问题 | 代表模式 |
 |-|-|-|
@@ -196,7 +196,7 @@ MCP / A2A / ACP]
 }
 ```
 
-**关键指标：**任务成功率、Handoff 循环率、Verifier 拒绝率、Agent 深度、工具失败率、Cost-per-success、审批延迟、Context 压缩率。
+**关键指标**：任务成功率、Handoff 循环率、Verifier 拒绝率、Agent 深度、工具失败率、Cost-per-success、审批延迟、Context 压缩率。
 
 ## 5.2 安全护栏分级
 
@@ -256,5 +256,5 @@ MCP / A2A / ACP]
 ---
 
 > [!NOTE]
-> **原站链接：**[https://multi-agent.wiki/](https://multi-agent.wiki/)
-> **结论：**这是一个少见的"**不卖框架、只讲工程**"的多智能体参考站。它的真正价值不在某个具体模式，而在它给整个领域**建立了统一的工程坐标系**——让"我们用了 LangGraph 的 Supervisor + AutoGen 的 GroupChat"这种厂商混用表述，可以翻译成"中心化控制 + 共享 thread 信息流 + Manager 决策"这种工程语言。**值得团队 onboarding 时人手一份。**
+> **原站链接**：[https://multi-agent.wiki/](https://multi-agent.wiki/)
+> **结论**：这是一个少见的"**不卖框架、只讲工程**"的多智能体参考站。它的真正价值不在某个具体模式，而在它给整个领域**建立了统一的工程坐标系**——让"我们用了 LangGraph 的 Supervisor + AutoGen 的 GroupChat"这种厂商混用表述，可以翻译成"中心化控制 + 共享 thread 信息流 + Manager 决策"这种工程语言。**值得团队 onboarding 时人手一份。**

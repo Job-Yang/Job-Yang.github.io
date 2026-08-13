@@ -11,7 +11,7 @@ migration_classification: "needs_semantic_redaction"
 review_required: true
 ---
 > [!NOTE]
-> **一句话结论：**Agent = Model + Harness。模型是野马，Harness 是缰绳。决定一个 coding agent 好不好用的，不是模型参数量，而是包在模型外面那套让它能真正干完活的工程系统。有人拆开 Claude Code 发现，约 98% 是 harness，只有 2% 是模型调用。
+> **一句话结论**：Agent = Model + Harness。模型是野马，Harness 是缰绳。决定一个 coding agent 好不好用的，不是模型参数量，而是包在模型外面那套让它能真正干完活的工程系统。有人拆开 Claude Code 发现，约 98% 是 harness，只有 2% 是模型调用。
 
 本文回答两个问题：**Harness Engineering 到底是什么**，以及**为什么它正在成为 AI 编码的胜负手**。材料来自 Martin Fowler 团队、Addy Osmani、Anthropic 工程团队及张汉东《驾驭工程》。
 
@@ -28,7 +28,7 @@ Viv Trivedy 提出了 harness engineering 这个术语，并给了一句被反�
 Martin Fowler 团队的 Birgitta Böckeler 把定义收得更紧：**harness 就是一个 AI agent 里除了模型之外的一切**——系统提示词、工具、上下文策略、钩子、沙箱、子 agent、反馈回路、恢复路径，全是 harness [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 
 > [!NOTE]
-> **最硬的证据：**在 Terminal Bench 2.0 上，同一个 Claude Opus 4.6，装在 Claude Code 里的得分远低于装在定制 harness 里的得分；Viv 的团队只改 harness、不换模型，就把一个 coding agent 从 Top 30 拉到了 Top 5 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。同一个模型，套在 Cursor、自研插件、Claude Code 里表现天差地别——差的不是脑子，是缰绳。
+> **最硬的证据**：在 Terminal Bench 2.0 上，同一个 Claude Opus 4.6，装在 Claude Code 里的得分远低于装在定制 harness 里的得分；Viv 的团队只改 harness、不换模型，就把一个 coding agent 从 Top 30 拉到了 Top 5 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。同一个模型，套在 Cursor、自研插件、Claude Code 里表现天差地别——差的不是脑子，是缰绳。
 
 ---
 
@@ -56,10 +56,10 @@ flowchart LR
 
 ## Sensors（反馈控制）——马跑歪了，缰绳一拉拽回来
 
-在 agent 行动之后观察结果，帮它自我纠正。测试、linter、类型检查、AI 代码审查都是传感器。**精妙之处：**最强的传感器，是那些产出「专门给 LLM 看」的信号的——比如一条自定义 linter 报错，里面直接附上「该怎么改」的指令，本质上是一种**良性的提示词注入** [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
+在 agent 行动之后观察结果，帮它自我纠正。测试、linter、类型检查、AI 代码审查都是传感器。**精妙之处**：最强的传感器，是那些产出「专门给 LLM 看」的信号的——比如一条自定义 linter 报错，里面直接附上「该怎么改」的指令，本质上是一种**良性的提示词注入** [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 
 > [!NOTE]
-> **记死这个因果：**只有 Guides 没有 Sensors，agent 永远不知道规则有没有生效；只有 Sensors 没有 Guides，agent 会一遍遍重犯同样的错。两手都得硬。
+> **记死这个因果**：只有 Guides 没有 Sensors，agent 永远不知道规则有没有生效；只有 Sensors 没有 Guides，agent 会一遍遍重犯同样的错。两手都得硬。
 
 ## 再切一刀：计算型 vs 推理型
 
@@ -72,7 +72,7 @@ Guides 和 Sensors 各自又分两种执行方式，这一刀决定了成本和�
 | 速度成本 | 毫秒到秒级，便宜，可靠 | 慢、贵、不确定 |
 | 用法 | 每次改动都能跑 | 选择性地跑，补语义判断 |
 
-**实践含义：**能用确定性工具（类型检查、测试）接住的错，就别花钱让 LLM 去判断。把便宜可靠的计算型传感器铺在每一次改动上，把贵的推理型留给真正需要语义判断的地方。
+**实践含义**：能用确定性工具（类型检查、测试）接住的错，就别花钱让 LLM 去判断。把便宜可靠的计算型传感器铺在每一次改动上，把贵的推理型留给真正需要语义判断的地方。
 
 ---
 
@@ -90,7 +90,7 @@ Guides 和 Sensors 各自又分两种执行方式，这一刀决定了成本和�
 - agent 总把跑不过的代码当「完成」 → 把类型检查的反压（back-pressure）信号接进循环
 
 > [!NOTE]
-> **心智转变：**模型答错时，第一反应不该是「模型真笨」，而是「我的 Guides 是不是没说清？我的 Sensors 是不是没接住？」
+> **心智转变**：模型答错时，第一反应不该是「模型真笨」，而是「我的 Guides 是不是没说清？我的 Sensors 是不是没接住？」
 
 ## 洞察二：棘轮原则（The Ratchet）——每个错误都变成一条永久规则
 
@@ -108,11 +108,11 @@ grep diff 里的 .skip 和 xit"]
 ```
 
 > [!NOTE]
-> **铁律：**好的 AGENTS.md 里每一行，都应该能追溯到一次具体的、真实发生过的失败。只在见到真实失败时才加约束，只在某个强模型让约束变得多余时才删它——「上棘轮，别头脑风暴」。这也是为什么 Harness Engineering 是一门**手艺**而非框架：适配你代码库的 harness 是被你的失败史塑造的，**你下载不到**。
+> **铁律**：好的 AGENTS.md 里每一行，都应该能追溯到一次具体的、真实发生过的失败。只在见到真实失败时才加约束，只在某个强模型让约束变得多余时才删它——「上棘轮，别头脑风暴」。这也是为什么 Harness Engineering 是一门**手艺**而非框架：适配你代码库的 harness 是被你的失败史塑造的，**你下载不到**。
 
 ## 洞察三：模型变强，harness 不会消失，只会「移位」
 
-最反直觉的一点。天真的故事是：模型越强，harness 越没用。Anthropic 的结论恰恰相反：**模型变强时，有趣的 harness 组合空间不会缩小，它会移动**。它把原理讲得极干净：**「harness 里的每一个组件，都编码了一个关于『模型自己做不到什么』的假设。」** [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)
+最反直觉的一点。天真的故事是：模型越强，harness 越没用。Anthropic 的结论恰恰相反：**模型变强时，有趣的 harness 组合空间不会缩小，它会移动**。它把原理讲得极干净**：「harness 里的每一个组件，都编码了一个关于『模型自己做不到什么』的假设。」** [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)
 
 ```mermaid
 flowchart LR
@@ -125,13 +125,13 @@ flowchart LR
 多天记忆策略 / 三 agent 协同 / UI 质量评估器"]
 ```
 
-**实践含义：**当模型在某件事上变强了，对应组件就「不承重」了，该拆掉；当模型解锁新能力，新天花板带来新失败模式，需要新脚手架去够。**所以 harness 是一个活系统，不是一次性配好的配置文件。**
+**实践含义**：当模型在某件事上变强了，对应组件就「不承重」了，该拆掉；当模型解锁新能力，新天花板带来新失败模式，需要新脚手架去够。**所以 harness 是一个活系统，不是一次性配好的配置文件。**
 
 ## 洞察四：模型和 harness 是「共同训练」出来的
 
 Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness 一起做后训练的**。模型会专门在 harness 设计者认为它该擅长的动作上变强——文件操作、bash、规划、子 agent 派发 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。这解释了两个怪现象：为什么 Opus 4.6 在 Claude Code 里手感和别处不一样；为什么你把工具的 str_replace 换成 apply_patch 有时会引起莫名其妙的性能回退——一个真正通用的模型不该在乎这个，但共同训练造成了过拟合。
 
-**实践含义：**模型「出生时」所在的 harness，不一定是它能力的天花板。为你的具体任务定制 harness，可以解锁原厂 harness 漏在地上的能力。Top 30 → Top 5 就是最硬的证据。
+**实践含义**：模型「出生时」所在的 harness，不一定是它能力的天花板。为你的具体任务定制 harness，可以解锁原厂 harness 漏在地上的能力。Top 30 → Top 5 就是最硬的证据。
 
 ---
 
@@ -150,7 +150,7 @@ Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness �
 | 钩子 Hooks | 「我告诉过 agent」≠「系统强制执行」 | 生命周期节点跑脚本：改完文件就跑类型检查 / lint / 测试、拦截危险命令、PR 前需审批 |
 
 > [!NOTE]
-> **两条特别值钱的原则：**
+> **两条特别值钱的原则**：
 > **1. 成功是沉默的，失败是吵闹的。**类型检查过了，agent 什么都听不到；一旦失败，错误文本被注入循环，agent 自我纠正。让反馈回路在常见情况下几乎零成本，出问题时又直接可执行。
 > **2. 生成与评估必须分家。**Anthropic 明确指出，把生成和评估拆成两个独立 agent，效果好过让一个 agent 自评——因为 agent 给自己的活打分时，可靠地会偏向乐观。配套的「sprint contract」模式更狠：让生成方和评估方在写代码之前，先谈拢「done 到底是什么意思」 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。
 
@@ -172,7 +172,7 @@ Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness �
 组织层面的深刻洞察。强类型语言天生自带类型检查这个传感器；清晰的模块边界天生支持架构约束规则；Spring 这类框架把 agent 本不该操心的细节抽象掉，隐式提高成功率。**没有这些属性，对应的控制手段你压根建不起来** [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 
 > [!NOTE]
-> **残酷的推论：**harness 最被需要的地方（债台高筑的遗留系统），恰恰是最难建 harness 的地方。绿地项目可以从第一天就把「可驾驭性」焊进技术选型里。
+> **残酷的推论**：harness 最被需要的地方（债台高筑的遗留系统），恰恰是最难建 harness 的地方。绿地项目可以从第一天就把「可驾驭性」焊进技术选型里。
 
 这里还藏着一条控制论定律——**Ashby 必要多样性定律**：一个调节器，必须拥有至少和它所治理的系统一样多的多样性。LLM 几乎能产出任何东西，但一旦你把它约束到某种确定的拓扑（比如「就用这套服务模板」），就缩小了它的输出空间，使全面的 harness 变得可行。**定义拓扑，本身就是一次「降低多样性」的治理动作** [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 
@@ -191,4 +191,4 @@ Viv 提出的 HaaS（Harness-as-a-Service）框架点明方向：我们正从「
 所以这门手艺的目标，不是彻底消灭人的输入，而是**把人的输入，导向最需要它的地方**。
 
 > [!NOTE]
-> **贯穿所有材料的那条哲学：**在 AI Agent 系统里，控制行为的最佳方式不是更多代码，而是更好的约束。决定胜负的不是模型的参数量，而是驾驭模型的工程能力。
+> **贯穿所有材料的那条哲学**：在 AI Agent 系统里，控制行为的最佳方式不是更多代码，而是更好的约束。决定胜负的不是模型的参数量，而是驾驭模型的工程能力。

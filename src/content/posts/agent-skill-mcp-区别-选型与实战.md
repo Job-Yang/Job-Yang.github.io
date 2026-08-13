@@ -11,7 +11,7 @@ migration_classification: "needs_refactor"
 review_required: true
 ---
 > [!NOTE]
-> **一句话先理清三者：**
+> **一句话先理清三者**：
 > **Agent** 是会自主干活的"人"
 > **Skill** 是教他某类活怎么干的"招式说明书"
 > **MCP** 是接到外部系统的"工具箱接口"。
@@ -79,7 +79,7 @@ DB/API/构建服务}
 ```
 
 > [!NOTE]
-> **判据：**要"一个会干活的角色" → Agent；给角色加"标准动作" → Skill；让角色"接到外部系统/常驻服务" → MCP。
+> **判据**：要"一个会干活的角色" → Agent；给角色加"标准动作" → Skill；让角色"接到外部系统/常驻服务" → MCP。
 
 ---
 
@@ -128,7 +128,7 @@ crash/log/UI/截图]
 > 编译不是"教模型怎么写"，而是要真正驱动外部构建工具、回采运行态证据。让模型裸跑 xcodebuild 既不稳也无状态——必须由独立服务接管。
 
 > [!NOTE]
-> **串起来看：**这套流水线 = 一个 **Agent**（自闭环工作循环）+ 若干 **Skill**（config_wizard / doctor / runtime_smoke 等标准动作）+ **MCP**（XcodeBuildMCP 接管编译运行）。三层各司其职，这就是它们真实的协作方式。
+> **串起来看**：这套流水线 = 一个 **Agent**（自闭环工作循环）+ 若干 **Skill**（config_wizard / doctor / runtime_smoke 等标准动作）+ **MCP**（XcodeBuildMCP 接管编译运行）。三层各司其职，这就是它们真实的协作方式。
 
 ---
 

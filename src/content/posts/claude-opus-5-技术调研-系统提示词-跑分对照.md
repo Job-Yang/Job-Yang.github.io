@@ -59,7 +59,7 @@ review_required: true
 
 系统提示词的 Environment 段里有一句关键设定:
 
-> **Thinking behavior:** Claude 默认在回答前先思考。即便对看似明显的问题,只要有任何潜伏复杂性的迹象,就开启扩展思考块深入,以确保自己不只是对熟悉之物做模式匹配。
+> **Thinking behavior**: Claude 默认在回答前先思考。即便对看似明显的问题,只要有任何潜伏复杂性的迹象,就开启扩展思考块深入,以确保自己不只是对熟悉之物做模式匹配。
 
 **这对应了什么?** 学术上叫 **test-time compute(推理时算力)**,大白话就是"允许它多花点算力想一会儿再开口"。上一代 Opus 4.8 默认是不额外思考的,Opus 5 把"思考"变成了默认开关,再叠一个 low/medium/high/xhigh/max 的用力档位[[MarkTechPost]](https://www.marktechpost.com/2026/07/24/meet-the-new-claude-opus-5-frontier-class-agentic-coding-and-computer-use-at-unchanged-opus-pricing/)。
 

@@ -424,7 +424,7 @@ Blake 在他的 Claw 项目里用了 **84 个 hooks** 当编排层 —— 这套
 
 在官方一个确定性的 Weather App 任务里,这套"操作即带上下文"的机制把 **墙钟时间砍掉约 70%、token 用量约 68%、工具调用次数约 76%**[XcodeBuildMCP Changelog](https://www.xcodebuildmcp.com/docs/changelog)。
 
-**新旧闭环对比(这是和正文第 2 章最大的差异):**
+**新旧闭环对比(这是和正文第 2 章最大的差异)**:
 
 | 维度 | 旧版 2.5.x(正文写法) | 新版 2.6.x |
 |-|-|-|

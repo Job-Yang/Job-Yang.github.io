@@ -11,7 +11,7 @@ migration_classification: "needs_refactor"
 review_required: true
 ---
 > [!NOTE]
-> **一句话总结：**Superpowers 是一套让 AI 编码 Agent "自动驾驶"的开发方法论 + 可组合 skill 框架。Agent 从需求澄清到代码合并全程自治，强制 TDD、subagent 驱动、两阶段 code review。GitHub 201K stars，MIT 协议。
+> **一句话总结**：Superpowers 是一套让 AI 编码 Agent "自动驾驶"的开发方法论 + 可组合 skill 框架。Agent 从需求澄清到代码合并全程自治，强制 TDD、subagent 驱动、两阶段 code review。GitHub 201K stars，MIT 协议。
 
 # 一、项目概述
 
@@ -37,7 +37,7 @@ Skill 无需手动调用，Agent 根据上下文**自动激活**对应 skill：
 7. **Finishing** — 全部测试通过后，提供 merge / PR / keep / discard 选项，自动清理 worktree
 
 > [!NOTE]
-> **关键特性：**Agent 可自主工作数小时不偏离计划，无需人工干预。
+> **关键特性**：Agent 可自主工作数小时不偏离计划，无需人工干预。
 
 ---
 
@@ -81,7 +81,7 @@ Skill 无需手动调用，Agent 根据上下文**自动激活**对应 skill：
 # 五、结论
 
 > [!NOTE]
-> **选型建议：**
+> **选型建议**：
 > - 想让 Agent 尽可能自主跑完全流程、强调 TDD → 选 **Superpowers**
 > - 想要每步产出可审阅的规范文档、团队多人协作需统一流程 → 选 **Spec Kit**
 > - 两者不互斥，可组合使用：Spec Kit 管规范产出，Superpowers 管执行纪律

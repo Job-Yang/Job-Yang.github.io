@@ -23,7 +23,7 @@ review_required: true
 Mamba 就像人在做阅读理解，读完一段就"在脑子里写个总结"，然后忘掉原句。它看再长的文章都不卡，**速度恒定 O(N)**，且推理时显存占用恒定 O(1)。
 
 > [!NOTE]
-> **客户端类比：**Transformer + KV Cache 像把所有聊天记录都加载到内存里（越聊越占内存）。Mamba 像 IM 系统的"会话摘要" —— 滚动维护一个固定大小的状态向量，把历史压缩进去。
+> **客户端类比**：Transformer + KV Cache 像把所有聊天记录都加载到内存里（越聊越占内存）。Mamba 像 IM 系统的"会话摘要" —— 滚动维护一个固定大小的状态向量，把历史压缩进去。
 
 ## 🔴【进阶版】状态空间模型（SSM）
 
@@ -39,7 +39,7 @@ Mamba 的关键创新是**"选择性 SSM"**：让 A、B、C 这些参数**本身
 
 不过到 2026 年，主流大模型仍是 Transformer + 各种优化。Mamba 在长序列（百万级 token）和端侧场景表现亮眼，但通用能力上还未完全替代 Transformer。**主流趋势是"混合架构"**（如 Jamba：部分层用 Mamba、部分层用 Attention）。
 
-> 📚 **推荐阅读：**
+> 📚 **推荐阅读**：
 > 
 > \- [Mamba: Linear-Time Sequence Modeling with Selective State Spaces (Gu & Dao, 2023)](https://arxiv.org/abs/2312.00752)：挑战 Transformer 王座的头号种子。
 
