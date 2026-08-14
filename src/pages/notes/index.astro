@@ -33,17 +33,11 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
       {rendered.length === 0 && <p class="empty">还没有公开的手记。</p>}
       {rendered.map(({ note, Content }) => (
         <article class="note-card">
-          <div class="note-head">
-            <div class="avatar" aria-hidden="true">羊</div>
-            <div class="who">
-              <span class="name">老羊</span>
-              {note.data.publishedAt && (
-                <time datetime={note.data.publishedAt.toISOString()}>
-                  {note.data.publishedAt.toISOString().slice(0, 10)}
-                </time>
-              )}
-            </div>
-          </div>
+          {note.data.publishedAt && (
+            <time datetime={note.data.publishedAt.toISOString()}>
+              {note.data.publishedAt.toISOString().slice(0, 10)}
+            </time>
+          )}
           <div class="note-content">
             {note.data.title && <h2>{note.data.title}</h2>}
             <Content />
@@ -111,38 +105,9 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
     background: rgba(255, 255, 255, 0.055);
   }
 
-  .note-head {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-bottom: 14px;
-  }
-
-  .avatar {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    place-items: center;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), #b25a1e);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 650;
-  }
-
-  .who {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.3;
-  }
-
-  .who .name {
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .who time {
+  .note-card time {
+    display: block;
+    margin-bottom: 12px;
     color: var(--ink-faint);
     font: 11px var(--mono);
   }
