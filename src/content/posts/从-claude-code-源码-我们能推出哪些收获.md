@@ -117,8 +117,8 @@ flowchart TD
 (源码)** | 抓到的真实 prompt 有几个一致的手法[[claude-code-reverse]](https://github.com/Yuyz0112/claude-code-reverse):  
 ① 工具描述里写死"该用/不该用",比如 Bash 工具明令 ``You MUST avoid using ... `find` and `grep`. Instead use Grep, Glob``;  
 ② 高危行为用大写绝对量词钉死,如 `IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked`、`NEVER commit changes unless the user explicitly asks`;  
-③ 用 `` 这个"非用户输入"的旁路通道做运行时动态提醒(如待办为空时提醒用 TodoWrite);  
-④ 启动就注入 `` 现场(工作目录、是否 git 仓库、平台、日期、git status)。 |
+③ 用 `<system-reminder>` 这个"非用户输入"的旁路通道做运行时动态提醒(如待办为空时提醒用 TodoWrite);  
+④ 启动就注入 `<env>` 现场(工作目录、是否 git 仓库、平台、日期、git status)。 |
 |-|-|
 | **推导** | 这些都不是"碰运气调出来的咒语",而是**有明确意图的工程动作**:工具描述里嵌指令,是把模型往正确工具上推;大写绝对量词,是给高危行为划红线、不留模糊;system-reminder 旁路,是不污染对话又能动态提醒;注入 env,是让模型一上来就有现场感、少问废话。每一条都对应一个要解决的具体问题。 |
 | **果** | 写 prompt 别再靠玄学和反复试。可直接照搬的四个工程手法**:① 在工具/能力描述里写明"何时用、何时别用"+正反例;② 高危红线用大写绝对量词钉死,而不是写一堆温和又互相打架的建议;③ 用旁路通道(类 system-reminder)做运行时提醒,不污染主对话;④ 启动即注入环境现场。**Prompt 是能版本管理、能复盘优化的资产。 |
