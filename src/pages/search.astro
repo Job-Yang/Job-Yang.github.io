@@ -1,0 +1,152 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索" description="搜索全部文章与手记。" active="writing">
+  <div class="space-fallback" slot="background"></div>
+  <div class="page-shell">
+    <header class="page-intro reading">
+      <div class="eyebrow">Search</div>
+      <h1 class="display">搜索<span>。</span></h1>
+      <p>按标题、正文或分类检索全部文章与手记。</p>
+    </header>
+
+    <section class="reading search-panel">
+      <input
+        id="q"
+        type="search"
+        placeholder="输入关键词…"
+        autocomplete="off"
+        aria-label="搜索关键词"
+      />
+      <p id="hint" class="hint">共 <span id="total">0</span> 篇可搜索内容</p>
+      <ul id="results" class="results"></ul>
+      <p id="empty" class="empty" hidden>没有匹配的内容。</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  const input = document.getElementById('q') as HTMLInputElement;
+  const list = document.getElementById('results') as HTMLUListElement;
+  const empty = document.getElementById('empty') as HTMLParagraphElement;
+  const totalEl = document.getElementById('total') as HTMLSpanElement;
+  let data: any[] = [];
+
+  const params = new URLSearchParams(location.search);
+  const initial = params.get('q') ?? '';
+
+  fetch('/search.json')
+    .then((r) => r.json())
+    .then((json) => {
+      data = json;
+      if (totalEl) totalEl.textContent = String(data.length);
+      if (initial) {
+        input.value = initial;
+        run(initial);
+      }
+    });
+
+  function run(query: string) {
+    const q = query.trim().toLowerCase();
+    list.innerHTML = '';
+    if (!q) {
+      empty.hidden = true;
+      return;
+    }
+    const hits = data
+      .filter((item) => item.text.toLowerCase().includes(q))
+      .slice(0, 40);
+    empty.hidden = hits.length > 0;
+    for (const hit of hits) {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <a href="${hit.url}">
+          <div class="meta"><span>${hit.category}</span></div>
+          <h3>${hit.title || hit.excerpt}</h3>
+          ${hit.title ? `<p>${hit.excerpt}</p>` : ''}
+        </a>`;
+      list.appendChild(li);
+    }
+  }
+
+  let timer: number;
+  input?.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = window.setTimeout(() => run(input.value), 120);
+  });
+</script>
+
+<style>
+  .search-panel {
+    padding-block: 44px 90px;
+  }
+
+  #q {
+    width: 100%;
+    padding: 16px 20px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink);
+    font-size: 16px;
+    outline: none;
+    transition: border-color 180ms ease;
+  }
+
+  #q:focus {
+    border-color: var(--accent);
+  }
+
+  .hint {
+    margin: 14px 2px 24px;
+    color: var(--ink-faint);
+    font: 12px var(--mono);
+  }
+
+  .results {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .results li {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .results a {
+    display: block;
+    padding: 22px 0;
+    text-decoration: none;
+  }
+
+  .results .meta {
+    color: var(--accent);
+    font: 11px var(--mono);
+    margin-bottom: 7px;
+  }
+
+  .results h3 {
+    margin: 0 0 6px;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .results a:hover h3 {
+    color: var(--accent);
+  }
+
+  .results p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .empty {
+    color: var(--ink-faint);
+    font-size: 15px;
+  }
+</style>

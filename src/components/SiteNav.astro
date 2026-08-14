@@ -14,6 +14,7 @@ const { active, minimal = false } = Astro.props;
       <a class:list={{ active: active === 'writing' }} href="/writing/">写作</a>
       {!minimal && <a class:list={{ active: active === 'notes' }} href="/notes/">手记</a>}
       {!minimal && <a class:list={{ active: active === 'about' }} href="/about/">关于</a>}
+      <a href="/search/">搜索</a>
       <a href="/rss.xml">RSS</a>
     </div>
   </div>
@@ -24,27 +25,34 @@ const { active, minimal = false } = Astro.props;
     position: sticky;
     top: 0;
     z-index: 50;
-    border-bottom: 1px solid var(--line);
-    background: rgba(3, 3, 3, 0.72);
-    backdrop-filter: saturate(160%) blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(3, 3, 3, 0.42);
+    backdrop-filter: saturate(150%) blur(20px);
     view-transition-name: site-nav;
   }
 
   .nav-inner {
     display: flex;
     width: min(calc(100% - 96px), var(--wide));
-    min-height: 58px;
+    min-height: 52px;
     margin-inline: auto;
     align-items: center;
     justify-content: space-between;
   }
 
   .brand {
-    color: var(--ink);
-    font-size: 15px;
-    font-weight: 650;
+    color: var(--ink-dim);
+    font-size: 14px;
+    font-weight: 600;
     letter-spacing: -0.01em;
     text-decoration: none;
+    opacity: 0.75;
+    transition: color 180ms ease, opacity 180ms ease;
+  }
+
+  .brand:hover {
+    color: var(--ink);
+    opacity: 1;
   }
 
   .brand span {
@@ -53,13 +61,13 @@ const { active, minimal = false } = Astro.props;
 
   .links {
     display: flex;
-    gap: 26px;
+    gap: 22px;
   }
 
   .links a {
-    border-bottom: 1px solid transparent;
-    color: var(--ink-dim);
-    font-size: 14px;
+    position: relative;
+    color: var(--ink-faint);
+    font-size: 13.5px;
     text-decoration: none;
     transition: color 180ms ease;
   }
@@ -69,8 +77,15 @@ const { active, minimal = false } = Astro.props;
     color: var(--ink);
   }
 
-  .links a.active {
-    border-color: var(--accent);
+  .links a.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 1.5px;
+    border-radius: 2px;
+    background: var(--accent);
   }
 
   @media (max-width: 720px) {

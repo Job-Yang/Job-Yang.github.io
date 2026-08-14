@@ -5,6 +5,7 @@ import RenderingControl from './RenderingControl.astro';
 <div class="space-static" aria-hidden="true"></div>
 <canvas id="black-hole-canvas" aria-hidden="true"></canvas>
 <div class="space-scrim" aria-hidden="true"></div>
+<div class="plunge-veil" aria-hidden="true"></div>
 <RenderingControl />
 
 <script>
@@ -20,6 +21,15 @@ import RenderingControl from './RenderingControl.astro';
     width: 100vw;
     height: 100vh;
     pointer-events: none;
+  }
+
+  .plunge-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    background: #000;
+    opacity: var(--plunge-black, 0);
   }
 
   .space-static {

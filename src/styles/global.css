@@ -12,7 +12,7 @@
   --serif: "Songti SC", "STSong", "Noto Serif SC", serif;
   --sans: -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
   --mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-  --reading: 720px;
+  --reading: 820px;
   --wide: 1360px;
 }
 
@@ -93,12 +93,18 @@ input {
   color: var(--ink);
   font-size: 13px;
   text-decoration: none;
-  transition: 180ms ease;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms ease, color 180ms ease;
 }
 
 .pill:hover {
   border-color: rgba(245, 185, 113, 0.52);
   color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.pill:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 90ms;
 }
 
 .page-shell {
@@ -164,6 +170,16 @@ input {
   mix-blend-mode: normal;
 }
 
+/* Page transition.
+   Home → article uses a real WebGL black-hole dive (see scene.js / index.astro),
+   which fades to black on its own. For every other navigation we keep a plain,
+   quick crossfade so nothing flashes. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 320ms;
+  animation-timing-function: ease;
+}
+
 @media (max-width: 720px) {
   .wide {
     width: min(calc(100% - 36px), var(--wide));
@@ -189,5 +205,10 @@ input {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }

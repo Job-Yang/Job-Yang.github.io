@@ -7,9 +7,10 @@ interface Props {
   category: string;
   publishedAt: Date;
   readingMinutes?: number;
+  image?: string;
 }
 
-const { title, description, category, publishedAt, readingMinutes } = Astro.props;
+const { title, description, category, publishedAt, readingMinutes, image } = Astro.props;
 ---
 
 <BaseLayout
@@ -18,17 +19,19 @@ const { title, description, category, publishedAt, readingMinutes } = Astro.prop
   active="writing"
   minimalNav
   article
+  image={image}
 >
   <article class="article reading">
     <header>
       <a class="back" href="/writing/">← 返回全部文章</a>
       <div class="eyebrow">{category} · {publishedAt.toISOString().slice(0, 10)}</div>
       <h1 class="display">{title}</h1>
-      <p class="description">{description}</p>
       <div class="meta">
         {readingMinutes && <span>{readingMinutes} min read</span>}
       </div>
     </header>
+
+    <nav class="toc" id="toc" aria-label="目录"></nav>
 
     <div class="prose">
       <slot />
@@ -44,6 +47,64 @@ const { title, description, category, publishedAt, readingMinutes } = Astro.prop
     </footer>
   </article>
 </BaseLayout>
+
+<script>
+  // Build a floating table of contents from body headings.
+  const prose = document.querySelector('.prose');
+  const toc = document.getElementById('toc');
+  if (prose && toc) {
+    const headings = Array.from(prose.querySelectorAll('h1, h2')) as HTMLElement[];
+    if (headings.length >= 3) {
+      const ul = document.createElement('ul');
+      headings.forEach((h, i) => {
+        if (!h.id) h.id = `sec-${i}`;
+        const li = document.createElement('li');
+        li.className = h.tagName === 'H1' ? 'lv1' : 'lv2';
+        const a = document.createElement('a');
+        a.href = `#${h.id}`;
+        a.textContent = h.textContent ?? '';
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+      toc.appendChild(ul);
+      toc.classList.add('ready');
+
+      const links = Array.from(toc.querySelectorAll('a'));
+      const spy = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const id = entry.target.id;
+            links.forEach((l) =>
+              l.classList.toggle('active', l.getAttribute('href') === '#' + id),
+            );
+          });
+        },
+        { rootMargin: '-10% 0px -80% 0px' },
+      );
+      headings.forEach((h) => spy.observe(h));
+    }
+  }
+
+  // Add copy buttons to code blocks.
+  document.querySelectorAll('.prose pre').forEach((pre) => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = '复制';
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? '';
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = '已复制';
+        setTimeout(() => (btn.textContent = '复制'), 1600);
+      } catch {
+        btn.textContent = '复制失败';
+      }
+    });
+    pre.appendChild(btn);
+  });
+</script>
 
 <style is:global>
   .article {
@@ -174,6 +235,88 @@ const { title, description, category, publishedAt, readingMinutes } = Astro.prop
   .prose pre code {
     padding: 0;
     background: none;
+  }
+
+  .prose pre {
+    position: relative;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--ink-dim);
+    font: 11px var(--mono);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 160ms ease, color 160ms ease;
+  }
+
+  .prose pre:hover .copy-btn {
+    opacity: 1;
+  }
+
+  .copy-btn:hover {
+    color: var(--ink);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
+
+  .toc {
+    display: none;
+  }
+
+  @media (min-width: 1180px) {
+    .toc.ready {
+      display: block;
+      position: fixed;
+      top: 120px;
+      left: max(24px, calc((100vw - var(--reading)) / 2 - 220px));
+      width: 200px;
+      max-height: 70vh;
+      overflow-y: auto;
+      padding-right: 12px;
+    }
+
+    .toc ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-left: 1px solid var(--line);
+    }
+
+    .toc li {
+      margin: 0;
+    }
+
+    .toc a {
+      display: block;
+      padding: 5px 0 5px 14px;
+      margin-left: -1px;
+      border-left: 2px solid transparent;
+      color: var(--ink-faint);
+      font-size: 13px;
+      line-height: 1.5;
+      text-decoration: none;
+      transition: color 160ms ease, border-color 160ms ease;
+    }
+
+    .toc li.lv2 a {
+      padding-left: 26px;
+      font-size: 12.5px;
+    }
+
+    .toc a:hover {
+      color: var(--ink-dim);
+    }
+
+    .toc a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
   }
 
   .prose img {

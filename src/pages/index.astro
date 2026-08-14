@@ -43,8 +43,7 @@ const noteTeasers = notes.map((note) => ({
       <div class="eyebrow kicker">Engineer · Writer · Builder</div>
       <h1 class="display">清醒时做事，<br />独处时<em>思考</em>。</h1>
       <p>
-        我是老羊。曾经写 iOS，现在更多在折腾 <strong>AI Agent 的自演化</strong>——让工具从「会写代码」
-        变成「能持续交付」。这里记录文章、手记与长期思考。
+        我是老羊。iOS 老兵，最近拥抱 AI，这里记录一些感想和学习过程。
       </p>
       <div class="actions">
         <a class="primary" href="/writing/">读文章 →</a>
@@ -105,8 +104,8 @@ const noteTeasers = notes.map((note) => ({
         <div class="reading-column about">
           <div class="section-head"><h2>关于</h2></div>
           <p>
-            iOS 出身的工程师，现在专注 AI Agent 与自演化系统。相信“分享要平视”，文章尽量保留真实过程，
-            结论必须有证据。
+            资深 iOS 工程师，先后在美团、字节跳动做客户端。这两年在全面转向 AI，一边学它、一边用它重做自己的工具。
+            这里主要记录：我读到的、想到的、以及踩过的坑。
           </p>
           <a href="/about/">更多关于我与公众号 →</a>
         </div>
@@ -114,6 +113,52 @@ const noteTeasers = notes.map((note) => ({
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  // Intercept in-site navigation from the home page and play the black-hole dive
+  // before leaving. Only when the WebGL backdrop is available and the user has
+  // not asked for reduced motion.
+  const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.addEventListener('click', (event) => {
+    if (prefersReduced) return;
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const link = (event.target as HTMLElement)?.closest?.('a');
+    if (!link) return;
+    const href = link.getAttribute('href') || '';
+    const target = link.getAttribute('target');
+    // Only same-origin, in-page-route navigations; skip hashes, downloads, feeds.
+    if (
+      !href ||
+      href.startsWith('#') ||
+      href.startsWith('http') ||
+      href.startsWith('mailto:') ||
+      href.endsWith('.xml') ||
+      target === '_blank'
+    ) {
+      return;
+    }
+
+    const dive = (window as any).blackHoleControls?.plunge;
+    if (typeof dive !== 'function' || document.body.classList.contains('no-webgpu')) {
+      return;
+    }
+
+    event.preventDefault();
+    // Safety timeout: if the dive can't advance (e.g. backgrounded tab pausing
+    // rAF), navigate anyway so a click never appears to hang.
+    let navigated = false;
+    const go = () => {
+      if (navigated) return;
+      navigated = true;
+      window.location.href = href;
+    };
+    dive(760).then(go);
+    setTimeout(go, 1200);
+  });
+</script>
 
 <style>
   .home {
@@ -180,18 +225,38 @@ const noteTeasers = notes.map((note) => ({
     border-radius: 11px;
     font-size: 14px;
     text-decoration: none;
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+  }
+
+  .actions a:hover {
+    transform: translateY(-2px);
+  }
+
+  .actions a:active {
+    transform: translateY(0) scale(0.98);
+    transition-duration: 90ms;
   }
 
   .primary {
     background: var(--ink);
     color: var(--bg);
     font-weight: 650;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset, 0 6px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .primary:hover {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 10px 28px rgba(0, 0, 0, 0.45);
   }
 
   .secondary {
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(10px);
+  }
+
+  .secondary:hover {
+    border-color: rgba(245, 185, 113, 0.4);
+    background: rgba(255, 255, 255, 0.07);
   }
 
   .lower {

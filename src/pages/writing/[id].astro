@@ -12,6 +12,15 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+
+// Auto reading time from body (Chinese ~350 chars/min), unless set in frontmatter.
+const bodyText = (post.body ?? '').replace(/```[\s\S]*?```/g, ' ');
+const charCount = (bodyText.match(/[\u4e00-\u9fff]/g) || []).length
+  + (bodyText.match(/[a-zA-Z0-9]+/g) || []).length;
+const readingMinutes = post.data.readingMinutes ?? Math.max(1, Math.round(charCount / 350));
+
+// First in-body image → og:image for richer social cards.
+const firstImage = (post.body ?? '').match(/!\[[^\]]*\]\((\/[^)\s]+)\)/)?.[1];
 ---
 
 <ArticleLayout
@@ -19,7 +28,8 @@ const { Content } = await render(post);
   description={post.data.description}
   category={post.data.category}
   publishedAt={post.data.publishedAt}
-  readingMinutes={post.data.readingMinutes}
+  readingMinutes={readingMinutes}
+  image={firstImage}
 >
   <Content />
 </ArticleLayout>

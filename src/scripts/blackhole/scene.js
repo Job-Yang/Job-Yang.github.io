@@ -231,15 +231,8 @@ if (canvas) {
     return getState();
   };
 
-  window.blackHoleControls = {
-    applyPreset,
-    applySettings,
-    getState,
-    reset,
-    togglePause,
-  };
-
   const syncScroll = () => {
+    if (plunge.active) return;
     const range = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
     scrollProgress = Math.min(Math.max(window.scrollY / range, 0), 1);
     document.documentElement.style.setProperty(
@@ -248,23 +241,74 @@ if (canvas) {
     );
   };
 
+  // Programmatic "dive into the black hole" used for page transitions. Drives the
+  // same camera plunge that scrolling does, but on a timer, then fades to black.
+  const plunge = { active: false, start: 0, duration: 760, from: 0, resolve: null };
+
+  const runPlunge = (now) => {
+    const t = Math.min((now - plunge.start) / plunge.duration, 1);
+    // easeInQuart — hangs briefly, then snaps hard into the core for impact.
+    const eased = t * t * t * t;
+    scrollProgress = Math.min(plunge.from + (1 - plunge.from) * eased, 1);
+    // Let the head-on dive fill the frame with the core, then land on black.
+    const dark = THREE.MathUtils.smoothstep(t, 0.86, 1);
+    document.documentElement.style.setProperty('--space-fade', String(1 + dark * 2));
+    document.documentElement.style.setProperty('--plunge-black', String(dark));
+    if (t >= 1) {
+      plunge.active = false;
+      const done = plunge.resolve;
+      plunge.resolve = null;
+      if (done) done();
+    }
+  };
+
+  const startPlunge = (duration = 760) =>
+    new Promise((resolve) => {
+      if (reducedMotion || settings.paused) {
+        resolve();
+        return;
+      }
+      plunge.active = true;
+      plunge.start = performance.now();
+      plunge.duration = duration;
+      plunge.from = scrollProgress;
+      plunge.resolve = resolve;
+    });
+
+  window.blackHoleControls = {
+    applyPreset,
+    applySettings,
+    getState,
+    reset,
+    togglePause,
+    plunge: startPlunge,
+  };
+
   const updateCamera = (delta) => {
     elapsed += delta;
     const approach = 1 - Math.exp(-elapsed * 0.16);
-    const plunge = scrollProgress ** 2 * (3 - 2 * scrollProgress);
-    const distance = 31 - approach * 7 - plunge * 16;
-    const y = -1.15 - approach * 0.45 - plunge * 4.4;
-    const drift = Math.sin(elapsed * 0.05) * 1.8;
-    const angle = 0.12 + elapsed * 0.005;
+    const fall = scrollProgress ** 2 * (3 - 2 * scrollProgress);
+    // During a transition dive, swing the camera to face the core head-on,
+    // kill the stylised drift/tilt, and push it right up to the event horizon
+    // so the central black grows and swallows the frame — "falling into" the
+    // black hole rather than "flying past" it.
+    const dive = plunge.active ? THREE.MathUtils.smoothstep(scrollProgress, 0.42, 1) : 0;
+    const straighten = 1 - dive;
+    // Drive the camera all the way to (and slightly past) the event horizon so
+    // the central black fills the frame — a "slamming into" impact, not a flyby.
+    const distance = Math.max(31 - approach * 7 - fall * 16 - dive * (30 - fall * 8), 0.28);
+    const y = (-1.15 - approach * 0.45 - fall * 4.4) * straighten;
+    const drift = Math.sin(elapsed * 0.05) * 1.8 * straighten;
+    const angle = (0.12 + elapsed * 0.005) * straighten;
 
     camera.position.set(
       Math.sin(angle) * distance + drift,
       y,
       Math.cos(angle) * distance,
     );
-    camera.lookAt(0, -scrollProgress * 2.5, 0);
-    camera.rotateY(-0.5);
-    camera.rotateX(0.1);
+    camera.lookAt(0, -scrollProgress * 2.5 * straighten, 0);
+    camera.rotateY(-0.5 * straighten);
+    camera.rotateX(0.1 * straighten);
   };
 
   const updateShip = (delta) => {
@@ -317,6 +361,7 @@ if (canvas) {
     accumulated = 0;
     delta = Math.min(delta, 0.05);
 
+    if (plunge.active) runPlunge(now);
     updateCamera(delta);
     updateShip(delta);
     simulation.update(delta, camera);
@@ -327,6 +372,16 @@ if (canvas) {
   document.addEventListener('visibilitychange', () => {
     pageVisible = !document.hidden;
   });
+  // If the page is restored from bfcache after a forward plunge, the black veil
+  // variables are still maxed out — clear them so the page isn't left blacked out.
+  const clearPlunge = () => {
+    plunge.active = false;
+    plunge.resolve = null;
+    document.documentElement.style.setProperty('--plunge-black', '0');
+    syncScroll();
+  };
+  window.addEventListener('pageshow', clearPlunge);
+  clearPlunge();
   window.addEventListener('scroll', syncScroll, { passive: true });
   window.addEventListener(
     'resize',
