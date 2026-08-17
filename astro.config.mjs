@@ -4,7 +4,7 @@ import remarkCallout from './src/lib/remark-callout.mjs';
 import rehypeLazyImages from './src/lib/rehype-lazy-images.mjs';
 
 export default defineConfig({
-  site: 'https://job-yang.github.io',
+  site: 'https://jobyang.cn',
   output: 'static',
   integrations: [sitemap()],
   markdown: {
