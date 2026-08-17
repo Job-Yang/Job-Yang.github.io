@@ -6,7 +6,7 @@ import SiteNav from '../components/SiteNav.astro';
 interface Props {
   title?: string;
   description?: string;
-  active?: 'writing' | 'notes' | 'about';
+  active?: 'writing' | 'notes' | 'projects' | 'about';
   minimalNav?: boolean;
   showFooter?: boolean;
   image?: string;
@@ -34,6 +34,10 @@ const fullTitle = title.includes('Job Yang') ? title : `${title} — Job Yang`;
     <meta name="description" content={description} />
     <meta name="theme-color" content="#030303" />
     <meta name="generator" content={Astro.generator} />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23030303'/><circle cx='32' cy='32' r='20' fill='none' stroke='%23f5b971' stroke-width='2'/><circle cx='32' cy='32' r='5' fill='%23f5b971'/></svg>"
+    />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title="Job Yang RSS" href="/rss.xml" />
     <meta property="og:type" content={article ? 'article' : 'website'} />

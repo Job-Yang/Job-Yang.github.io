@@ -1,6 +1,6 @@
 ---
 interface Props {
-  active?: 'writing' | 'notes' | 'about';
+  active?: 'writing' | 'notes' | 'projects' | 'about';
   minimal?: boolean;
 }
 
@@ -13,6 +13,7 @@ const { active, minimal = false } = Astro.props;
     <div class="links">
       <a class:list={{ active: active === 'writing' }} href="/writing/">写作</a>
       {!minimal && <a class:list={{ active: active === 'notes' }} href="/notes/">手记</a>}
+      {!minimal && <a class:list={{ active: active === 'projects' }} href="/projects/">沉淀</a>}
       {!minimal && <a class:list={{ active: active === 'about' }} href="/about/">关于</a>}
       <a href="/search/">搜索</a>
       <a href="/rss.xml">RSS</a>
@@ -95,6 +96,10 @@ const { active, minimal = false } = Astro.props;
 
     .links {
       gap: 14px;
+    }
+
+    .links a:nth-last-child(-n + 2) {
+      display: none;
     }
   }
 </style>

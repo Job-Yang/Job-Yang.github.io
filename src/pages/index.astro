@@ -2,10 +2,14 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BlackHoleBackdrop from '../components/BlackHoleBackdrop.astro';
+import ProjectVisual from '../components/ProjectVisual.astro';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft))
   .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf())
   .slice(0, 3);
+const projects = (await getCollection('projects', ({ data }) => !data.draft && data.featured))
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 2);
 const notes = (await getCollection('notes', ({ data }) => !data.draft))
   .sort((a, b) => {
     const da = a.data.publishedAt?.valueOf();
@@ -52,6 +56,25 @@ const noteTeasers = notes.map((note) => ({
     </section>
 
     <div class="lower">
+      <section class="content-section wide" id="selected-work">
+        <div class="section-head">
+          <h2>沉淀</h2>
+          <a class="pill" href="/projects/">全部沉淀 →</a>
+        </div>
+        <div class="featured-projects">
+          {projects.map((project, index) => (
+            <a class="featured-project" href={`/projects/${project.id}/`}>
+              <div class="featured-project-copy">
+                <span>{String(index + 1).padStart(2, '0')} · {project.data.eyebrow}</span>
+                <h3>{project.data.title}</h3>
+                <p>{project.data.statement}</p>
+              </div>
+              <ProjectVisual type={project.data.visual} compact />
+            </a>
+          ))}
+        </div>
+      </section>
+
       <section class="content-section wide">
         <div class="section-head">
           <h2>最近写的</h2>
@@ -82,14 +105,12 @@ const noteTeasers = notes.map((note) => ({
           </div>
           <div class="reading-column note-flow">
             {noteTeasers.map(({ note, title, excerpt }) => (
-              <a class="note-line" href="/notes/">
+              <a class:list={['note-line', { 'has-date': note.data.publishedAt }]} href="/notes/">
                 {note.data.publishedAt ? (
                   <time datetime={note.data.publishedAt.toISOString()}>
                     {note.data.publishedAt.toISOString().slice(0, 10)}
                   </time>
-                ) : (
-                  <span></span>
-                )}
+                ) : null}
                 <div class="note-text">
                   {title && <strong>{title}</strong>}
                   <span>{excerpt}</span>
@@ -104,7 +125,7 @@ const noteTeasers = notes.map((note) => ({
         <div class="reading-column about">
           <div class="section-head"><h2>关于</h2></div>
           <p>
-            资深 iOS 工程师，先后在美团、字节跳动做客户端。这两年在全面转向 AI，一边学它、一边用它重做自己的工具。
+            资深 iOS 工程师，先后在美团、字节跳动做客户端。最近在全面转向 AI，一边学它、一边用它重做自己的工具。
             这里主要记录：我读到的、想到的、以及踩过的坑。
           </p>
           <a href="/about/">更多关于我与公众号 →</a>
@@ -271,7 +292,7 @@ const noteTeasers = notes.map((note) => ({
 
   .section-head {
     display: flex;
-    max-width: var(--reading);
+    max-width: 1120px;
     margin-bottom: 30px;
     align-items: center;
     justify-content: space-between;
@@ -283,7 +304,7 @@ const noteTeasers = notes.map((note) => ({
   }
 
   .reading-column {
-    max-width: var(--reading);
+    max-width: 1120px;
   }
 
   .cards {
@@ -334,6 +355,57 @@ const noteTeasers = notes.map((note) => ({
     color: var(--ink-dim);
   }
 
+  .featured-projects {
+    display: grid;
+    max-width: 1120px;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .featured-project {
+    display: grid;
+    min-height: 290px;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 180ms ease;
+  }
+
+  .featured-project:hover {
+    opacity: 0.82;
+  }
+
+  .featured-project :global(.project-visual) {
+    height: 270px;
+  }
+
+  .featured-project-copy {
+    padding: 34px 20px 34px 0;
+  }
+
+  .featured-project-copy > span {
+    color: var(--accent);
+    font: 10px var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .featured-project h3 {
+    margin: 12px 0 10px;
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 400;
+  }
+
+  .featured-project p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
   .note-flow {
     display: grid;
     gap: 0;
@@ -342,10 +414,14 @@ const noteTeasers = notes.map((note) => ({
   .note-line {
     display: grid;
     padding: 18px 0;
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: 1fr;
     border-bottom: 1px solid var(--line);
     text-decoration: none;
     transition: opacity 180ms ease;
+  }
+
+  .note-line.has-date {
+    grid-template-columns: 100px 1fr;
   }
 
   .note-line:hover {
@@ -409,6 +485,24 @@ const noteTeasers = notes.map((note) => ({
     .hero > p {
       max-width: 88%;
       font-size: 16px;
+    }
+
+    .featured-projects {
+      gap: 0;
+    }
+
+    .featured-project {
+      padding-block: 34px;
+      grid-template-columns: 1fr;
+    }
+
+    .featured-project-copy {
+      padding: 0;
+    }
+
+    .featured-project :global(.project-visual) {
+      height: auto;
+      aspect-ratio: 3 / 2;
     }
   }
 </style>

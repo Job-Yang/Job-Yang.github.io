@@ -1,0 +1,276 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectVisual from '../../components/ProjectVisual.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft))
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout
+  title="沉淀"
+  description="一些文章和研究，慢慢沉淀成了能直接使用的东西。"
+  active="projects"
+>
+  <div class="space-fallback" slot="background"></div>
+  <div class="projects-page">
+    <header class="projects-intro wide">
+      <div class="eyebrow">Ideas Made Useful</div>
+      <h1 class="display">沉淀</h1>
+      <p>一些文章和研究，慢慢沉淀成了能直接使用的东西。</p>
+    </header>
+
+    <div class="project-showcase">
+      {projects.map((project, index) => (
+        <article class:list={['showcase-item', `showcase-${project.data.visual}`]}>
+          <div class="showcase-inner wide">
+            <div class="showcase-copy">
+              <span class="showcase-index">{String(index + 1).padStart(2, '0')}</span>
+              <div class="eyebrow">{project.data.eyebrow}</div>
+              <h2 class="display">{project.data.title}</h2>
+              <p>{project.data.statement}</p>
+              <div class="showcase-tags">
+                {project.data.tags.map((tag) => <span>{tag}</span>)}
+              </div>
+              <a class="showcase-link" href={`/projects/${project.id}/`}>
+                查看详情 <span>↗</span>
+              </a>
+            </div>
+
+            <a class="showcase-visual" href={`/projects/${project.id}/`} aria-label={`查看 ${project.data.title}`}>
+              <ProjectVisual type={project.data.visual} priority={index === 0} />
+            </a>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <footer class="projects-future wide">
+      <div class="eyebrow">In Progress</div>
+      <p>iLoop，以及后续那些值得被做出来的想法。</p>
+    </footer>
+  </div>
+</BaseLayout>
+
+<style>
+  .projects-page {
+    position: relative;
+    z-index: 2;
+  }
+
+  .projects-intro {
+    padding-block: 110px 120px;
+  }
+
+  .projects-intro h1 {
+    margin: 18px 0 20px;
+    font-size: clamp(54px, 7vw, 82px);
+    line-height: 1;
+  }
+
+  .projects-intro p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 18px;
+  }
+
+  .project-showcase {
+    border-top: 1px solid var(--line);
+  }
+
+  .showcase-item {
+    position: relative;
+    min-height: 720px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .showcase-item + .showcase-item {
+    margin-top: 130px;
+    border-top: 1px solid var(--line);
+  }
+
+  .showcase-item::before {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: "";
+  }
+
+  .showcase-writing::before {
+    background: radial-gradient(circle at 74% 48%, rgba(245, 185, 113, 0.045), transparent 36%);
+  }
+
+  .showcase-video::before {
+    background: radial-gradient(circle at 75% 48%, rgba(126, 174, 194, 0.045), transparent 36%);
+  }
+
+  .showcase-inner {
+    position: relative;
+    display: grid;
+    min-height: 720px;
+    grid-template-columns: minmax(320px, 0.76fr) minmax(0, 1.24fr);
+    align-items: center;
+    gap: 40px;
+  }
+
+  .showcase-copy {
+    position: relative;
+    z-index: 3;
+    max-width: 500px;
+    padding-block: 84px;
+  }
+
+  .showcase-index {
+    display: block;
+    margin-bottom: 76px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .showcase-copy h2 {
+    margin: 16px 0 22px;
+    font-size: clamp(52px, 6vw, 78px);
+    line-height: 1;
+  }
+
+  .showcase-copy > p {
+    max-width: 450px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 17px;
+    line-height: 1.85;
+  }
+
+  .showcase-tags {
+    display: flex;
+    margin-top: 28px;
+    flex-wrap: wrap;
+    gap: 9px 18px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .showcase-tags span::before {
+    margin-right: 7px;
+    color: var(--accent);
+    content: "·";
+  }
+
+  .showcase-link {
+    display: inline-flex;
+    margin-top: 48px;
+    padding-bottom: 7px;
+    align-items: center;
+    gap: 18px;
+    border-bottom: 1px solid rgba(245, 185, 113, 0.38);
+    color: var(--ink);
+    font-size: 13px;
+    text-decoration: none;
+    transition: border-color 180ms ease, color 180ms ease, gap 180ms ease;
+  }
+
+  .showcase-link span {
+    color: var(--accent);
+    font-size: 17px;
+  }
+
+  .showcase-link:hover {
+    gap: 24px;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .showcase-visual {
+    position: relative;
+    display: block;
+    min-width: 0;
+    aspect-ratio: 3 / 2;
+  }
+
+  .showcase-visual :global(.project-visual) {
+    height: 100%;
+  }
+
+  .showcase-video .showcase-inner {
+    grid-template-columns: minmax(0, 1.24fr) minmax(320px, 0.76fr);
+  }
+
+  .showcase-video .showcase-copy {
+    order: 2;
+    justify-self: end;
+  }
+
+  .showcase-video .showcase-visual {
+    order: 1;
+  }
+
+  .projects-future {
+    padding-block: 130px 150px;
+  }
+
+  .projects-future p {
+    margin: 18px 0 0;
+    color: var(--ink-dim);
+    font-family: var(--serif);
+    font-size: 30px;
+  }
+
+  @media (max-width: 860px) {
+    .projects-intro {
+      padding-block: 80px 82px;
+    }
+
+    .showcase-item,
+    .showcase-inner {
+      min-height: auto;
+    }
+
+    .showcase-item + .showcase-item {
+      margin-top: 86px;
+    }
+
+    .showcase-inner,
+    .showcase-video .showcase-inner {
+      padding-block: 68px;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .showcase-copy,
+    .showcase-video .showcase-copy {
+      order: 1;
+      max-width: 580px;
+      padding-block: 0;
+      justify-self: start;
+    }
+
+    .showcase-index {
+      margin-bottom: 46px;
+    }
+
+    .showcase-visual,
+    .showcase-video .showcase-visual {
+      order: 2;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .projects-intro h1 {
+      font-size: 56px;
+    }
+
+    .showcase-copy h2 {
+      font-size: 48px;
+    }
+
+    .showcase-visual {
+      margin-inline: -18px;
+      width: calc(100% + 36px);
+    }
+
+    .projects-future p {
+      font-size: 25px;
+    }
+  }
+</style>

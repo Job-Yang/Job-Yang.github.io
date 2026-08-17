@@ -1,0 +1,1001 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ProjectVisual from '../components/ProjectVisual.astro';
+
+interface Props {
+  title: string;
+  eyebrow: string;
+  description: string;
+  statement: string;
+  github: string;
+  install: string;
+  tags: string[];
+  visual: 'writing' | 'video';
+}
+
+const { title, eyebrow, description, statement, github, install, tags, visual } = Astro.props;
+const isWriting = visual === 'writing';
+---
+
+<BaseLayout title={title} description={description} active="projects" article>
+  <div class="project-background" slot="background"></div>
+  <article class:list={['project-page', `project-${visual}`]}>
+    <header class="project-hero wide">
+      <div class="hero-copy">
+        <a class="back" href="/projects/">← 返回全部沉淀</a>
+        <div class="eyebrow">{eyebrow}</div>
+        <h1 class="display">{title}</h1>
+        <p>{statement}</p>
+        <div class="hero-actions">
+          <a class="primary-action" href={github} target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a class="secondary-action" href="#story">了解它为什么存在 ↓</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <ProjectVisual type={visual} priority />
+      </div>
+    </header>
+
+    {
+      isWriting ? (
+        <>
+          <section id="story" class="story-section wide">
+            <div class="section-label">01 · 问题</div>
+            <div class="story-heading">
+              <h2 class="display">大家都闻得到 AI 味。<br />但它究竟从哪里来？</h2>
+              <p>
+                问题不只是“大词太多”或“喜欢排比”。更深的一层，是模型常拿英文句法组织中文：
+                动词藏进名词后面，抽象判断走在事实前面，句子看起来正式，意思却越来越远。
+              </p>
+            </div>
+
+            <div class="sentence-lab" data-sentence-lab>
+              <div class="lab-toolbar" role="tablist" aria-label="句子对照">
+                <button class="active" type="button" data-mode="diagnose">查看病灶</button>
+                <button type="button" data-mode="rewrite">看改写</button>
+              </div>
+              <div class="lab-stage diagnose-stage">
+                <p>
+                  本次升级<span data-note="空壳句式">不仅仅是</span>一次简单的迭代，更是我们对整个
+                  <span data-note="抽象大词">底层逻辑</span>的一次
+                  <span data-note="名词化">系统性重塑</span>。
+                </p>
+                <div class="lab-notes">
+                  <span>动作被藏起来</span>
+                  <span>抽象词替代事实</span>
+                  <span>用姿态代替判断</span>
+                </div>
+              </div>
+              <div class="lab-stage rewrite-stage" hidden>
+                <p>这次不只是改了几个功能。我们重新理了一遍底层逻辑。</p>
+                <span>信息没有减少，句子的着力点回到了动作和事实。</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="source-section">
+            <div class="wide source-inner">
+              <div class="section-label">02 · 来源</div>
+              <div class="source-intro">
+                <h2 class="display">这不是一份“AI 写作技巧”清单。</h2>
+                <p>它把一百年来对欧化中文的研究，转成了 Agent 能执行的规则。</p>
+              </div>
+              <div class="source-timeline">
+                <div><time>1943</time><strong>王力</strong><span>《中国现代语法》中的“欧化的语法”</span></div>
+                <div><time>1972</time><strong>思果</strong><span>从翻译实践总结中文的常见病</span></div>
+                <div><time>1987</time><strong>余光中</strong><span>《怎样改进英式中文？》</span></div>
+                <div class="current"><time>现在</time><strong>好好说话</strong><span>把历史诊断变成可重复执行的工作流</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="method-section wide">
+            <div class="section-label">03 · 工作方式</div>
+            <h2 class="display">先守住事实，再处理表达。</h2>
+            <div class="method-flow">
+              <div><span>01</span><strong>保护事实</strong><p>数字、术语、链接和引用原文不能被润色改变。</p></div>
+              <div><span>02</span><strong>识别病灶</strong><p>找到翻译腔、名词化、空泛拔高和自造词。</p></div>
+              <div><span>03</span><strong>重写句子</strong><p>让动词回来，让具体事实走在抽象判断前面。</p></div>
+              <div><span>04</span><strong>交付前回读</strong><p>检查事实、气口和作者原本的声音是否还在。</p></div>
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          <section id="story" class="story-section wide">
+            <div class="section-label">01 · 能力缺口</div>
+            <div class="story-heading">
+              <h2 class="display">模型看得见图片，<br />却看不见事情如何发生。</h2>
+              <p>
+                很多 App 问题只存在于一段动态过程里。均匀抽帧会留下大量重复画面，
+                真正出问题的瞬间反而可能一次都没被选中。
+              </p>
+            </div>
+
+            <div class="frame-demo">
+              <div class="frame-before">
+                <span>均匀抽帧</span>
+                <div class="frames">
+                  <i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <p>六张几乎相同的画面，问题发生的 11.2 秒不在里面。</p>
+              </div>
+              <div class="frame-after">
+                <span>运动区间</span>
+                <div class="motion-window">
+                  <i></i><i></i><i class="key"></i><i></i>
+                </div>
+                <p>先找变化，再让模型只看真正有信息的瞬间。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="pipeline-section">
+            <div class="wide">
+              <div class="section-label">02 · 方法</div>
+              <div class="pipeline-heading">
+                <h2 class="display">不是看更多，<br />而是先选对。</h2>
+                <div class="zero-token"><strong>0</strong><span>token 用于选择关键帧</span></div>
+              </div>
+              <div class="pipeline">
+                <div><span>01</span><strong>Grid</strong><p>先看完整视频的节奏</p></div>
+                <div><span>02</span><strong>Scan</strong><p>用帧差定位运动区间</p></div>
+                <div><span>03</span><strong>Zoom</strong><p>放大可疑的几秒</p></div>
+                <div><span>04</span><strong>Judge</strong><p>让模型理解发生了什么</p></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="evidence-section wide">
+            <div class="section-label">03 · 一次真实诊断</div>
+            <h2 class="display">结论落到具体时间，<br />而不是“视频里好像有问题”。</h2>
+            <div class="evidence-timeline">
+              <div><time>00:09.0</time><span>开始滚动</span></div>
+              <div><time>00:11.2</time><span>手指停止</span></div>
+              <div class="anomaly"><time>00:11.8</time><span>面板仍继续移动</span></div>
+              <div class="conclusion"><strong>结论</strong><span>交互状态异常，不是视频卡顿。</span></div>
+            </div>
+          </section>
+        </>
+      )
+    }
+
+    <section class="details-section">
+      <div class="details-inner wide">
+        <aside>
+          <div class="section-label">04 · 使用与边界</div>
+          <div class="project-facts">
+            <div><span>TYPE</span><strong>Agent Skill</strong></div>
+            <div><span>FOCUS</span><strong>{tags.join(' / ')}</strong></div>
+            <div><span>INSTALL</span><code>{install}</code></div>
+          </div>
+        </aside>
+        <div class="project-prose">
+          <slot />
+        </div>
+      </div>
+    </section>
+
+    <footer class="project-footer wide">
+      <div>
+        <div class="eyebrow">Open Source</div>
+        <h2 class="display">源码、安装说明和后续更新都在 GitHub。</h2>
+      </div>
+      <a href={github} target="_blank" rel="noreferrer">打开仓库 <span>↗</span></a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<script>
+  const lab = document.querySelector('[data-sentence-lab]');
+  if (lab) {
+    const buttons = Array.from(lab.querySelectorAll<HTMLButtonElement>('[data-mode]'));
+    const diagnose = lab.querySelector<HTMLElement>('.diagnose-stage');
+    const rewrite = lab.querySelector<HTMLElement>('.rewrite-stage');
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.dataset.mode;
+        buttons.forEach((item) => item.classList.toggle('active', item === button));
+        if (diagnose) diagnose.hidden = mode !== 'diagnose';
+        if (rewrite) rewrite.hidden = mode !== 'rewrite';
+      });
+    });
+  }
+
+  document.querySelectorAll('.project-prose pre').forEach((pre) => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = '复制';
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? '';
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = '已复制';
+        setTimeout(() => (btn.textContent = '复制'), 1600);
+      } catch {
+        btn.textContent = '复制失败';
+      }
+    });
+    pre.appendChild(btn);
+  });
+</script>
+
+<style is:global>
+  .project-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: #030303;
+  }
+
+  .project-page {
+    position: relative;
+    z-index: 2;
+  }
+
+  .project-hero {
+    display: grid;
+    min-height: calc(88svh - 52px);
+    padding-block: 70px;
+    grid-template-columns: minmax(360px, 0.76fr) minmax(0, 1.24fr);
+    align-items: center;
+    gap: 28px;
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 2;
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 72px;
+    color: var(--ink-faint);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .back:hover {
+    color: var(--accent);
+  }
+
+  .hero-copy h1 {
+    margin: 18px 0 26px;
+    font-size: clamp(58px, 8vw, 104px);
+    line-height: 0.98;
+  }
+
+  .hero-copy > p {
+    max-width: 550px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 18px;
+    line-height: 1.8;
+  }
+
+  .hero-actions {
+    display: flex;
+    margin-top: 36px;
+    gap: 12px;
+  }
+
+  .primary-action,
+  .secondary-action {
+    display: inline-flex;
+    min-height: 44px;
+    padding: 0 18px;
+    align-items: center;
+    border: 1px solid var(--line);
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  .primary-action {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .primary-action:hover {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  .secondary-action {
+    color: var(--ink-dim);
+  }
+
+  .secondary-action:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .hero-visual {
+    min-width: 0;
+    aspect-ratio: 3 / 2;
+  }
+
+  .hero-visual .project-visual {
+    height: 100%;
+  }
+
+  .story-section,
+  .method-section,
+  .evidence-section {
+    padding-block: 130px;
+  }
+
+  .section-label {
+    color: var(--accent);
+    font: 10px var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .story-heading {
+    display: grid;
+    margin-top: 34px;
+    grid-template-columns: 1.3fr 0.7fr;
+    align-items: end;
+    gap: 70px;
+  }
+
+  .story-heading h2,
+  .source-intro h2,
+  .method-section > h2,
+  .pipeline-heading h2,
+  .evidence-section > h2 {
+    margin: 0;
+    font-size: clamp(38px, 5vw, 65px);
+    line-height: 1.28;
+  }
+
+  .story-heading p,
+  .source-intro p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.9;
+  }
+
+  .sentence-lab {
+    margin-top: 90px;
+    border-block: 1px solid var(--line);
+  }
+
+  .lab-toolbar {
+    display: flex;
+    padding: 18px 0;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .lab-toolbar button {
+    padding: 7px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .lab-toolbar button.active {
+    color: var(--accent);
+  }
+
+  .lab-stage {
+    min-height: 360px;
+    padding: 68px 0;
+  }
+
+  .lab-stage[hidden] {
+    display: none;
+  }
+
+  .lab-stage > p {
+    max-width: 1100px;
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: clamp(30px, 4vw, 48px);
+    line-height: 1.75;
+  }
+
+  .diagnose-stage [data-note] {
+    position: relative;
+    color: var(--accent);
+    border-bottom: 1px solid rgba(245, 185, 113, 0.6);
+  }
+
+  .diagnose-stage [data-note]::after {
+    position: absolute;
+    right: 0;
+    bottom: -19px;
+    color: var(--ink-faint);
+    content: attr(data-note);
+    font: 8px var(--mono);
+  }
+
+  .lab-notes {
+    display: flex;
+    margin-top: 72px;
+    gap: 34px;
+    color: var(--ink-faint);
+    font-size: 12px;
+  }
+
+  .lab-notes span::before {
+    margin-right: 8px;
+    color: var(--accent);
+    content: "·";
+  }
+
+  .rewrite-stage > span {
+    display: block;
+    margin-top: 42px;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .source-section,
+  .pipeline-section,
+  .details-section {
+    border-block: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.012);
+  }
+
+  .source-inner,
+  .pipeline-section > .wide {
+    padding-block: 130px;
+  }
+
+  .source-intro {
+    display: grid;
+    margin-top: 34px;
+    grid-template-columns: 1fr 0.62fr;
+    align-items: end;
+    gap: 70px;
+  }
+
+  .source-timeline {
+    display: grid;
+    margin-top: 92px;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+  }
+
+  .source-timeline > div {
+    position: relative;
+    min-height: 175px;
+    padding: 30px 24px 0 0;
+  }
+
+  .source-timeline > div::before {
+    position: absolute;
+    top: -4px;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+    content: "";
+  }
+
+  .source-timeline .current::before {
+    background: var(--accent);
+    box-shadow: 0 0 18px rgba(245, 185, 113, 0.45);
+  }
+
+  .source-timeline time {
+    color: var(--accent);
+    font: 10px var(--mono);
+  }
+
+  .source-timeline strong {
+    display: block;
+    margin: 9px 0 6px;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+  }
+
+  .source-timeline span {
+    color: var(--ink-faint);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .method-section > h2 {
+    max-width: 800px;
+    margin-top: 34px;
+  }
+
+  .method-flow,
+  .pipeline {
+    display: grid;
+    margin-top: 88px;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+  }
+
+  .method-flow > div,
+  .pipeline > div {
+    min-height: 210px;
+    padding: 28px 28px 0 0;
+    border-right: 1px solid var(--line);
+  }
+
+  .method-flow > div:last-child,
+  .pipeline > div:last-child {
+    border-right: 0;
+  }
+
+  .method-flow span,
+  .pipeline span {
+    color: var(--accent);
+    font: 9px var(--mono);
+  }
+
+  .method-flow strong,
+  .pipeline strong {
+    display: block;
+    margin: 48px 0 10px;
+    color: var(--ink);
+    font-size: 18px;
+  }
+
+  .method-flow p,
+  .pipeline p {
+    max-width: 220px;
+    margin: 0;
+    color: var(--ink-faint);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .frame-demo {
+    display: grid;
+    margin-top: 90px;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+  }
+
+  .frame-before,
+  .frame-after {
+    min-width: 0;
+    padding: 38px;
+    background: #050505;
+  }
+
+  .frame-before > span,
+  .frame-after > span {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .frames,
+  .motion-window {
+    display: grid;
+    min-width: 0;
+    margin: 42px 0 28px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+
+  .motion-window {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .frames i,
+  .motion-window i {
+    aspect-ratio: 9 / 14;
+    border: 1px solid rgba(153, 193, 207, 0.13);
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) 12% 13% / 76% 7% no-repeat,
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 18%) 12% 35% / 76% 54% no-repeat,
+      #090b0c;
+    opacity: 0.4;
+  }
+
+  .motion-window i {
+    opacity: 0.74;
+  }
+
+  .motion-window i.key {
+    border-color: var(--accent);
+    opacity: 1;
+    box-shadow: 0 0 24px rgba(245, 185, 113, 0.08);
+  }
+
+  .frame-before p,
+  .frame-after p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 13px;
+  }
+
+  .pipeline-heading {
+    display: flex;
+    margin-top: 34px;
+    justify-content: space-between;
+    align-items: end;
+    gap: 60px;
+  }
+
+  .zero-token {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    color: var(--ink-faint);
+  }
+
+  .zero-token strong {
+    color: var(--accent);
+    font-family: var(--serif);
+    font-size: 90px;
+    font-weight: 400;
+    line-height: 0.8;
+  }
+
+  .zero-token span {
+    max-width: 90px;
+    font: 9px/1.5 var(--mono);
+  }
+
+  .evidence-section > h2 {
+    max-width: 900px;
+    margin-top: 34px;
+  }
+
+  .evidence-timeline {
+    display: grid;
+    margin-top: 90px;
+    grid-template-columns: 1fr 1fr 1fr 1.4fr;
+    border-top: 1px solid var(--line);
+  }
+
+  .evidence-timeline > div {
+    position: relative;
+    min-height: 150px;
+    padding: 30px 24px 0 0;
+  }
+
+  .evidence-timeline > div::before {
+    position: absolute;
+    top: -4px;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+    content: "";
+  }
+
+  .evidence-timeline .anomaly::before {
+    background: var(--accent);
+  }
+
+  .evidence-timeline time,
+  .evidence-timeline strong {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--accent);
+    font: 11px var(--mono);
+    font-weight: 400;
+  }
+
+  .evidence-timeline span {
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .evidence-timeline .conclusion {
+    padding-left: 28px;
+    border-left: 1px solid rgba(245, 185, 113, 0.34);
+  }
+
+  .evidence-timeline .conclusion::before {
+    display: none;
+  }
+
+  .details-inner {
+    display: grid;
+    min-width: 0;
+    padding-block: 130px;
+    grid-template-columns: 260px minmax(0, 760px);
+    justify-content: space-between;
+    gap: 90px;
+  }
+
+  .details-inner > * {
+    min-width: 0;
+  }
+
+  .project-facts {
+    display: grid;
+    margin-top: 52px;
+    gap: 28px;
+  }
+
+  .project-facts > div {
+    display: grid;
+    gap: 7px;
+  }
+
+  .project-facts span {
+    color: var(--ink-faint);
+    font: 8px var(--mono);
+  }
+
+  .project-facts strong,
+  .project-facts code {
+    overflow-wrap: anywhere;
+    color: var(--ink-dim);
+    font: 11px/1.7 var(--mono);
+    font-weight: 400;
+  }
+
+  .project-prose {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    color: #c5c3bf;
+    font-size: 17px;
+    line-height: 1.95;
+  }
+
+  .project-prose h2 {
+    margin: 78px 0 24px;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 31px;
+    font-weight: 400;
+  }
+
+  .project-prose h2:first-child {
+    margin-top: 0;
+  }
+
+  .project-prose p {
+    margin: 0 0 28px;
+  }
+
+  .project-prose strong {
+    color: var(--ink);
+  }
+
+  .project-prose ul,
+  .project-prose ol {
+    margin: 0 0 30px;
+    padding-left: 1.35em;
+  }
+
+  .project-prose li {
+    margin-bottom: 10px;
+  }
+
+  .project-prose blockquote {
+    margin: 36px 0;
+    padding-left: 24px;
+    border-left: 1px solid var(--accent);
+    color: var(--ink-dim);
+  }
+
+  .project-prose code {
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--ink);
+    font: 0.88em var(--mono);
+  }
+
+  .project-prose pre {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: 34px 0;
+    padding: 22px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    background: #070707;
+  }
+
+  .project-prose pre code {
+    padding: 0;
+    background: none;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 9px;
+    border: 1px solid var(--line);
+    background: #050505;
+    color: var(--ink-dim);
+    font: 10px var(--mono);
+    cursor: pointer;
+  }
+
+  .project-footer {
+    display: flex;
+    padding-block: 100px 120px;
+    justify-content: space-between;
+    align-items: end;
+    gap: 60px;
+  }
+
+  .project-footer h2 {
+    max-width: 760px;
+    margin: 22px 0 0;
+    font-size: clamp(32px, 4vw, 52px);
+    line-height: 1.3;
+  }
+
+  .project-footer > a {
+    display: inline-flex;
+    min-width: 180px;
+    padding-bottom: 9px;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(245, 185, 113, 0.4);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .project-footer > a span {
+    color: var(--accent);
+  }
+
+  @media (max-width: 900px) {
+    .project-hero {
+      min-height: auto;
+      padding-block: 58px 82px;
+      grid-template-columns: 1fr;
+    }
+
+    .hero-copy {
+      max-width: 650px;
+    }
+
+    .back {
+      margin-bottom: 52px;
+    }
+
+    .hero-visual {
+      width: 100%;
+    }
+
+    .story-heading,
+    .source-intro,
+    .details-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .source-timeline,
+    .method-flow,
+    .pipeline,
+    .evidence-timeline {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .details-inner {
+      gap: 70px;
+    }
+
+    .project-facts {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .project-hero {
+      padding-block: 42px 60px;
+    }
+
+    .hero-copy h1 {
+      font-size: 56px;
+    }
+
+    .hero-copy > p {
+      font-size: 16px;
+    }
+
+    .hero-actions {
+      flex-wrap: wrap;
+    }
+
+    .secondary-action {
+      display: none;
+    }
+
+    .hero-visual {
+      margin-inline: -18px;
+      width: calc(100% + 36px);
+    }
+
+    .story-section,
+    .method-section,
+    .evidence-section,
+    .source-inner,
+    .pipeline-section > .wide,
+    .details-inner {
+      padding-block: 86px;
+    }
+
+    .story-heading {
+      gap: 36px;
+    }
+
+    .story-heading h2,
+    .source-intro h2,
+    .method-section > h2,
+    .pipeline-heading h2,
+    .evidence-section > h2 {
+      font-size: 38px;
+    }
+
+    .lab-stage {
+      min-height: 330px;
+      padding-block: 48px;
+    }
+
+    .lab-stage > p {
+      font-size: 29px;
+    }
+
+    .diagnose-stage [data-note]::after {
+      display: none;
+    }
+
+    .lab-notes {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .source-timeline,
+    .method-flow,
+    .pipeline,
+    .evidence-timeline,
+    .project-facts {
+      grid-template-columns: 1fr;
+    }
+
+    .source-timeline > div {
+      min-height: 120px;
+    }
+
+    .method-flow > div,
+    .pipeline > div {
+      min-height: 160px;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .frame-demo {
+      grid-template-columns: 1fr;
+    }
+
+    .frame-before,
+    .frame-after {
+      padding: 24px 18px;
+    }
+
+    .pipeline-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .evidence-timeline .conclusion {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .project-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

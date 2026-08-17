@@ -30,7 +30,16 @@ export async function GET() {
     text: `${n.data.title ?? ''} ${plain(n.body ?? '')}`,
     excerpt: plain(n.body ?? '', 90),
   }));
-  return new Response(JSON.stringify([...posts, ...notes]), {
+  const projects = (await getCollection('projects', ({ data }) => !data.draft)).map((p) => ({
+    type: 'project',
+    title: p.data.title,
+    category: '沉淀',
+    tags: p.data.tags,
+    url: `/projects/${p.id}/`,
+    text: `${p.data.title} ${p.data.description} ${p.data.statement} ${plain(p.body ?? '')}`,
+    excerpt: p.data.statement,
+  }));
+  return new Response(JSON.stringify([...posts, ...notes, ...projects]), {
     headers: { 'Content-Type': 'application/json' },
   });
 }

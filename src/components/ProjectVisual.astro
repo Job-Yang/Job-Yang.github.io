@@ -1,0 +1,70 @@
+---
+interface Props {
+  type: 'writing' | 'video';
+  compact?: boolean;
+  priority?: boolean;
+}
+
+const { type, compact = false, priority = false } = Astro.props;
+const image =
+  type === 'writing'
+    ? '/images/projects/haohao-shuohua.webp'
+    : '/images/projects/video-reader.webp';
+const alt =
+  type === 'writing'
+    ? '纠缠的半透明墨迹逐渐收束成清晰流动的信号'
+    : '连续的透明时间切片中，一个关键瞬间被琥珀色光线选中';
+---
+
+<figure class:list={['project-visual', `visual-${type}`, { compact }]}>
+  <img
+    src={image}
+    alt={alt}
+    width="1536"
+    height="1024"
+    loading={priority ? 'eager' : 'lazy'}
+    fetchpriority={priority ? 'high' : 'auto'}
+  />
+</figure>
+
+<style>
+  .project-visual {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: #030303;
+  }
+
+  .project-visual img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center right;
+    mix-blend-mode: screen;
+    mask-image:
+      linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.42) 10%, black 29%, black 88%, transparent 100%),
+      linear-gradient(0deg, transparent 0%, black 13%, black 88%, transparent 100%);
+    mask-composite: intersect;
+  }
+
+  .visual-writing img {
+    filter: saturate(0.82) contrast(1.04);
+  }
+
+  .visual-video img {
+    filter: saturate(0.78) contrast(1.06);
+  }
+
+  @media (max-width: 720px) {
+    .project-visual img {
+      object-position: 68% center;
+      mask-image:
+        linear-gradient(90deg, transparent 0%, black 15%, black 87%, transparent 100%),
+        linear-gradient(0deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    }
+  }
+</style>

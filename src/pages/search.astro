@@ -2,13 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="搜索" description="搜索全部文章与手记。" active="writing">
+<BaseLayout title="搜索" description="搜索全部文章、手记与沉淀。">
   <div class="space-fallback" slot="background"></div>
   <div class="page-shell">
     <header class="page-intro reading">
       <div class="eyebrow">Search</div>
       <h1 class="display">搜索<span>。</span></h1>
-      <p>按标题、正文或分类检索全部文章与手记。</p>
+      <p>按标题、正文或分类检索全部文章、手记与沉淀。</p>
     </header>
 
     <section class="reading search-panel">
@@ -19,7 +19,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         autocomplete="off"
         aria-label="搜索关键词"
       />
-      <p id="hint" class="hint">共 <span id="total">0</span> 篇可搜索内容</p>
+      <p id="hint" class="hint">共 <span id="total">0</span> 项可搜索内容</p>
       <ul id="results" class="results"></ul>
       <p id="empty" class="empty" hidden>没有匹配的内容。</p>
     </section>
