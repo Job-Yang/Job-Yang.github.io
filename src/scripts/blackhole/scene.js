@@ -72,7 +72,7 @@ if (canvas) {
       clarity: 2,
       fps: 60,
       precision: 100,
-      lensing: 3.2,
+      lensing: 2.8,
       bloom: 1.05,
       detail: 1,
     },
@@ -106,6 +106,9 @@ if (canvas) {
   const shipTarget = new THREE.Vector3();
   const shipDirection = new THREE.Vector3();
   const shipWorldAxis = new THREE.Vector3();
+  const shipRedshift = new THREE.Color(0x9f6848);
+  const shipMaterials = [];
+  const shipLensImages = [];
   shipRoot.add(shipSpin);
   camera.add(shipRoot);
   shipRoot.visible = false;
@@ -119,6 +122,9 @@ if (canvas) {
     loaded: false,
     error: null,
     compressedBytes: 1549744,
+    requestedAt: performance.now(),
+    loadedAt: null,
+    firstOnScreenAt: null,
   };
   window.__shipDebug = debug;
 
@@ -142,12 +148,54 @@ if (canvas) {
           if (!material) return;
           material.roughness = Math.max(material.roughness ?? 0.65, 0.48);
           material.metalness = Math.max(material.metalness ?? 0.25, 0.18);
+          if (!shipMaterials.includes(material)) {
+            material.userData.shipBaseOpacity = material.opacity;
+            material.userData.shipBaseColor = material.color?.clone();
+            material.userData.shipBaseEmissive = material.emissive?.clone();
+            material.userData.shipBaseEmissiveIntensity = material.emissiveIntensity ?? 1;
+            material.transparent = true;
+            material.needsUpdate = true;
+            shipMaterials.push(material);
+          }
         });
       });
 
       shipSpin.add(model);
+
+      [
+        { x: -0.28, y: 0.12, strength: 0.2 },
+        { x: 0.22, y: -0.1, strength: 0.12 },
+      ].forEach(({ x, y, strength }) => {
+        const image = new THREE.Group();
+        const clone = model.clone(true);
+        const materials = [];
+        clone.traverse((child) => {
+          if (!child.isMesh) return;
+          const source = Array.isArray(child.material) ? child.material : [child.material];
+          const cloned = source.map((material) => {
+            const next = material.clone();
+            next.transparent = true;
+            next.depthWrite = false;
+            next.opacity = 0;
+            next.needsUpdate = true;
+            materials.push(next);
+            return next;
+          });
+          child.material = Array.isArray(child.material) ? cloned : cloned[0];
+          child.renderOrder = 4;
+        });
+        image.add(clone);
+        image.position.set(x, y, 0.08);
+        image.visible = false;
+        shipSpin.add(image);
+        shipLensImages.push({ group: image, materials, x, y, strength });
+      });
+
       shipRoot.visible = true;
       debug.loaded = true;
+      debug.loadedAt = performance.now();
+      debug.loadDuration = Number((debug.loadedAt - debug.requestedAt).toFixed(1));
+      shipStartedAt = debug.loadedAt - 700;
       debug.bounds = size.toArray();
     },
     undefined,
@@ -161,6 +209,7 @@ if (canvas) {
   let bloomPass;
   let scrollProgress = 0;
   let elapsed = 0;
+  let shipStartedAt = null;
   let last = performance.now();
   let accumulated = 0;
   let targetFrameDuration = 1000 / settings.fps;
@@ -314,20 +363,38 @@ if (canvas) {
   const updateShip = (delta) => {
     if (!debug.loaded) return;
 
-    const autoApproach = 1 - Math.exp(-elapsed * 0.55);
+    if (shipStartedAt === null) shipStartedAt = performance.now();
+    const cycleDuration = 28;
+    const shipElapsed = (performance.now() - shipStartedAt) / 1000;
+    const cyclePhase = (shipElapsed % cycleDuration) / cycleDuration;
+    const autoPhase = Math.min(cyclePhase / 0.92, 1);
+    const entryWindow = 0.08;
+    const entryDistance = 0.18;
+    const autoApproach =
+      autoPhase < entryWindow
+        ? entryDistance *
+          (1 - (1 - autoPhase / entryWindow) * (1 - autoPhase / entryWindow))
+        : entryDistance +
+          (1 - entryDistance) *
+            (() => {
+              const t = (autoPhase - entryWindow) / (1 - entryWindow);
+              return t * t * (3 - 2 * t);
+            })();
     const scrollFall = scrollProgress ** 2 * (3 - 2 * scrollProgress);
-    const flight = Math.min(autoApproach * 0.3 + scrollFall * 0.82, 1);
-    const vanish = THREE.MathUtils.smoothstep(flight, 0.82, 1);
+    const flight = Math.min(Math.max(autoApproach, scrollFall), 1);
+    const fade = THREE.MathUtils.smoothstep(flight, 0.68, 1);
     const narrow = camera.aspect < 1;
-    const ndcX = THREE.MathUtils.lerp(narrow ? 0.82 : -0.03, narrow ? 0.92 : 0.28, flight);
-    const ndcY = THREE.MathUtils.lerp(-0.62, narrow ? -0.08 : 0.04, flight);
-    const z = THREE.MathUtils.lerp(-7.2, -29, flight);
+    const targetNdcX = narrow ? 0.38 : 0.4;
+    const targetNdcY = narrow ? 0.12 : 0.14;
+    const startNdcX = narrow ? 0.72 : -0.16;
+    const startNdcY = -1.12;
+    const ndcX = THREE.MathUtils.lerp(startNdcX, targetNdcX, flight);
+    const ndcY = THREE.MathUtils.lerp(startNdcY, targetNdcY, flight);
+    const z = THREE.MathUtils.lerp(-7.2, -36, flight);
     const halfHeight = Math.abs(z) * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
 
     shipRoot.position.set(ndcX * halfHeight * camera.aspect, ndcY * halfHeight, z);
 
-    const targetNdcX = narrow ? 0.92 : 0.28;
-    const targetNdcY = narrow ? -0.08 : 0.04;
     const targetZ = -80;
     const targetHalfHeight =
       Math.abs(targetZ) * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
@@ -340,14 +407,52 @@ if (canvas) {
     shipRoot.quaternion.setFromUnitVectors(shipAxis, shipDirection);
 
     shipSpin.rotation.z += delta * (0.72 + flight * 4.8);
-    shipSpin.scale.setScalar(Math.max((narrow ? 0.38 : 1) * (1 - vanish), 0.001));
-    shipRoot.visible = vanish < 0.995;
+    const scale = (narrow ? 0.38 : 1) * THREE.MathUtils.lerp(1, 0.68, fade);
+    const opacity = 1 - fade;
+    const lensStrength =
+      THREE.MathUtils.smoothstep(flight, 0.5, 0.76) *
+      (1 - THREE.MathUtils.smoothstep(flight, 0.9, 1));
+    shipSpin.scale.setScalar(scale);
+    shipMaterials.forEach((material) => {
+      material.opacity = material.userData.shipBaseOpacity * opacity;
+      if (material.color && material.userData.shipBaseColor) {
+        material.color
+          .copy(material.userData.shipBaseColor)
+          .lerp(shipRedshift, fade * 0.62)
+          .multiplyScalar(THREE.MathUtils.lerp(1, 0.38, fade));
+      }
+      if (material.emissive && material.userData.shipBaseEmissive) {
+        material.emissive.copy(material.userData.shipBaseEmissive);
+        material.emissiveIntensity =
+          material.userData.shipBaseEmissiveIntensity * THREE.MathUtils.lerp(1, 0.2, fade);
+      }
+    });
+    shipLensImages.forEach(({ group, materials, x, y, strength }, index) => {
+      group.visible = lensStrength > 0.02 && opacity > 0.03;
+      group.position.x = x * THREE.MathUtils.lerp(0.45, 1.35, lensStrength);
+      group.position.y = y * THREE.MathUtils.lerp(0.45, 1.2, lensStrength);
+      group.rotation.z = (index === 0 ? -1 : 1) * lensStrength * 0.14;
+      materials.forEach((material) => {
+        material.opacity = lensStrength * strength * opacity;
+        if (material.color) material.color.copy(shipRedshift).multiplyScalar(0.72);
+      });
+    });
+    shipRoot.visible = opacity > 0.01;
 
     shipWorldAxis.copy(shipAxis).applyQuaternion(shipRoot.quaternion);
     debug.flight = Number(flight.toFixed(3));
+    debug.cyclePhase = Number(cyclePhase.toFixed(3));
+    debug.screenPosition = [Number(ndcX.toFixed(3)), Number(ndcY.toFixed(3))];
+    debug.opacity = Number(opacity.toFixed(3));
+    debug.scale = Number(scale.toFixed(3));
+    debug.lensStrength = Number(lensStrength.toFixed(3));
     debug.rotation = Number(shipSpin.rotation.z.toFixed(3));
     debug.axisAlignment = Number(shipWorldAxis.dot(shipDirection).toFixed(6));
     debug.visible = shipRoot.visible;
+    if (debug.firstOnScreenAt === null && ndcY > -1) {
+      debug.firstOnScreenAt = performance.now();
+      debug.timeFromLoadedToOnScreen = Number((debug.firstOnScreenAt - debug.loadedAt).toFixed(1));
+    }
   };
 
   const animate = () => {

@@ -17,7 +17,6 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   title={title}
   description={description}
   active="writing"
-  minimalNav
   article
   image={image}
 >
@@ -127,6 +126,7 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
     margin: 18px 0 24px;
     font-size: clamp(40px, 6vw, 60px);
     line-height: 1.18;
+    overflow-wrap: anywhere;
   }
 
   .description {
@@ -145,9 +145,13 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   }
 
   .prose {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
     color: #c5c3bf;
     font-size: 17.5px;
     line-height: 1.9;
+    overflow-wrap: anywhere;
   }
 
   .prose h2,
@@ -224,6 +228,7 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   }
 
   .prose pre {
+    max-width: 100%;
     margin: 34px 0;
     padding: 22px;
     overflow-x: auto;
@@ -328,6 +333,7 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   .prose table {
     display: block;
     width: 100%;
+    max-width: 100%;
     margin: 34px 0;
     overflow-x: auto;
     border-collapse: collapse;
@@ -391,6 +397,66 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
     border-top: 1px solid var(--line);
   }
 
+  .article-flow {
+    display: grid;
+    margin: 46px 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+
+  .article-flow > div {
+    position: relative;
+    min-height: 142px;
+    padding: 22px 20px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.012);
+  }
+
+  .article-flow > div::after {
+    position: absolute;
+    top: 50%;
+    right: -7px;
+    z-index: 1;
+    color: var(--accent);
+    content: "→";
+    font: 11px var(--mono);
+    transform: translateY(-50%);
+  }
+
+  .article-flow > div:nth-child(4n)::after,
+  .article-flow > div:last-child::after {
+    display: none;
+  }
+
+  .article-flow span {
+    color: var(--accent);
+    font: 9px var(--mono);
+  }
+
+  .article-flow strong {
+    display: block;
+    margin: 22px 0 7px;
+    color: var(--ink);
+    font-size: 15px;
+  }
+
+  .article-flow p {
+    margin: 0;
+    color: var(--ink-faint);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .article-flow-agent {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .article-flow-agent > div:nth-child(3n)::after {
+    display: none;
+  }
+
   .article-end {
     display: flex;
     margin-top: 90px;
@@ -424,6 +490,26 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
 
     .prose {
       font-size: 16.5px;
+    }
+
+    .article-flow,
+    .article-flow-agent {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .article-flow > div,
+    .article-flow-agent > div {
+      min-height: 132px;
+      padding: 18px 16px;
+    }
+
+    .article-flow > div:nth-child(3n)::after {
+      display: block;
+    }
+
+    .article-flow > div:nth-child(2n)::after,
+    .article-flow > div:last-child::after {
+      display: none;
     }
 
     .article-end {

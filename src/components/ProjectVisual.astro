@@ -1,30 +1,38 @@
 ---
 interface Props {
-  type: 'writing' | 'video';
+  type: 'writing' | 'video' | 'generic';
   compact?: boolean;
   priority?: boolean;
 }
 
 const { type, compact = false, priority = false } = Astro.props;
-const image =
-  type === 'writing'
-    ? '/images/projects/haohao-shuohua.webp'
-    : '/images/projects/video-reader.webp';
-const alt =
-  type === 'writing'
-    ? '纠缠的半透明墨迹逐渐收束成清晰流动的信号'
-    : '连续的透明时间切片中，一个关键瞬间被琥珀色光线选中';
+const image = type === 'writing'
+  ? '/images/projects/haohao-shuohua.webp'
+  : type === 'video'
+    ? '/images/projects/video-reader.webp'
+    : undefined;
+const alt = type === 'writing'
+  ? '纠缠的半透明墨迹逐渐收束成清晰流动的信号'
+  : '连续的透明时间切片中，一个关键瞬间被琥珀色光线选中';
 ---
 
 <figure class:list={['project-visual', `visual-${type}`, { compact }]}>
-  <img
-    src={image}
-    alt={alt}
-    width="1536"
-    height="1024"
-    loading={priority ? 'eager' : 'lazy'}
-    fetchpriority={priority ? 'high' : 'auto'}
-  />
+  {image ? (
+    <img
+      src={image}
+      alt={alt}
+      width="1536"
+      height="1024"
+      loading={priority ? 'eager' : 'lazy'}
+      fetchpriority={priority ? 'high' : 'auto'}
+    />
+  ) : (
+    <div class="generic-skill" aria-label="可安装、可复用、可持续演化的 Agent Skill">
+      <span>AGENT SKILL</span>
+      <strong>Install<br />Use<br />Evolve</strong>
+      <i></i>
+    </div>
+  )}
 </figure>
 
 <style>
@@ -57,6 +65,46 @@ const alt =
 
   .visual-video img {
     filter: saturate(0.78) contrast(1.06);
+  }
+
+  .visual-generic {
+    aspect-ratio: 3 / 2;
+  }
+
+  .generic-skill {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    padding: 12%;
+    align-content: center;
+    border-block: 1px solid rgba(245, 185, 113, 0.2);
+    background:
+      linear-gradient(90deg, transparent 49.8%, rgba(245, 185, 113, 0.12) 50%, transparent 50.2%),
+      linear-gradient(transparent 49.8%, rgba(245, 185, 113, 0.12) 50%, transparent 50.2%);
+  }
+
+  .generic-skill span {
+    color: var(--accent);
+    font: 9px var(--mono);
+  }
+
+  .generic-skill strong {
+    margin-top: 18px;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: clamp(34px, 5vw, 68px);
+    font-weight: 400;
+    line-height: 0.98;
+  }
+
+  .generic-skill i {
+    position: absolute;
+    right: 12%;
+    bottom: 15%;
+    width: 22%;
+    aspect-ratio: 1;
+    border: 1px solid rgba(245, 185, 113, 0.3);
+    transform: rotate(45deg);
   }
 
   @media (max-width: 720px) {

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import MediaViewer from '../components/MediaViewer.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteNav from '../components/SiteNav.astro';
 
@@ -7,7 +8,6 @@ interface Props {
   title?: string;
   description?: string;
   active?: 'writing' | 'notes' | 'projects' | 'about';
-  minimalNav?: boolean;
   showFooter?: boolean;
   image?: string;
   article?: boolean;
@@ -17,13 +17,13 @@ const {
   title = 'Job Yang — 工程师 · 写作者',
   description = '记录 AI Agent、工程实践与长期思考。',
   active,
-  minimalNav = false,
   showFooter = true,
   image,
   article = false,
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const fullTitle = title.includes('Job Yang') ? title : `${title} — Job Yang`;
+const isHome = Astro.url.pathname === '/';
 ---
 
 <!doctype html>
@@ -40,6 +40,24 @@ const fullTitle = title.includes('Job Yang') ? title : `${title} — Job Yang`;
     />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title="Job Yang RSS" href="/rss.xml" />
+    {isHome && (
+      <>
+        <link
+          rel="preload"
+          href="/images/blackhole-poster.webp"
+          as="image"
+          type="image/webp"
+          fetchpriority="high"
+        />
+        <link
+          rel="preload"
+          href="/assets/endurance.glb"
+          as="fetch"
+          type="model/gltf-binary"
+          crossorigin="anonymous"
+        />
+      </>
+    )}
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
@@ -50,11 +68,12 @@ const fullTitle = title.includes('Job Yang') ? title : `${title} — Job Yang`;
   </head>
   <body>
     <a class="skip-link" href="#main">跳到正文</a>
-    <SiteNav active={active} minimal={minimalNav} />
+    <SiteNav active={active} />
     <slot name="background" />
     <main id="main">
       <slot />
     </main>
     {showFooter && <SiteFooter />}
+    <MediaViewer />
   </body>
 </html>

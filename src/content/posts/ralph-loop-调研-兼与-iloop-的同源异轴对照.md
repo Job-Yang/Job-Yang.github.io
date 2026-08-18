@@ -1,9 +1,11 @@
 ---
-title: "Ralph Loop 调研 · 兼与 iLoop 的同源异轴对照"
-description: "本文分三部分:先讲透 Ralph Loop 的本质与三个赌注,再论证 iLoop 与 Ralph 的同源关系,最后给出四条可落地的启示 + 两条反向验证。"
+title: "iLoop 与 Ralph Loop：反馈闭环和重启纪律的两条轴"
+description: "Ralph 把重启纪律拉满，iLoop 把反馈厚度拉满。两套系统不是对立路线，而是同一种 Agent 循环在不同风险条件下的两种取舍。"
 publishedAt: 2026-08-13
-category: "【费曼·实战复盘】"
+category: "AI / 工程"
 tags: []
+pinned: true
+editorialRank: 90
 draft: false
 source: public-rewrite
 source_id: "article-e62fe77b98"

@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FeedbackLoopDiagram from '../../components/FeedbackLoopDiagram.astro';
 
 const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort((a, b) => {
   const da = a.data.publishedAt?.valueOf();
@@ -41,6 +42,7 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
           <div class="note-content">
             {note.data.title && <h2>{note.data.title}</h2>}
             <Content />
+            {note.id === '反馈循环' && <FeedbackLoopDiagram />}
           </div>
           {note.data.tags.length > 0 && (
             <div class="tags">

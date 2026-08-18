@@ -1,10 +1,11 @@
 ---
 title: 好好说话
+kind: skill
 eyebrow: Chinese Writing Skill
 description: 一个给 AI Agent 用的中文写作 Skill。从起草到交付，保事实、去 AI 味、加中文味。
 statement: 让 AI 写出的中文，不再像一份翻译过来的汇报材料。
-github: https://github.com/Job-Yang/haohao-shuohua
-install: npx skills add https://github.com/Job-Yang/haohao-shuohua.git
+github: https://github.com/Job-Yang/jobbyang-ai-skills/tree/main/skills/haohao-shuohua
+install: git clone https://github.com/Job-Yang/jobbyang-ai-skills.git
 tags:
   - Agent Skill
   - 中文写作
@@ -27,7 +28,8 @@ visual: writing
 ## 安装
 
 ```bash
-npx skills add https://github.com/Job-Yang/haohao-shuohua.git
+git clone https://github.com/Job-Yang/jobbyang-ai-skills.git
+cp -R jobbyang-ai-skills/skills/haohao-shuohua ~/.claude/skills/haohao-shuohua
 ```
 
 安装完成后，直接对 Agent 说：

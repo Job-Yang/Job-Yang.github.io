@@ -2,10 +2,9 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getLegacyPosts } from '../../lib/legacy';
+import { comparePosts } from '../../lib/posts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
-);
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(comparePosts);
 const legacyPosts = await getLegacyPosts();
 const categories = [...new Set(posts.map((post) => post.data.category))];
 ---
@@ -17,41 +16,42 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
 >
   <div class="space-fallback" slot="background"></div>
   <div class="page-shell">
-    <header class="page-intro reading">
+    <header class="writing-intro writing-width">
       <div class="eyebrow">Writing Index</div>
-      <h1 class="display">记录思考，<br />对抗时间的熵增。</h1>
-      <p>这里收录公开发表的文章，涵盖 AI Agent、软件工程与技术趋势的长期思考。</p>
+      <h1 class="display">记录思考，对抗时间的熵增。</h1>
+      <p>关于 AI Agent、软件工程与技术变化的长期思考。</p>
     </header>
 
-    <section class="reading filters" aria-label="文章分类">
+    <section class="writing-width filters" aria-label="文章分类">
       <button class="active" type="button" data-filter="all">全部</button>
       {categories.map((category) => (
         <button type="button" data-filter={category}>{category}</button>
       ))}
     </section>
 
-    <section class="reading current">
-      <div class="section-title"><span>Current Writing</span></div>
+    <section class="writing-width current">
+      <div class="section-title"><span>Curated Writing</span></div>
       <div class="post-list">
         {posts.map((post) => (
-          <article data-category={post.data.category}>
+          <article data-category={post.data.category} data-pinned={post.data.pinned || undefined}>
             <a href={`/writing/${post.id}/`}>
+              <h2>{post.data.title}</h2>
+              <p>{post.data.description}</p>
               <div class="post-meta">
                 <time datetime={post.data.publishedAt.toISOString()}>
                   {post.data.publishedAt.toISOString().slice(0, 10)}
                 </time>
                 <span>{post.data.category}</span>
                 {post.data.readingMinutes && <span>{post.data.readingMinutes} min</span>}
+                {post.data.pinned && <span class="pin-label">置顶</span>}
               </div>
-              <h2>{post.data.title}</h2>
-              <p>{post.data.description}</p>
             </a>
           </article>
         ))}
       </div>
     </section>
 
-    <section class="reading archive section-rule">
+    <section class="writing-width archive section-rule">
       <div class="section-title">
         <span>Early Archive · 2015–2016</span>
       </div>
@@ -88,22 +88,46 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
 </script>
 
 <style>
+  .writing-width {
+    width: min(calc(100% - 72px), 1120px);
+    margin-inline: auto;
+  }
+
+  .writing-intro {
+    padding-block: 58px 42px;
+  }
+
+  .writing-intro h1 {
+    margin-top: 14px;
+    font-size: clamp(38px, 5vw, 58px);
+    line-height: 1.08;
+  }
+
+  .writing-intro p {
+    max-width: 620px;
+    margin: 20px 0 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
   .filters {
     display: flex;
-    gap: 10px;
-    padding-bottom: 30px;
+    gap: 7px;
+    padding-block: 15px;
     flex-wrap: wrap;
+    border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
   }
 
   .filters button {
-    padding: 7px 14px;
+    padding: 5px 10px;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: 4px;
     background: transparent;
     color: var(--ink-dim);
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .filters button:hover,
@@ -114,7 +138,7 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
 
   .current,
   .archive {
-    padding-block: 58px 90px;
+    padding-block: 38px 76px;
   }
 
   .section-title {
@@ -155,33 +179,44 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
   }
 
   article h2 {
-    margin: 7px 0 8px;
+    margin: 0;
     color: var(--ink);
-    font-size: 21px;
-    line-height: 1.45;
+    font: 400 25px/1.42 var(--serif);
     transition: color 180ms ease;
+  }
+
+  article[data-pinned] h2 {
+    font-size: 28px;
   }
 
   article a:hover h2 {
     color: var(--accent);
   }
 
-  article p,
-  .archive-note {
-    margin: 0;
+  article p {
+    max-width: 800px;
+    margin: 9px 0 0;
     color: var(--ink-dim);
     font-size: 15px;
+    line-height: 1.75;
   }
 
   .post-meta {
     display: flex;
-    gap: 12px;
+    margin-top: 14px;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
     color: var(--ink-faint);
     font: 11px var(--mono);
   }
 
-  .post-meta span:first-of-type {
+  .post-meta span {
     color: var(--accent);
+  }
+
+  .pin-label {
+    order: -1;
   }
 
   .archive {
@@ -190,6 +225,8 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
 
   .archive-note {
     margin: -12px 0 28px;
+    color: var(--ink-dim);
+    font-size: 15px;
   }
 
   .legacy-list {
@@ -215,6 +252,36 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
   }
 
   @media (max-width: 580px) {
+    .writing-width {
+      width: min(calc(100% - 36px), 1120px);
+    }
+
+    .writing-intro {
+      padding-block: 46px 30px;
+    }
+
+    .writing-intro h1 {
+      font-size: 40px;
+    }
+
+    .filters {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filters button {
+      flex: 0 0 auto;
+    }
+
+    article a {
+      padding: 24px 0;
+    }
+
+    article[data-pinned] h2 {
+      font-size: 25px;
+    }
+
     .legacy-list a {
       gap: 5px;
       grid-template-columns: 1fr;

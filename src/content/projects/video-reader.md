@@ -1,10 +1,11 @@
 ---
 title: Video Reader
+kind: skill
 eyebrow: Visual Debugging Skill
 description: 一个让只会看图片的 LLM 理解视频的 Agent Skill。用纯代码提取关键帧和运动时间线，再让模型判断发生了什么。
 statement: 把一段录屏翻译成带时间戳的关键帧，让 Agent 真正看懂第几秒发生了什么。
-github: https://github.com/Job-Yang/video-reader
-install: npx skills add https://github.com/Job-Yang/video-reader.git
+github: https://github.com/Job-Yang/jobbyang-ai-skills/tree/main/skills/video-reader
+install: git clone https://github.com/Job-Yang/jobbyang-ai-skills.git
 tags:
   - Agent Skill
   - Video Analysis
@@ -27,7 +28,8 @@ visual: video
 ## 安装
 
 ```bash
-npx skills add https://github.com/Job-Yang/video-reader.git
+git clone https://github.com/Job-Yang/jobbyang-ai-skills.git
+cp -R jobbyang-ai-skills/skills/video-reader ~/.claude/skills/video-reader
 ```
 
 装好后，不需要自己记脚本命令。把视频交给 Agent，直接说：

@@ -8,6 +8,8 @@ tags:
   - 软件工程
   - 理解债
 featured: true
+pinned: true
+editorialRank: 88
 readingMinutes: 14
 source: public-rewrite
 ---

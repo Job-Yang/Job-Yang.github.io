@@ -2,14 +2,15 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BlackHoleBackdrop from '../components/BlackHoleBackdrop.astro';
-import ProjectVisual from '../components/ProjectVisual.astro';
+import { comparePosts } from '../lib/posts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf())
+  .sort(comparePosts)
   .slice(0, 3);
 const projects = (await getCollection('projects', ({ data }) => !data.draft && data.featured))
-  .sort((a, b) => a.data.order - b.data.order)
-  .slice(0, 2);
+  .sort((a, b) => a.data.order - b.data.order);
+const featuredSystem = projects.find((project) => project.data.kind === 'system');
+const featuredSkills = projects.filter((project) => project.data.kind === 'skill').slice(0, 3);
 const notes = (await getCollection('notes', ({ data }) => !data.draft))
   .sort((a, b) => {
     const da = a.data.publishedAt?.valueOf();
@@ -58,18 +59,36 @@ const noteTeasers = notes.map((note) => ({
     <div class="lower">
       <section class="content-section wide" id="selected-work">
         <div class="section-head">
-          <h2>沉淀</h2>
+          <h2>系统</h2>
           <a class="pill" href="/projects/">全部沉淀 →</a>
         </div>
-        <div class="featured-projects">
-          {projects.map((project, index) => (
-            <a class="featured-project" href={`/projects/${project.id}/`}>
-              <div class="featured-project-copy">
-                <span>{String(index + 1).padStart(2, '0')} · {project.data.eyebrow}</span>
+        {featuredSystem && (
+          <a class="featured-system" href={`/projects/${featuredSystem.id}/`}>
+            <div class="featured-system-copy">
+              <span>{featuredSystem.data.status} · {featuredSystem.data.eyebrow}</span>
+              <h3>{featuredSystem.data.title}</h3>
+              <p>{featuredSystem.data.statement}</p>
+              <strong>了解 iLoop →</strong>
+            </div>
+          </a>
+        )}
+      </section>
+
+      <section class="content-section wide">
+        <div class="section-head">
+          <h2>我的技能</h2>
+          <a class="pill" href="https://github.com/Job-Yang/jobbyang-ai-skills" target="_blank" rel="noreferrer">
+            GitHub 技能仓 ↗
+          </a>
+        </div>
+        <div class="home-skills">
+          {featuredSkills.map((project, index) => (
+            <a class="home-skill" href={`/projects/${project.id}/`}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <div>
                 <h3>{project.data.title}</h3>
                 <p>{project.data.statement}</p>
               </div>
-              <ProjectVisual type={project.data.visual} compact />
             </a>
           ))}
         </div>
@@ -355,55 +374,90 @@ const noteTeasers = notes.map((note) => ({
     color: var(--ink-dim);
   }
 
-  .featured-projects {
-    display: grid;
+  .featured-system {
     max-width: 1120px;
-    gap: 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .featured-project {
-    display: grid;
-    min-height: 290px;
-    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
-    align-items: center;
-    border-bottom: 1px solid var(--line);
+    min-height: 0;
+    border-block: 1px solid var(--line);
     color: inherit;
     text-decoration: none;
     transition: opacity 180ms ease;
   }
 
-  .featured-project:hover {
+  .featured-system:hover {
     opacity: 0.82;
   }
 
-  .featured-project :global(.project-visual) {
-    height: 270px;
+  .featured-system-copy {
+    max-width: 760px;
+    padding: 54px 20px 58px 0;
   }
 
-  .featured-project-copy {
-    padding: 34px 20px 34px 0;
-  }
-
-  .featured-project-copy > span {
+  .featured-system-copy > span {
     color: var(--accent);
     font: 10px var(--mono);
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
-  .featured-project h3 {
+  .featured-system h3 {
     margin: 12px 0 10px;
     font-family: var(--serif);
-    font-size: 30px;
+    font-size: 56px;
     font-weight: 400;
   }
 
-  .featured-project p {
+  .featured-system p {
     margin: 0;
     color: var(--ink-dim);
     font-size: 14px;
     line-height: 1.65;
+  }
+
+  .featured-system strong {
+    display: inline-block;
+    margin-top: 28px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .home-skills {
+    display: grid;
+    max-width: 1120px;
+    border-top: 1px solid var(--line);
+  }
+
+  .home-skill {
+    display: grid;
+    padding: 24px 0;
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 18px;
+    border-bottom: 1px solid var(--line);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .home-skill > span {
+    padding-top: 4px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .home-skill h3 {
+    margin: 0 0 7px;
+    font-family: var(--serif);
+    font-size: 25px;
+    font-weight: 400;
+  }
+
+  .home-skill p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .home-skill:hover h3 {
+    color: var(--accent);
   }
 
   .note-flow {
@@ -487,22 +541,8 @@ const noteTeasers = notes.map((note) => ({
       font-size: 16px;
     }
 
-    .featured-projects {
-      gap: 0;
-    }
-
-    .featured-project {
-      padding-block: 34px;
-      grid-template-columns: 1fr;
-    }
-
-    .featured-project-copy {
-      padding: 0;
-    }
-
-    .featured-project :global(.project-visual) {
-      height: auto;
-      aspect-ratio: 3 / 2;
+    .featured-system-copy {
+      padding-block: 38px;
     }
   }
 </style>

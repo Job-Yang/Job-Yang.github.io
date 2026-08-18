@@ -4,6 +4,7 @@ description: "2026 年的大厂正在做一件反常的事：抢着把 Token 塞
 publishedAt: 2026-08-13
 category: "【汤山·畅想】"
 tags: []
+editorialRank: 76
 draft: false
 source: public-rewrite
 source_id: "article-fa5c92d4b3"
