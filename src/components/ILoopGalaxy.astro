@@ -1,0 +1,775 @@
+---
+const stages = [
+  { title: '目标与验收', action: '先写清什么算完成', next: '风险定级' },
+  { title: '风险定级', action: '决定放权范围和验证深度', next: '建立假设' },
+  { title: '建立假设', action: '汇集上下文，列出要排除的可能', next: '实现改动' },
+  { title: '实现改动', action: '在已对齐范围内做最小变更', next: '取得反馈' },
+  { title: '取得反馈', action: '编译、启动或执行，观察真实现场', detail: '异常：带着新线索回到假设', next: '按目标取证' },
+  { title: '按目标取证', action: '按问题选择日志、Crash，或 UI 树、截图与自动化', detail: '证据不足：回到假设', next: '证据收敛' },
+  { title: '证据收敛', action: '核对时间、范围、机制和反证', detail: '不支持：回到假设', next: '验收判定' },
+  { title: '验收判定', action: '对照标准；高风险换独立 Agent 复核', detail: '不通过：回到假设', next: '沉淀经验' },
+  { title: '沉淀经验', action: '保存病例、证据、结论和可复用经验', next: '目标与验收' },
+];
+---
+
+<div class="galaxy-wrap">
+  <div class="galaxy" data-iloop-galaxy data-stages={JSON.stringify(stages)}>
+    <canvas aria-hidden="true"></canvas>
+
+    <div class="stage-copy" aria-live="polite" aria-atomic="true">
+      <span data-stage-kicker>第 01 步</span>
+      <h3 data-stage-title>目标与验收</h3>
+      <p data-stage-action>先写清什么算完成</p>
+      <strong data-stage-detail hidden></strong>
+      <small data-stage-next>下一步：风险定级</small>
+    </div>
+
+    <div class="stations">
+      {stages.map((stage, index) => (
+        <button
+          type="button"
+          class="station"
+          data-stage-index={index}
+          aria-label={`第 ${String(index + 1).padStart(2, '0')} 步：${stage.title}`}
+        >
+          <span class="star" aria-hidden="true">
+            <i></i>
+            <b></b>
+          </span>
+          <span class="station-label">
+            {String(index + 1).padStart(2, '0')} {stage.title}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <ol class="stage-legend" aria-label="iLoop 九步闭环">
+    {stages.map((stage, index) => (
+      <li>
+        <span>{String(index + 1).padStart(2, '0')}</span>
+        {stage.title}
+      </li>
+    ))}
+  </ol>
+</div>
+
+<script is:inline>
+  const roots = document.querySelectorAll('[data-iloop-galaxy]');
+
+  roots.forEach((root) => {
+    if (root.dataset.ready === 'true') return;
+    root.dataset.ready = 'true';
+    const stages = JSON.parse(root.dataset.stages || '[]');
+
+    const canvas = root.querySelector('canvas');
+    const context = canvas.getContext('2d');
+    const staticCanvas = document.createElement('canvas');
+    const staticContext = staticCanvas.getContext('2d');
+    const stations = [...root.querySelectorAll('[data-stage-index]')];
+    const copy = root.querySelector('.stage-copy');
+    const kicker = root.querySelector('[data-stage-kicker]');
+    const title = root.querySelector('[data-stage-title]');
+    const action = root.querySelector('[data-stage-action]');
+    const detail = root.querySelector('[data-stage-detail]');
+    const next = root.querySelector('[data-stage-next]');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const TAU = Math.PI * 2;
+    const START_ANGLE = -Math.PI / 2;
+    const TRAVEL_MS = 3000;
+    const HOLD_MS = 750;
+    const SEGMENT_MS = TRAVEL_MS + HOLD_MS;
+    const CYCLE_MS = SEGMENT_MS * stages.length;
+    const EMISSION_RATE = 260;
+    const phases = stations.map((_, index) => index * 1.618);
+    const state = {
+      width: 0,
+      height: 0,
+      dpr: 1,
+      currentStage: reduceMotion ? 5 : 0,
+      cycleOrigin: performance.now() - (reduceMotion ? 5 * SEGMENT_MS : 0),
+      manualUntil: 0,
+      manualAngle: null,
+      frame: 0,
+      lastFrameTime: performance.now(),
+      lastCometPosition: null,
+      particles: [],
+      spawnAccumulator: 0,
+    };
+
+    const random = (seed) => {
+      const value = Math.sin(seed * 8191.731 + 17.17) * 43758.5453;
+      return value - Math.floor(value);
+    };
+
+    const angleForStage = (index) => START_ANGLE + (index * TAU) / stages.length;
+
+    const orbit = (angle) => {
+      const compact = state.width < 520;
+      const radiusX = state.width * (compact ? 0.34 : 0.375);
+      const radiusY = state.height * (compact ? 0.24 : 0.315);
+      return {
+        x: state.width * 0.5 + radiusX * Math.cos(angle),
+        y: state.height * 0.5 + radiusY * Math.sin(angle),
+      };
+    };
+
+    const normalAt = (angle) => {
+      const compact = state.width < 520;
+      const dx = -state.width * (compact ? 0.34 : 0.375) * Math.sin(angle);
+      const dy = state.height * (compact ? 0.24 : 0.315) * Math.cos(angle);
+      const length = Math.hypot(dx, dy) || 1;
+      return { x: -dy / length, y: dx / length };
+    };
+
+    const setStage = (index, immediate = false) => {
+      if (state.currentStage === index && !immediate) return;
+      state.currentStage = index;
+      const stage = stages[index];
+      const apply = () => {
+        kicker.textContent = `第 ${String(index + 1).padStart(2, '0')} 步`;
+        title.textContent = stage.title;
+        action.textContent = stage.action;
+        detail.textContent = stage.detail || '';
+        detail.hidden = !stage.detail;
+        next.textContent = `下一步：${stage.next}`;
+        copy.classList.remove('changing');
+      };
+
+      if (immediate || reduceMotion) {
+        apply();
+      } else {
+        copy.classList.add('changing');
+        setTimeout(apply, 170);
+      }
+    };
+
+    const resize = () => {
+      const bounds = root.getBoundingClientRect();
+      state.width = Math.max(1, bounds.width);
+      state.height = Math.max(1, bounds.height);
+      state.dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.round(state.width * state.dpr);
+      canvas.height = Math.round(state.height * state.dpr);
+      staticCanvas.width = canvas.width;
+      staticCanvas.height = canvas.height;
+      canvas.style.width = `${state.width}px`;
+      canvas.style.height = `${state.height}px`;
+      context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      staticContext.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+      stations.forEach((station, index) => {
+        const angle = angleForStage(index);
+        const point = orbit(angle);
+        station.style.left = `${point.x}px`;
+        station.style.top = `${point.y}px`;
+        station.dataset.side =
+          Math.sin(angle) < -0.45 ? 'top' :
+          Math.sin(angle) > 0.45 ? 'bottom' :
+          Math.cos(angle) > 0 ? 'right' : 'left';
+      });
+
+      state.particles = [];
+      state.lastCometPosition = null;
+      drawGalaxy();
+    };
+
+    const drawGalaxy = () => {
+      staticContext.clearRect(0, 0, state.width, state.height);
+      staticContext.globalCompositeOperation = 'source-over';
+
+      for (let index = 0; index < 52; index += 1) {
+        const x = random(index + 11) * state.width;
+        const y = random(index + 73) * state.height;
+        const radius = 0.35 + random(index + 151) * 0.85;
+        staticContext.beginPath();
+        staticContext.arc(x, y, radius, 0, TAU);
+        staticContext.fillStyle = `rgba(238,240,246,${0.07 + random(index + 211) * 0.12})`;
+        staticContext.fill();
+      }
+
+      // A broken star-dust guide makes the orbit readable without drawing a line.
+      for (let index = 0; index < 320; index += 1) {
+        if (index % 37 < 4) continue;
+        const angle = (index / 320) * TAU;
+        const point = orbit(angle);
+        const normal = normalAt(angle);
+        const jitter = (random(index + 307) - 0.5) * 5;
+        const radius = 0.35 + random(index + 401) * 0.8;
+        const shimmer = 0.88 + 0.12 * Math.sin(index * 0.41);
+        staticContext.beginPath();
+        staticContext.arc(point.x + normal.x * jitter, point.y + normal.y * jitter, radius, 0, TAU);
+        staticContext.fillStyle = `rgba(238,240,246,${(0.2 + random(index + 509) * 0.25) * shimmer})`;
+        staticContext.fill();
+      }
+
+      for (let index = 0; index < 760; index += 1) {
+        const angle = random(index + 601) * TAU;
+        const point = orbit(angle);
+        const normal = normalAt(angle);
+        const lowerArc = angle > Math.PI * 0.48 && angle < Math.PI * 0.94;
+        const spread = lowerArc ? 10 + random(index + 701) * 18 : 14 + random(index + 701) * 42;
+        const offset = (random(index + 809) - 0.5) * spread;
+        const tangentOffset = (random(index + 907) - 0.5) * 9;
+        const tangent = { x: -normal.y, y: normal.x };
+        const radius = 0.3 + random(index + 1009) * 1.05;
+        const alpha = lowerArc
+          ? 0.11 + random(index + 1103) * 0.3
+          : 0.06 + random(index + 1103) * 0.22;
+        const color = random(index + 1201) > 0.82 ? '245,185,113' : '238,240,246';
+        staticContext.beginPath();
+        staticContext.arc(
+          point.x + normal.x * offset + tangent.x * tangentOffset,
+          point.y + normal.y * offset + tangent.y * tangentOffset,
+          radius,
+          0,
+          TAU,
+        );
+        staticContext.fillStyle = `rgba(${color},${alpha})`;
+        staticContext.fill();
+      }
+
+      // The feedback and evidence arc carries more visual weight.
+      for (let index = 0; index < 190; index += 1) {
+        const progress = random(index + 1801);
+        const angle = angleForStage(4) + progress * (TAU / stages.length) * 2;
+        const point = orbit(angle);
+        const normal = normalAt(angle);
+        const tangent = { x: -normal.y, y: normal.x };
+        const offset = (random(index + 1901) - 0.5) * (12 + random(index + 2001) * 24);
+        const tangentOffset = (random(index + 2101) - 0.5) * 10;
+        const radius = 0.45 + random(index + 2201) * 1.2;
+        const alpha = 0.12 + random(index + 2301) * 0.34;
+        const color = random(index + 2401) > 0.68 ? '245,185,113' : '238,240,246';
+        staticContext.beginPath();
+        staticContext.arc(
+          point.x + normal.x * offset + tangent.x * tangentOffset,
+          point.y + normal.y * offset + tangent.y * tangentOffset,
+          radius,
+          0,
+          TAU,
+        );
+        staticContext.fillStyle = `rgba(${color},${alpha})`;
+        staticContext.fill();
+      }
+    };
+
+    const spawnParticles = (position, previousPosition, delta, moving) => {
+      if (!moving || !previousPosition || delta <= 0) return;
+
+      state.spawnAccumulator += EMISSION_RATE * delta;
+      const count = Math.min(12, Math.floor(state.spawnAccumulator));
+      state.spawnAccumulator -= count;
+
+      const velocityX = (position.x - previousPosition.x) / delta;
+      const velocityY = (position.y - previousPosition.y) / delta;
+      const speed = Math.hypot(velocityX, velocityY) || 1;
+      const backX = -velocityX / speed;
+      const backY = -velocityY / speed;
+      const normalX = -backY;
+      const normalY = backX;
+
+      for (let index = 0; index < count; index += 1) {
+        const spread = (Math.random() - 0.5) * 0.52;
+        const drift = 9 + Math.random() * 24;
+        const life = 0.68 + Math.random() * 0.5;
+        state.particles.push({
+          x: position.x + (Math.random() - 0.5) * 3,
+          y: position.y + (Math.random() - 0.5) * 3,
+          vx: backX * drift + normalX * spread * drift + velocityX * 0.035,
+          vy: backY * drift + normalY * spread * drift + velocityY * 0.035,
+          life,
+          age: 0,
+          radius: 0.6 + Math.random() * 1.65,
+          cool: Math.random() > 0.78,
+        });
+      }
+    };
+
+    const updateAndDrawParticles = (delta) => {
+      context.globalCompositeOperation = 'lighter';
+
+      state.particles = state.particles.filter((particle) => {
+        particle.age += delta;
+        if (particle.age >= particle.life) return false;
+        particle.x += particle.vx * delta;
+        particle.y += particle.vy * delta;
+        particle.vx *= 0.992;
+        particle.vy *= 0.992;
+        const remaining = 1 - particle.age / particle.life;
+        const alpha = Math.pow(remaining, 1.28) * 0.82;
+        context.beginPath();
+        context.arc(particle.x, particle.y, particle.radius * (0.45 + remaining * 0.55), 0, TAU);
+        context.fillStyle = particle.cool
+          ? `rgba(82,205,224,${alpha * 0.72})`
+          : `rgba(220,250,255,${alpha})`;
+        context.fill();
+        return true;
+      });
+    };
+
+    const drawCometHead = (point, atNode, time) => {
+      context.globalCompositeOperation = 'lighter';
+      const accent = atNode ? '245,185,113' : '215,250,255';
+      const breathe = atNode ? 1.08 + Math.sin(time / 95) * 0.06 : 1;
+      const comaRadius = 24 * breathe;
+
+      const coma = context.createRadialGradient(
+        point.x - 4,
+        point.y - 3,
+        0,
+        point.x,
+        point.y,
+        comaRadius,
+      );
+      coma.addColorStop(0, 'rgba(255,255,255,0.98)');
+      coma.addColorStop(0.18, `rgba(${accent},0.86)`);
+      coma.addColorStop(0.5, atNode ? 'rgba(245,185,113,0.34)' : 'rgba(75,210,225,0.35)');
+      coma.addColorStop(1, 'rgba(75,210,225,0)');
+      context.beginPath();
+      context.arc(point.x, point.y, comaRadius, 0, TAU);
+      context.fillStyle = coma;
+      context.fill();
+
+      // Offset lobes keep the coma from reading as a perfect glowing dot.
+      for (let index = 0; index < 4; index += 1) {
+        const angle = index * 1.73 + time * 0.00018;
+        const distance = 5 + index * 1.4;
+        context.beginPath();
+        context.arc(
+          point.x + Math.cos(angle) * distance,
+          point.y + Math.sin(angle) * distance,
+          5 - index * 0.55,
+          0,
+          TAU,
+        );
+        context.fillStyle = atNode
+          ? `rgba(245,185,113,${0.12 - index * 0.018})`
+          : `rgba(170,238,248,${0.12 - index * 0.018})`;
+        context.fill();
+      }
+
+      const nucleus = context.createRadialGradient(
+        point.x - 2,
+        point.y - 2,
+        0,
+        point.x,
+        point.y,
+        8,
+      );
+      nucleus.addColorStop(0, '#fff');
+      nucleus.addColorStop(0.48, `rgb(${accent})`);
+      nucleus.addColorStop(1, 'rgba(255,255,255,0)');
+      context.beginPath();
+      context.arc(point.x, point.y, 8, 0, TAU);
+      context.fillStyle = nucleus;
+      context.fill();
+      context.beginPath();
+      context.arc(point.x - 0.6, point.y - 0.6, 2.8, 0, TAU);
+      context.fillStyle = '#fff';
+      context.fill();
+      context.globalCompositeOperation = 'source-over';
+    };
+
+    const renderStations = (time, activeIndex) => {
+      stations.forEach((station, index) => {
+        const active = index === activeIndex;
+        const twinkle = 0.82 + 0.18 * Math.sin(time / (1500 + index * 260) + phases[index]);
+        station.classList.toggle('active', active);
+        station.style.setProperty('--twinkle', twinkle.toFixed(3));
+      });
+    };
+
+    const frame = (time) => {
+      const delta = Math.min(0.033, Math.max(0.001, (time - state.lastFrameTime) / 1000));
+      state.lastFrameTime = time;
+      context.clearRect(0, 0, state.width, state.height);
+      context.globalCompositeOperation = 'source-over';
+      context.drawImage(staticCanvas, 0, 0, state.width, state.height);
+
+      let stageIndex = state.currentStage;
+      let angle = angleForStage(stageIndex);
+      let atNode = true;
+
+      if (!reduceMotion) {
+        if (state.manualUntil > time && state.manualAngle != null) {
+          angle = state.manualAngle;
+          atNode = true;
+        } else {
+          state.manualAngle = null;
+          const cycleTime = (time - state.cycleOrigin) % CYCLE_MS;
+          const segmentIndex = Math.floor(cycleTime / SEGMENT_MS) % stages.length;
+          const segmentTime = cycleTime - segmentIndex * SEGMENT_MS;
+
+          if (segmentTime < HOLD_MS) {
+            stageIndex = segmentIndex;
+            angle = angleForStage(segmentIndex);
+            atNode = true;
+          } else {
+            const progress = Math.min(1, (segmentTime - HOLD_MS) / TRAVEL_MS);
+            stageIndex = segmentIndex;
+            angle = angleForStage(segmentIndex) + progress * (TAU / stages.length);
+            atNode = false;
+          }
+        }
+      }
+
+      setStage(stageIndex);
+      const cometPosition = orbit(angle);
+      spawnParticles(cometPosition, state.lastCometPosition, delta, !atNode);
+      updateAndDrawParticles(delta);
+      drawCometHead(cometPosition, atNode, time);
+      renderStations(time, atNode ? stageIndex : -1);
+      state.lastCometPosition = cometPosition;
+      root.dataset.stage = String(stageIndex);
+      root.dataset.atNode = String(atNode);
+      root.dataset.particles = String(state.particles.length);
+      if (!reduceMotion) {
+        state.frame = requestAnimationFrame(frame);
+      }
+    };
+
+    stations.forEach((station, index) => {
+      station.addEventListener('click', () => {
+        const now = performance.now();
+        state.manualAngle = angleForStage(index);
+        state.manualUntil = now + 2600;
+        state.cycleOrigin = state.manualUntil - index * SEGMENT_MS;
+        setStage(index);
+        if (reduceMotion) {
+          context.clearRect(0, 0, state.width, state.height);
+          context.drawImage(staticCanvas, 0, 0, state.width, state.height);
+          state.particles = [];
+          const point = orbit(state.manualAngle);
+          drawCometHead(point, true, performance.now());
+          renderStations(0, index);
+        }
+      });
+    });
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(root);
+    resize();
+    setStage(state.currentStage, true);
+    state.frame = requestAnimationFrame(frame);
+
+    document.addEventListener('astro:before-swap', () => {
+      cancelAnimationFrame(state.frame);
+      observer.disconnect();
+    }, { once: true });
+  });
+</script>
+
+<style>
+  .galaxy-wrap {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .galaxy {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.28;
+    min-height: 480px;
+    isolation: isolate;
+  }
+
+  .stage-legend {
+    display: none;
+  }
+
+  canvas,
+  .stations {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  canvas {
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .stations {
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .station {
+    --twinkle: 0.9;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #e0dad1;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .star {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 52px;
+    height: 52px;
+    transform: translate(-50%, -50%) scale(calc(0.9 + var(--twinkle) * 0.1));
+    opacity: calc(0.76 + var(--twinkle) * 0.24);
+    transition: transform 220ms ease, filter 220ms ease, color 220ms ease;
+    color: #fff;
+    filter: drop-shadow(0 0 7px rgba(238, 240, 246, 0.48));
+  }
+
+  .star::before,
+  .star::after,
+  .star i::before,
+  .star i::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: currentColor;
+    content: "";
+    transform: translate(-50%, -50%);
+    opacity: 0.56;
+  }
+
+  .star::before {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, currentColor 43%, #fff 50%, currentColor 57%, transparent);
+  }
+
+  .star::after {
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, currentColor 43%, #fff 50%, currentColor 57%, transparent);
+  }
+
+  .star i::before,
+  .star i::after {
+    width: 58%;
+    height: 1px;
+    opacity: 0.28;
+  }
+
+  .star i::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .star i::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  .star b {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 18%, currentColor 38%, transparent 72%);
+    box-shadow: 0 0 17px currentColor;
+    transform: translate(-50%, -50%);
+  }
+
+  .station.active {
+    color: var(--accent);
+  }
+
+  .station.active .star {
+    color: var(--accent);
+    filter: drop-shadow(0 0 12px rgba(245, 185, 113, 0.72));
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+
+  .station-label {
+    position: absolute;
+    min-width: max-content;
+    color: inherit;
+    font-size: 15px;
+    font-weight: 520;
+    line-height: 1.25;
+    letter-spacing: 0;
+    text-shadow: 0 2px 8px #000;
+    transition: color 220ms ease;
+  }
+
+  .station[data-side="top"] .station-label {
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .station[data-side="bottom"] .station-label {
+    top: 27px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .station[data-side="left"] .station-label {
+    top: 50%;
+    right: 28px;
+    transform: translateY(-50%);
+  }
+
+  .station[data-side="right"] .station-label {
+    top: 50%;
+    left: 28px;
+    transform: translateY(-50%);
+  }
+
+  .stage-copy {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    width: min(48%, 330px);
+    text-align: center;
+    transform: translate(-50%, -50%);
+    transition: opacity 170ms ease, transform 170ms ease;
+    pointer-events: none;
+  }
+
+  .stage-copy.changing {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 5px));
+  }
+
+  .stage-copy > span,
+  .stage-copy small,
+  .stage-copy strong {
+    font-family: var(--mono);
+  }
+
+  .stage-copy > span {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+  }
+
+  .stage-copy h3 {
+    margin: 12px 0 10px;
+    font-family: var(--serif);
+    font-size: clamp(32px, 4vw, 44px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: 0;
+    color: var(--accent);
+    text-shadow: 0 2px 3px #000, 0 4px 18px #000, 0 0 30px rgba(0, 0, 0, 0.9);
+  }
+
+  .stage-copy p {
+    margin: 0;
+    color: #d0cbc4;
+    font-size: 14px;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  .stage-copy strong {
+    display: block;
+    margin-top: 7px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  .stage-copy small {
+    display: block;
+    margin-top: 11px;
+    color: var(--ink-dim);
+    font-size: 11px;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  @media (max-width: 720px) {
+    .galaxy {
+      width: 100%;
+      min-height: 390px;
+      margin-inline: 0;
+    }
+
+    .station-label {
+      display: none;
+    }
+
+    .star {
+      width: 42px;
+      height: 42px;
+    }
+
+    .stage-copy {
+      width: 39%;
+    }
+
+    .stage-copy h3 {
+      margin-block: 8px 7px;
+      font-size: 23px;
+    }
+
+    .stage-copy p {
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .stage-copy > span,
+    .stage-copy small {
+      font-size: 9px;
+    }
+
+    .stage-copy strong {
+      margin-top: 4px;
+      font-size: 10px;
+    }
+
+    .stage-copy small {
+      margin-top: 6px;
+    }
+
+    .station[data-side="left"] .station-label {
+      right: auto;
+      left: 22px;
+    }
+
+    .station[data-side="right"] .station-label {
+      right: 22px;
+      left: auto;
+    }
+
+    .stage-legend {
+      display: grid;
+      margin: 2px 0 0;
+      padding: 16px 0 0;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      list-style: none;
+    }
+
+    .stage-legend li {
+      color: var(--ink-dim);
+      font-size: 10px;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .stage-legend span {
+      margin-right: 3px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star,
+    .station,
+    .stage-copy {
+      transition: none;
+    }
+  }
+</style>

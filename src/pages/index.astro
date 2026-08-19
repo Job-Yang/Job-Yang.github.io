@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BlackHoleBackdrop from '../components/BlackHoleBackdrop.astro';
+import ILoopGalaxy from '../components/ILoopGalaxy.astro';
 import { comparePosts } from '../lib/posts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft))
@@ -63,14 +64,44 @@ const noteTeasers = notes.map((note) => ({
           <a class="pill" href="/projects/">全部沉淀 →</a>
         </div>
         {featuredSystem && (
-          <a class="featured-system" href={`/projects/${featuredSystem.id}/`}>
-            <div class="featured-system-copy">
-              <span>{featuredSystem.data.status} · {featuredSystem.data.eyebrow}</span>
-              <h3>{featuredSystem.data.title}</h3>
-              <p>{featuredSystem.data.statement}</p>
-              <strong>了解 iLoop →</strong>
+          <div class="iloop-showcase">
+            <div class="iloop-copy">
+              <span class="eyebrow">{featuredSystem.data.eyebrow}</span>
+              <h3 class="display"><em>i</em>Loop</h3>
+              <p class="iloop-statement">
+                让 Agent 在真实工程里持续交付。先定义要验证什么，再拿可复核的证据决定是否闭环。
+              </p>
+
+              <div class="iloop-capabilities">
+                <div>
+                  <strong>三档放权</strong>
+                  <p>L1 只分析，L2 可以改代码并验证，L3 才会连续执行。</p>
+                </div>
+                <div>
+                  <strong>真实取证</strong>
+                  <p>不按固定清单跑工具。按问题选择日志、Crash，或 UI 树、截图与自动化。</p>
+                </div>
+                <div>
+                  <strong>持续病例</strong>
+                  <p>保存目标、假设、观测和反证；换一轮仍能据此继续判断。</p>
+                </div>
+                <div>
+                  <strong>独立验收</strong>
+                  <p>用证据对照标准；高风险任务交独立 Agent 复核。</p>
+                </div>
+              </div>
+
+              <nav class="iloop-links" aria-label="iLoop 相关内容">
+                <a href="/writing/iloop-设计思路/"><em>i</em>Loop 设计</a>
+                <a href="/writing/vdd-面向验证的开发/">VDD</a>
+                <a href="/writing/oncall-助手/">Oncall</a>
+                <a href={featuredSystem.data.github} target="_blank" rel="noreferrer">
+                  已开源 · 查看仓库 ↗
+                </a>
+              </nav>
             </div>
-          </a>
+            <ILoopGalaxy />
+          </div>
         )}
       </section>
 
@@ -326,6 +357,95 @@ const noteTeasers = notes.map((note) => ({
     max-width: 1120px;
   }
 
+  .iloop-showcase {
+    display: grid;
+    max-width: 1360px;
+    padding: 42px clamp(24px, 3.4vw, 48px) 34px;
+    grid-template-columns: minmax(340px, 0.78fr) minmax(620px, 1.22fr);
+    gap: clamp(38px, 5vw, 82px);
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background:
+      linear-gradient(90deg, rgba(3, 3, 3, 0.30), rgba(3, 3, 3, 0.10)),
+      rgba(3, 3, 3, 0.04);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(5px) saturate(88%);
+  }
+
+  .iloop-copy {
+    min-width: 0;
+  }
+
+  .iloop-copy > .eyebrow {
+    font-size: 10px;
+  }
+
+  .iloop-copy h3 {
+    margin: 18px 0 20px;
+    font-size: clamp(50px, 5vw, 66px);
+    line-height: 1;
+  }
+
+  .iloop-copy h3 em,
+  .iloop-links em {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  .iloop-statement {
+    max-width: 540px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .iloop-capabilities {
+    display: grid;
+    margin-top: 34px;
+    gap: 22px;
+  }
+
+  .iloop-capabilities strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 640;
+  }
+
+  .iloop-capabilities p {
+    margin: 0;
+    color: var(--ink-faint);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .iloop-links {
+    display: flex;
+    margin-top: 34px;
+    padding-top: 20px;
+    flex-wrap: wrap;
+    gap: 12px 22px;
+    border-top: 1px solid var(--line);
+  }
+
+  .iloop-links a {
+    color: var(--ink-dim);
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 180ms ease;
+  }
+
+  .iloop-links a:hover {
+    color: var(--ink);
+  }
+
+  .iloop-links a:last-child {
+    color: var(--accent);
+  }
+
   .cards {
     display: grid;
     gap: 14px;
@@ -525,6 +645,17 @@ const noteTeasers = notes.map((note) => ({
     text-decoration: none;
   }
 
+  @media (max-width: 1120px) {
+    .iloop-showcase {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 36px;
+    }
+
+    .iloop-copy {
+      max-width: 720px;
+    }
+  }
+
   @media (max-width: 720px) {
     .hero {
       min-height: 78vh;
@@ -543,6 +674,23 @@ const noteTeasers = notes.map((note) => ({
 
     .featured-system-copy {
       padding-block: 38px;
+    }
+
+    .iloop-showcase {
+      padding: 34px 18px 20px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 34px;
+      border-inline: 0;
+      border-radius: 0;
+    }
+
+    .iloop-copy h3 {
+      font-size: 52px;
+    }
+
+    .iloop-capabilities {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px 18px;
     }
   }
 </style>
