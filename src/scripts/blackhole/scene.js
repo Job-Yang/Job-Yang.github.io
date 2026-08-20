@@ -195,7 +195,7 @@ if (canvas) {
       debug.loaded = true;
       debug.loadedAt = performance.now();
       debug.loadDuration = Number((debug.loadedAt - debug.requestedAt).toFixed(1));
-      shipStartedAt = debug.loadedAt - 700;
+      shipStartedAt = debug.loadedAt;
       debug.bounds = size.toArray();
     },
     undefined,
@@ -368,18 +368,7 @@ if (canvas) {
     const shipElapsed = (performance.now() - shipStartedAt) / 1000;
     const cyclePhase = (shipElapsed % cycleDuration) / cycleDuration;
     const autoPhase = Math.min(cyclePhase / 0.92, 1);
-    const entryWindow = 0.08;
-    const entryDistance = 0.18;
-    const autoApproach =
-      autoPhase < entryWindow
-        ? entryDistance *
-          (1 - (1 - autoPhase / entryWindow) * (1 - autoPhase / entryWindow))
-        : entryDistance +
-          (1 - entryDistance) *
-            (() => {
-              const t = (autoPhase - entryWindow) / (1 - entryWindow);
-              return t * t * (3 - 2 * t);
-            })();
+    const autoApproach = autoPhase;
     const scrollFall = scrollProgress ** 2 * (3 - 2 * scrollProgress);
     const flight = Math.min(Math.max(autoApproach, scrollFall), 1);
     const fade = THREE.MathUtils.smoothstep(flight, 0.68, 1);
@@ -387,7 +376,9 @@ if (canvas) {
     const targetNdcX = narrow ? 0.38 : 0.4;
     const targetNdcY = narrow ? 0.12 : 0.14;
     const startNdcX = narrow ? 0.72 : -0.16;
-    const startNdcY = -1.12;
+    // Start just below the viewport and move linearly for the whole approach.
+    // At the 28s cycle length this crosses the lower edge after about one second.
+    const startNdcY = -1.04;
     const ndcX = THREE.MathUtils.lerp(startNdcX, targetNdcX, flight);
     const ndcY = THREE.MathUtils.lerp(startNdcY, targetNdcY, flight);
     const z = THREE.MathUtils.lerp(-7.2, -36, flight);
