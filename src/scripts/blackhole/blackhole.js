@@ -82,6 +82,8 @@ export class BlackHoleSimulation {
       starDensity: uniform(config.starDensity ?? 0.003),
       starSize: uniform(config.starSize ?? 2.0),
       starBrightness: uniform(config.starBrightness ?? 1.0),
+      lensingAnchorsEnabled: uniform(config.lensingAnchorsEnabled ? 1.0 : 0.0),
+      lensingAnchorBrightness: uniform(config.lensingAnchorBrightness ?? 0.8),
 
       // === Nebula Layer 1 ===
       nebulaEnabled: uniform(config.nebulaEnabled ? 1.0 : 0.0),
@@ -188,6 +190,12 @@ export class BlackHoleSimulation {
     if (config.starDensity !== undefined) u.starDensity.value = config.starDensity;
     if (config.starSize !== undefined) u.starSize.value = config.starSize;
     if (config.starBrightness !== undefined) u.starBrightness.value = config.starBrightness;
+    if (config.lensingAnchorsEnabled !== undefined) {
+      u.lensingAnchorsEnabled.value = config.lensingAnchorsEnabled ? 1.0 : 0.0;
+    }
+    if (config.lensingAnchorBrightness !== undefined) {
+      u.lensingAnchorBrightness.value = config.lensingAnchorBrightness;
+    }
 
     // Nebula Layer 1 uniforms
     if (config.nebulaEnabled !== undefined) u.nebulaEnabled.value = config.nebulaEnabled ? 1.0 : 0.0;

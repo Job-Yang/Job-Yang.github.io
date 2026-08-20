@@ -29,6 +29,8 @@ if (canvas) {
     starDensity: 0.085,
     starSize: 1.1,
     starBrightness: 0.32,
+    lensingAnchorsEnabled: true,
+    lensingAnchorBrightness: 0.58,
     nebulaEnabled: true,
     nebula1Scale: 2.4,
     nebula1Density: 0.38,

@@ -220,6 +220,68 @@ const createStarField = (uniforms) => Fn(([rayDir]) => {
   return starColor.mul(starIntensity).mul(uniforms.starBrightness);
 });
 
+// A sparse layer of identifiable background sources. It is sampled with the
+// final, bent ray direction, so duplicated images and arcs come from the same
+// lensing path as the rest of the sky.
+const createAnchorStarField = (uniforms) => Fn(([rayDir]) => {
+  const theta = atan(rayDir.z, rayDir.x);
+  const phi = asin(clamp(rayDir.y, float(-1.0), float(1.0)));
+  const scaledCoord = vec2(theta, phi).mul(18.0);
+  const cell = floor(scaledCoord);
+  const cellUV = fract(scaledCoord);
+  const sourceExists = step(0.89, hash21(cell.add(713.0)));
+  const sourcePosition = hash22(cell.add(911.0)).mul(0.64).add(0.18);
+  const distanceToSource = length(cellUV.sub(sourcePosition));
+  const sourceSize = hash21(cell.add(119.0)).mul(0.003).add(0.003);
+  const core = smoothstep(sourceSize, float(0.0), distanceToSource);
+  const halo = smoothstep(sourceSize.mul(4.0), float(0.0), distanceToSource).mul(0.12);
+  const temperature = hash21(cell.add(337.0));
+  const sourceColor = mix(vec3(0.72, 0.86, 1.0), vec3(1.0, 0.88, 0.68), temperature);
+  const sparseSources = sourceColor
+    .mul(core.add(halo))
+    .mul(sourceExists);
+
+  // A narrow, structured stellar band crosses the optical axis. Far from the
+  // hole it stays straight; near the hole the same points bend and duplicate.
+  const camForward = normalize(uniforms.cameraTarget.sub(uniforms.cameraPosition));
+  const camRight = normalize(cross(vec3(0.0, 1.0, 0.0), camForward));
+  const camUp = normalize(cross(camForward, camRight));
+  const bandNormal = normalize(camUp.mul(0.92).add(camRight.mul(0.38)));
+  const bandTangent = normalize(camRight.mul(0.92).sub(camUp.mul(0.38)));
+  const signedBandDistance = dot(rayDir, bandNormal);
+  const bandDistance = abs(signedBandDistance);
+  const bandEnvelope = smoothstep(float(0.14), float(0.008), bandDistance);
+  const dustLane = smoothstep(float(0.012), float(0.045), bandDistance);
+  const bandCoord = vec2(
+    dot(rayDir, bandTangent).mul(145.0),
+    signedBandDistance.mul(520.0)
+  );
+  const bandCell = floor(bandCoord);
+  const bandUV = fract(bandCoord);
+  const bandStarExists = step(float(0.67), hash21(bandCell.add(1701.0)));
+  const bandStarPosition = hash22(bandCell.add(1907.0)).mul(0.78).add(0.11);
+  const bandStarDistance = length(bandUV.sub(bandStarPosition));
+  const bandStarCore = smoothstep(float(0.038), float(0.0), bandStarDistance);
+  const bandStarGlow = smoothstep(float(0.11), float(0.0), bandStarDistance).mul(0.08);
+  const bandTemperature = hash21(bandCell.add(211.0));
+  const bandStarColor = mix(
+    vec3(0.7, 0.86, 1.0),
+    vec3(1.0, 0.88, 0.7),
+    bandTemperature
+  );
+  const stellarBand = bandStarColor
+    .mul(bandStarCore.add(bandStarGlow))
+    .mul(bandStarExists)
+    .mul(bandEnvelope)
+    .mul(mix(float(0.22), float(1.0), dustLane))
+    .mul(0.62);
+
+  return sparseSources
+    .add(stellarBand)
+    .mul(uniforms.lensingAnchorBrightness)
+    .mul(uniforms.lensingAnchorsEnabled);
+});
+
 // Procedural nebula clouds - two FBM layers
 const createNebulaField = (uniforms) => Fn(([rayDir]) => {
   const noisePos1 = rayDir.mul(uniforms.nebula1Scale);
@@ -303,6 +365,7 @@ const createAccretionDiskColor = (uniforms) => Fn(([hitR, hitAngle, time, rayDir
 // Main raymarching shader
 export function createBlackHoleShader(uniforms) {
   const starField = createStarField(uniforms);
+  const anchorStarField = createAnchorStarField(uniforms);
   const nebulaField = createNebulaField(uniforms);
   const accretionDiskColor = createAccretionDiskColor(uniforms);
 
@@ -399,6 +462,7 @@ export function createBlackHoleShader(uniforms) {
 
       If(uniforms.starsEnabled.greaterThan(0.5), () => {
         bgColor.addAssign(starField(rayDir));
+        bgColor.addAssign(anchorStarField(rayDir));
       });
 
       If(uniforms.nebulaEnabled.greaterThan(0.5), () => {
