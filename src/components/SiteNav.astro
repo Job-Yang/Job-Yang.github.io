@@ -124,4 +124,15 @@ const isHome = Astro.url.pathname === '/';
       display: none;
     }
   }
+
+  @media (max-width: 360px) {
+    .links a:nth-child(3),
+    .links a:nth-child(5) {
+      display: none;
+    }
+
+    .links a {
+      padding-inline: 9px;
+    }
+  }
 </style>
