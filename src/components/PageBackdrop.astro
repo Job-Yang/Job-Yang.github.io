@@ -1,0 +1,129 @@
+---
+interface Props {
+  src: string;
+  position?: string;
+  opacity?: number;
+  mobilePosition?: string;
+  mobileOpacity?: number;
+  effect?: 'none' | 'planet' | 'spacetime';
+}
+
+const {
+  src,
+  position = 'center',
+  opacity = 1,
+  mobilePosition = position,
+  mobileOpacity = opacity,
+  effect = 'none',
+} = Astro.props;
+---
+
+<div
+  class:list={['page-backdrop', `effect-${effect}`]}
+  data-page-backdrop={effect}
+  style={`--backdrop-image: url("${src}"); --backdrop-position: ${position}; --backdrop-opacity: ${opacity}; --backdrop-mobile-position: ${mobilePosition}; --backdrop-mobile-opacity: ${mobileOpacity};`}
+  aria-hidden="true"
+></div>
+
+{effect === 'spacetime' && (
+  <script>
+    const backdrop = document.querySelector('[data-page-backdrop="spacetime"]') as HTMLElement;
+    if (backdrop && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      let scheduled = false;
+      const updateParallax = () => {
+        const progress = Math.min(window.scrollY / Math.max(window.innerHeight * 2, 1), 1);
+        backdrop.style.setProperty('--backdrop-shift', `${progress * -28}px`);
+        scheduled = false;
+      };
+      window.addEventListener(
+        'scroll',
+        () => {
+          if (scheduled) return;
+          scheduled = true;
+          requestAnimationFrame(updateParallax);
+        },
+        { passive: true },
+      );
+      updateParallax();
+    }
+  </script>
+)}
+
+<style>
+  .page-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background-color: #030303;
+    opacity: var(--backdrop-opacity);
+  }
+
+  .page-backdrop::before,
+  .page-backdrop::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
+
+  .page-backdrop::before {
+    inset: -2%;
+    background-image: var(--backdrop-image);
+    background-position: var(--backdrop-position);
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: translate3d(0, var(--backdrop-shift, 0), 0) scale(1.04);
+    will-change: transform, filter;
+  }
+
+  .page-backdrop::after {
+    background: linear-gradient(
+      90deg,
+      #030303 0%,
+      rgba(3, 3, 3, 0.98) 38%,
+      rgba(3, 3, 3, 0.82) 55%,
+      rgba(3, 3, 3, 0.18) 72%,
+      transparent 84%
+    );
+  }
+
+  .effect-planet::before {
+    animation: planet-sunrise 14s linear infinite alternate;
+  }
+
+  @keyframes planet-sunrise {
+    from {
+      filter: brightness(0.82) saturate(0.88);
+    }
+    to {
+      filter: brightness(1.08) saturate(1);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .page-backdrop {
+      background-position: var(--backdrop-mobile-position);
+      opacity: var(--backdrop-mobile-opacity);
+    }
+
+    .page-backdrop::before {
+      background-position: var(--backdrop-mobile-position);
+    }
+
+    .page-backdrop::after {
+      background: linear-gradient(
+        180deg,
+        rgba(3, 3, 3, 0.26) 0%,
+        rgba(3, 3, 3, 0.8) 48%,
+        #030303 78%
+      );
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .effect-planet::before {
+      animation: none;
+    }
+  }
+</style>

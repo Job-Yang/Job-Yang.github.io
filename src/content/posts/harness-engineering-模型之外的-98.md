@@ -1,7 +1,7 @@
 ---
 title: "Harness Engineering：模型之外的 98%"
 description: "本文回答两个问题：Harness Engineering 到底是什么，以及为什么它正在成为 AI 编码的胜负手。材料来自 Martin Fowler 团队、Addy Osmani、Anthropic "
-publishedAt: 2026-08-13
+publishedAt: 2026-06-15T15:41:14.000Z
 category: "【费曼·实战复盘】"
 tags: []
 draft: false
@@ -17,7 +17,7 @@ review_required: true
 
 ---
 
-# 一、这个词的来历
+# 这个词的来历
 
 Harness 字面是「马具」——套在马身上那套缰绳、嚼子、鞍。比喻精准到可怕：**模型（马）本身是野的、不可控、不可预测的；真正决定它能不能拉好车、跑对方向的，是你给它套的那套装备。**张汉东把那本逆向 Claude Code 源码的书取名《驾驭工程》，正是这个意思。
 
@@ -25,14 +25,14 @@ Viv Trivedy 提出了 harness engineering 这个术语，并给了一句被反�
 
 > Agent = Model + Harness。如果你不是那个模型，那你就是 harness。
 
-Martin Fowler 团队的 Birgitta Böckeler 把定义收得更紧：**harness 就是一个 AI agent 里除了模型之外的一切**——系统提示词、工具、上下文策略、钩子、沙箱、子 agent、反馈回路、恢复路径，全是 harness [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
+Martin Fowler 团队的 Birgitta Böckeler 把定义收得更紧：**harness 就是一个 AI agent 里除了模型之外的一切**，包括系统提示词、工具、上下文策略、钩子、沙箱、子 agent、反馈回路、恢复路径 [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 
 > [!NOTE]
 > **最硬的证据**：在 Terminal Bench 2.0 上，同一个 Claude Opus 4.6，装在 Claude Code 里的得分远低于装在定制 harness 里的得分；Viv 的团队只改 harness、不换模型，就把一个 coding agent 从 Top 30 拉到了 Top 5 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。同一个模型，套在 Cursor、自研插件、Claude Code 里表现天差地别——差的不是脑子，是缰绳。
 
 ---
 
-# 二、是什么：从控制论看，它是一个「调速器」
+# 是什么：从控制论看，它是一个「调速器」
 
 别把 harness 当成一堆零散的配置文件。它的本质是一个**控制论意义上的调速器（cybernetic governor）**——用前馈和反馈两种手段，把代码库持续调节到你想要的状态 [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。这套调速器由两个对子构成，是整个 Harness Engineering 最核心的思想框架。
 
@@ -50,11 +50,11 @@ flowchart LR
     S -.重复出现的问题.-> H
 ```
 
-## Guides（前馈控制）——在马跑之前，先告诉它往哪跑
+## Guides（前馈控制）：在马跑之前，先告诉它往哪跑
 
 提高 agent「第一次就做对」的概率。系统提示词、AGENTS.md / CLAUDE.md 里的项目约定、工具的描述、技能包、LSP 代码智能，都属于这一类。
 
-## Sensors（反馈控制）——马跑歪了，缰绳一拉拽回来
+## Sensors（反馈控制）：马跑歪了，缰绳一拉拽回来
 
 在 agent 行动之后观察结果，帮它自我纠正。测试、linter、类型检查、AI 代码审查都是传感器。**精妙之处**：最强的传感器，是那些产出「专门给 LLM 看」的信号的——比如一条自定义 linter 报错，里面直接附上「该怎么改」的指令，本质上是一种**良性的提示词注入** [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 
@@ -76,11 +76,11 @@ Guides 和 Sensors 各自又分两种执行方式，这一刀决定了成本和�
 
 ---
 
-# 三、为什么它有效：四个反直觉的洞察
+# 为什么它有效：四个反直觉的洞察
 
 这是全文的核心。把这四点想透，就抓住了 Harness Engineering 的灵魂。
 
-## 洞察一：「skill issue」重构——别再骂模型蠢
+## 洞察一：「skill issue」重构：别再骂模型蠢
 
 工程师有个坏默认：agent 干了蠢事 → 怪模型 → 「等下一代模型吧」。Harness Engineering 直接否定它。HumanLayer 那句话是纲领：**「这不是模型问题，是配置问题。」**大多数 agent 失败是可归因、可修的 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)：
 
@@ -92,7 +92,7 @@ Guides 和 Sensors 各自又分两种执行方式，这一刀决定了成本和�
 > [!NOTE]
 > **心智转变**：模型答错时，第一反应不该是「模型真笨」，而是「我的 Guides 是不是没说清？我的 Sensors 是不是没接住？」
 
-## 洞察二：棘轮原则（The Ratchet）——每个错误都变成一条永久规则
+## 洞察二：棘轮原则（The Ratchet）：每个错误都变成一条永久规则
 
 这是 Harness Engineering 最重要的工作习惯。**把 agent 的每一次犯错都当成永久信号，而不是「这把运气差，重试一下」。**Addy Osmani 举例：如果 agent 提了个带「注释掉的测试」的 PR 而你不小心合了，你要在三个层面同时上棘轮 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。
 
@@ -108,7 +108,7 @@ grep diff 里的 .skip 和 xit"]
 ```
 
 > [!NOTE]
-> **铁律**：好的 AGENTS.md 里每一行，都应该能追溯到一次具体的、真实发生过的失败。只在见到真实失败时才加约束，只在某个强模型让约束变得多余时才删它——「上棘轮，别头脑风暴」。这也是为什么 Harness Engineering 是一门**手艺**而非框架：适配你代码库的 harness 是被你的失败史塑造的，**你下载不到**。
+> **铁律**：好的 AGENTS.md 里每一行，都应该能追溯到一次具体的、真实发生过的失败。只在见到真实失败时才加约束，只在某个强模型让约束变得多余时才删它，也就是「上棘轮，别头脑风暴」。这也是为什么 Harness Engineering 是一门**手艺**而非框架：适配你代码库的 harness 是被你的失败史塑造的，**你下载不到**。
 
 ## 洞察三：模型变强，harness 不会消失，只会「移位」
 
@@ -129,13 +129,13 @@ flowchart LR
 
 ## 洞察四：模型和 harness 是「共同训练」出来的
 
-Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness 一起做后训练的**。模型会专门在 harness 设计者认为它该擅长的动作上变强——文件操作、bash、规划、子 agent 派发 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。这解释了两个怪现象：为什么 Opus 4.6 在 Claude Code 里手感和别处不一样；为什么你把工具的 str_replace 换成 apply_patch 有时会引起莫名其妙的性能回退——一个真正通用的模型不该在乎这个，但共同训练造成了过拟合。
+Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness 一起做后训练的**。模型会专门在 harness 设计者认为它该擅长的动作上变强，比如文件操作、bash、规划、子 agent 派发 [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。这解释了两个怪现象：为什么 Opus 4.6 在 Claude Code 里手感和别处不一样；为什么你把工具的 str_replace 换成 apply_patch 有时会引起莫名其妙的性能回退——一个真正通用的模型不该在乎这个，但共同训练造成了过拟合。
 
 **实践含义**：模型「出生时」所在的 harness，不一定是它能力的天花板。为你的具体任务定制 harness，可以解锁原厂 harness 漏在地上的能力。Top 30 → Top 5 就是最硬的证据。
 
 ---
 
-# 四、一个好 harness 由什么组成（可抄的清单）
+# 一个好 harness 由什么组成（可抄的清单）
 
 把思想落到零件上。逻辑是「从你想要的行为，倒推出该有哪个零件」——**如果你说不出某个组件是为了交付哪个行为而存在，它就不该在那儿** [Agent Harness Engineering](https://addyosmani.com/blog/agent-harness-engineering/)。
 
@@ -144,7 +144,7 @@ Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness �
 | 文件系统 + Git | 模型只能操作上下文里装得下的东西 | 给它工作区、把中间结果卸载到磁盘、多 agent 用共享文件协作；Git 白送版本管理和回滚 |
 | Bash + 代码执行 | 没法为每个动作预造工具 | 与其给一个厨房小工具，不如把整个厨房交给它，让它现造工具 |
 | 沙箱 + 默认工具链 | 在你笔记本上跑 agent 生成代码有风险，也无法并行 | 隔离环境、命令白名单、网络隔离、预装 runtime / 测试 CLI / 无头浏览器（让它能自我验证） |
-| 记忆 + 搜索 | 模型只有权重 + 当前上下文，没法改权重 | AGENTS.md 每次启动注入，agent 改了就重载——粗糙但有效的持续学习；web 搜索补训练截止后的新知 |
+| 记忆 + 搜索 | 模型只有权重 + 当前上下文，没法改权重 | AGENTS.md 每次启动注入，agent 改了就重载，这是粗糙但有效的持续学习；web 搜索补训练截止后的新知 |
 | 上下文管理 | 上下文塞满后模型推理会「腐烂」（context rot） | 压缩、工具输出卸载（留头尾、全文进磁盘）、技能渐进式披露；超长任务甚至要完整重置上下文，从紧凑交接文件重建 |
 | 长程执行 | 早停、分解差、跨多窗口后失去连贯 | Ralph Loop（hook 拦截退出、把原始 prompt 重新注入新窗口，逼它干完）；planning 写到磁盘 |
 | 钩子 Hooks | 「我告诉过 agent」≠「系统强制执行」 | 生命周期节点跑脚本：改完文件就跑类型检查 / lint / 测试、拦截危险命令、PR 前需审批 |
@@ -156,7 +156,7 @@ Viv 点破的底层机制：今天的 agent 产品，模型是**带着 harness �
 
 ---
 
-# 五、为什么这件事正在变成一门独立学科
+# 为什么这件事正在变成一门独立学科
 
 ## AGENTS.md 是杠杆率最高的点，但要克制
 
@@ -184,7 +184,7 @@ Viv 提出的 HaaS（Harness-as-a-Service）框架点明方向：我们正从「
 
 ---
 
-# 六、一句话总结：为什么你要在意
+# 一句话总结：为什么你要在意
 
 人的角色变了。过去我们把经验当成一种隐式的 harness 带进每个代码库——我们对 300 行的函数会本能反感，知道「我们这儿不这么干」，知道自己的名字会签在 commit 上。**Agent 这些全没有：没有社会责任感，没有审美厌恶，没有组织记忆。Harness Engineering，就是把人类开发者的经验外化、显性化成一套约束、传感器和自我纠正回路的工程努力** [Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html)。
 

@@ -9,8 +9,17 @@ import { defaultConfig } from './default-config.js';
 const canvas = document.querySelector('#black-hole-canvas');
 
 if (canvas) {
+  const deepFieldTexture = new THREE.TextureLoader().load(
+    '/images/cosmic/home-deep-field.webp',
+  );
+  deepFieldTexture.colorSpace = THREE.SRGBColorSpace;
+  deepFieldTexture.wrapS = THREE.RepeatWrapping;
+  deepFieldTexture.wrapT = THREE.ClampToEdgeWrapping;
+
   const config = {
     ...defaultConfig,
+    deepFieldTexture,
+    deepFieldBrightness: 0.2,
     diskInnerRadius: 5.2,
     diskOuterRadius: 22,
     diskTemperature: 8,
@@ -30,7 +39,7 @@ if (canvas) {
     starSize: 1.1,
     starBrightness: 0.32,
     lensingAnchorsEnabled: true,
-    lensingAnchorBrightness: 0.58,
+    lensingAnchorBrightness: 0.26,
     nebulaEnabled: true,
     nebula1Scale: 2.4,
     nebula1Density: 0.38,

@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ILoopGalaxy from '../../components/ILoopGalaxy.astro';
+import PageBackdrop from '../../components/PageBackdrop.astro';
 
 const projects = (await getCollection('projects', ({ data }) => !data.draft))
   .sort((a, b) => a.data.order - b.data.order);
@@ -16,7 +17,15 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   description="从方法论、系统到可安装技能：把反复有用的经验做成真正能运行的东西。"
   active="projects"
 >
-  <div class="space-fallback" slot="background"></div>
+  <PageBackdrop
+    slot="background"
+    src="/images/cosmic/about-planet-horizon.webp"
+    position="center right"
+    opacity={0.44}
+    mobilePosition="68% top"
+    mobileOpacity={0.3}
+    effect="planet"
+  />
   <div class="projects-page">
     <header class="projects-intro wide">
       <div class="eyebrow">Systems · Skills · Experiments</div>

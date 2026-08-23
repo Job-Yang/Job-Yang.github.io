@@ -1,0 +1,66 @@
+---
+interface Props {
+  model: 'station' | 'probe';
+  class?: string;
+  label?: string;
+}
+
+const {
+  model,
+  class: className,
+  label = model === 'station' ? '模块化环形空间站' : '深空探测器',
+} = Astro.props;
+---
+
+<div class:list={['space-model', `space-model-${model}`, className]} data-space-model={model}>
+  <canvas aria-label={label} role="img"></canvas>
+  <span class="model-status" aria-hidden="true">LOADING MODEL</span>
+</div>
+
+<script>
+  import '../scripts/space-model.js';
+</script>
+
+<style>
+  .space-model {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    min-height: 320px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .space-model canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 500ms linear;
+  }
+
+  .space-model.ready canvas {
+    opacity: 1;
+  }
+
+  .model-status {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+    letter-spacing: 0.12em;
+    transition: opacity 180ms linear;
+  }
+
+  .space-model.ready .model-status,
+  .space-model.failed .model-status {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .space-model canvas {
+      transition: none;
+    }
+  }
+</style>

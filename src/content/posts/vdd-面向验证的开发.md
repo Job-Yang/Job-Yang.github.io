@@ -1,11 +1,12 @@
 ---
 title: "让 AI 说“完成”前，先自证一遍：面向验证的开发（VDD）"
 description: "AI 写代码已经很快，真正的瓶颈挪到了验证。VDD 让 Agent 在说完成之前，先用真实结果和可复核证据回答：我凭什么这么说。"
-publishedAt: 2026-08-18
+publishedAt: 2026-07-31T10:16:07.000Z
 category: "AI / 工程"
 tags: ["VDD", "AI Agent", "软件工程"]
 featured: true
 pinned: true
+pinOrder: 3
 editorialRank: 100
 draft: false
 source: public-rewrite

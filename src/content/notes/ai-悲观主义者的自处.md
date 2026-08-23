@@ -1,5 +1,6 @@
 ---
 title: "AI 悲观主义者的自处"
+publishedAt: 2026-06-22T05:49:00.000Z
 order: 7
 tags: []
 draft: false

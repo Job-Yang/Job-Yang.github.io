@@ -1,7 +1,7 @@
 ---
 title: "CodeGraph 调研报告：AI 编码 Agent 的代码知识图谱"
 description: "CodeGraph 由 colbymchenry 开源，GitHub 地址为 github.com/colbymchenry/codegraph。项目核心理念：让 AI Agent 在编码前先\"理解\""
-publishedAt: 2026-08-13
+publishedAt: 2026-05-21T09:58:32.000Z
 category: "【费曼·调研】"
 tags: []
 draft: false
@@ -63,7 +63,7 @@ flowchart TB
     G -. 找注释/配置/错误码/魔法字符串 .-> R
 ```
 
-举个真实流程：Agent 要改 `parseConfig` —— 先 grep 找到它定义在哪（顺带搜到配置文件里相关字段名），再用 CodeGraph 查"谁调了它、改了会炸哪些测试"，最后 read 精读那几个文件。**grep 管"在哪"，CodeGraph 管"关系"，各司其职。**
+举个真实流程：Agent 要改 `parseConfig` ，先 grep 找到它定义在哪（顺带搜到配置文件里相关字段名），再用 CodeGraph 查"谁调了它、改了会炸哪些测试"，最后 read 精读那几个文件。**grep 管"在哪"，CodeGraph 管"关系"，各司其职。**
 
 ## 能力边界对比
 

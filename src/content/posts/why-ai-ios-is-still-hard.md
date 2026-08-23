@@ -1,7 +1,7 @@
 ---
 title: 为什么 AI 写 iOS，质量还是不太行
 description: iOS 把 AI 编程的通病放大了：公开语料少、工具链封闭、运行时动态、反馈循环昂贵。问题不只在模型，更在闭环没有接上。
-publishedAt: 2026-08-11
+publishedAt: 2026-07-16T13:42:16.000Z
 category: iOS / AI
 tags:
   - iOS

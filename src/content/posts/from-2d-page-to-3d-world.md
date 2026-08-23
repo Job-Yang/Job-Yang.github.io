@@ -1,7 +1,7 @@
 ---
 title: 没做过游戏，我用 AI 把一个页面改成了 3D
 description: 从二维概念图、图生 3D、Three.js 展示到 GLB 压缩，一次没有游戏开发经验的快速实验。
-publishedAt: 2026-08-10
+publishedAt: 2026-06-03T12:07:44.000Z
 category: 实验 / 3D
 tags:
   - Three.js

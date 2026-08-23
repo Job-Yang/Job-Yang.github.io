@@ -26,7 +26,6 @@ import {
   step,
   sign,
   abs,
-  exp,
   Loop,
   Break,
   If,
@@ -459,6 +458,25 @@ export function createBlackHoleShader(uniforms) {
     // Background for escaped rays
     If(escaped.greaterThan(0.5).and(alpha.lessThan(0.99)), () => {
       const bgColor = uniforms.starBackgroundColor.toVar('bgColor');
+
+      if (uniforms.deepFieldTexture) {
+        const deepFieldUV = vec2(
+          dot(rayDir, camRight),
+          dot(rayDir, camUp).negate()
+        ).mul(1.35).add(vec2(0.25, 0.22));
+        const deepFieldFocus = smoothstep(
+          float(0.36),
+          float(0.07),
+          length(screenUV.sub(vec2(0.68, 0.46)).mul(vec2(1.0, 1.34)))
+        );
+        bgColor.addAssign(
+          uniforms.deepFieldTexture
+            .sample(deepFieldUV)
+            .rgb
+            .mul(uniforms.deepFieldBrightness)
+            .mul(deepFieldFocus)
+        );
+      }
 
       If(uniforms.starsEnabled.greaterThan(0.5), () => {
         bgColor.addAssign(starField(rayDir));

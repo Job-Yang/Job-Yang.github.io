@@ -2,15 +2,14 @@
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FeedbackLoopDiagram from '../../components/FeedbackLoopDiagram.astro';
+import SpaceModel from '../../components/SpaceModel.astro';
+import { formatContentDate } from '../../lib/dates';
 
-const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort((a, b) => {
-  const da = a.data.publishedAt?.valueOf();
-  const db = b.data.publishedAt?.valueOf();
-  if (da != null && db != null && da !== db) return db - da;
-  if (da != null && db == null) return -1;
-  if (da == null && db != null) return 1;
-  return (a.data.order ?? 0) - (b.data.order ?? 0);
-});
+const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+  (a, b) =>
+    b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf() ||
+    (a.data.title ?? '').localeCompare(b.data.title ?? '', 'zh-CN'),
+);
 const rendered = await Promise.all(
   notes.map(async (note) => ({ note, Content: (await render(note)).Content })),
 );
@@ -22,7 +21,9 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
   description="短想法、片段和正在成形的念头。"
   active="notes"
 >
-  <div class="space-fallback" slot="background"></div>
+  <div class="space-fallback notes-background" slot="background">
+    <SpaceModel model="probe" class="notes-probe" />
+  </div>
   <div class="page-shell">
     <header class="page-intro reading">
       <div class="eyebrow">Forge Notes</div>
@@ -34,11 +35,9 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
       {rendered.length === 0 && <p class="empty">还没有公开的手记。</p>}
       {rendered.map(({ note, Content }) => (
         <article class="note-card">
-          {note.data.publishedAt && (
-            <time datetime={note.data.publishedAt.toISOString()}>
-              {note.data.publishedAt.toISOString().slice(0, 10)}
-            </time>
-          )}
+          <time datetime={note.data.publishedAt.toISOString()}>
+            {formatContentDate(note.data.publishedAt)}
+          </time>
           <div class="note-content">
             {note.data.title && <h2>{note.data.title}</h2>}
             <Content />
@@ -81,10 +80,24 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
 )}
 
 <style>
+  .notes-background {
+    overflow: hidden;
+  }
+
+  :global(.space-model.notes-probe) {
+    position: absolute;
+    top: 4vh;
+    right: -5vw;
+    width: min(43vw, 680px);
+    height: min(70vh, 680px);
+    opacity: 0.5;
+    mask-image: linear-gradient(90deg, transparent, black 30%);
+  }
+
   .notes-feed {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 22px;
     padding-block: 44px 90px;
   }
 
@@ -94,17 +107,74 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
   }
 
   .note-card {
-    padding: 22px 24px;
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.035);
-    backdrop-filter: blur(8px);
-    transition: border-color 200ms ease, background 200ms ease;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: 100%;
+    padding: 25px 27px 26px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 24px;
+    background:
+      linear-gradient(
+        142deg,
+        rgba(255, 255, 255, 0.065) 0%,
+        rgba(255, 255, 255, 0.027) 42%,
+        rgba(12, 12, 12, 0.7) 100%
+      ),
+      rgba(8, 8, 8, 0.82);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.09),
+      inset 0 -1px 0 rgba(245, 185, 113, 0.035),
+      0 16px 36px rgba(0, 0, 0, 0.34),
+      0 2px 8px rgba(0, 0, 0, 0.26);
+    backdrop-filter: blur(14px) saturate(112%);
+    transition:
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms ease;
+  }
+
+  .note-card::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      linear-gradient(
+        105deg,
+        rgba(255, 255, 255, 0.075),
+        transparent 24%,
+        transparent 78%,
+        rgba(245, 185, 113, 0.035)
+      );
+    content: "";
+    pointer-events: none;
+  }
+
+  .note-card::after {
+    position: absolute;
+    top: 0;
+    left: 9%;
+    width: 42%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.36),
+      transparent
+    );
+    content: "";
+    pointer-events: none;
   }
 
   .note-card:hover {
-    border-color: rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(245, 185, 113, 0.22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.11),
+      inset 0 -1px 0 rgba(245, 185, 113, 0.055),
+      0 20px 44px rgba(0, 0, 0, 0.4),
+      0 3px 10px rgba(0, 0, 0, 0.28);
+    transform: translateY(-2px);
   }
 
   .note-card time {
@@ -221,5 +291,30 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
   .tags span {
     color: var(--accent);
     font: 12px var(--mono);
+  }
+
+  @media (max-width: 720px) {
+    :global(.space-model.notes-probe) {
+      top: 2vh;
+      right: -34vw;
+      width: 96vw;
+      height: 54vh;
+      opacity: 0.3;
+    }
+
+    .notes-feed {
+      gap: 16px;
+      padding-top: 34px;
+    }
+
+    .note-card {
+      padding: 21px 22px 22px;
+      border-radius: 20px;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.085),
+        inset 0 -1px 0 rgba(245, 185, 113, 0.03),
+        0 12px 26px rgba(0, 0, 0, 0.32);
+    }
+
   }
 </style>

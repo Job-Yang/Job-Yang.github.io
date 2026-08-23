@@ -1,5 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import PageBackdrop from '../components/PageBackdrop.astro';
+import { formatContentDate } from '../lib/dates';
 
 interface Props {
   title: string;
@@ -20,10 +22,19 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   article
   image={image}
 >
+  <PageBackdrop
+    slot="background"
+    src="/images/cosmic/article-spacetime.webp"
+    position="center right"
+    opacity={0.68}
+    mobilePosition="72% top"
+    mobileOpacity={0.34}
+    effect="spacetime"
+  />
   <article class="article reading">
     <header>
       <a class="back" href="/writing/">← 返回全部文章</a>
-      <div class="eyebrow">{category} · {publishedAt.toISOString().slice(0, 10)}</div>
+      <div class="eyebrow">{category} · {formatContentDate(publishedAt)}</div>
       <h1 class="display">{title}</h1>
       <div class="meta">
         {readingMinutes && <span>{readingMinutes} min read</span>}
@@ -48,6 +59,31 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
 </BaseLayout>
 
 <script>
+  async function renderMermaid() {
+    const blocks = document.querySelectorAll<HTMLPreElement>(
+      '.prose pre[data-language="mermaid"]',
+    );
+    if (!blocks.length) return;
+
+    const { default: mermaid } = await import('mermaid');
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+    });
+
+    blocks.forEach((pre) => {
+      const holder = document.createElement('div');
+      holder.className = 'mermaid';
+      holder.textContent = pre.textContent ?? '';
+      pre.replaceWith(holder);
+    });
+
+    await mermaid.run({ querySelector: '.prose .mermaid' });
+  }
+
+  renderMermaid().catch((error) => console.error('[mermaid]', error));
+
   // Build a floating table of contents from body headings.
   const prose = document.querySelector('.prose');
   const toc = document.getElementById('toc');
@@ -86,7 +122,9 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   }
 
   // Add copy buttons to code blocks.
-  document.querySelectorAll('.prose pre').forEach((pre) => {
+  document
+    .querySelectorAll('.prose pre:not([data-language="mermaid"])')
+    .forEach((pre) => {
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
     btn.type = 'button';
@@ -102,11 +140,14 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
       }
     });
     pre.appendChild(btn);
-  });
+    });
 </script>
 
 <style is:global>
   .article {
+    position: relative;
+    z-index: 2;
+    width: min(calc(100% - 48px), 940px);
     padding: 70px 0 110px;
   }
 
@@ -202,6 +243,19 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
     text-underline-offset: 3px;
   }
 
+  .prose .mermaid {
+    display: flex;
+    justify-content: center;
+    max-width: 100%;
+    margin: 36px 0;
+    overflow-x: auto;
+  }
+
+  .prose .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+
   .prose ul,
   .prose ol {
     margin: 0 0 30px;
@@ -274,12 +328,12 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
     display: none;
   }
 
-  @media (min-width: 1180px) {
+  @media (min-width: 1400px) {
     .toc.ready {
       display: block;
       position: fixed;
       top: 120px;
-      left: max(24px, calc((100vw - var(--reading)) / 2 - 220px));
+      left: max(24px, calc((100vw - 940px) / 2 - 220px));
       width: 200px;
       max-height: 70vh;
       overflow-y: auto;
@@ -481,6 +535,7 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
 
   @media (max-width: 620px) {
     .article {
+      width: min(calc(100% - 36px), 940px);
       padding-top: 48px;
     }
 

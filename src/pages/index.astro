@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BlackHoleBackdrop from '../components/BlackHoleBackdrop.astro';
 import ILoopGalaxy from '../components/ILoopGalaxy.astro';
+import { formatContentDate } from '../lib/dates';
 import { comparePosts } from '../lib/posts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft))
@@ -13,14 +14,11 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft && d
 const featuredSystem = projects.find((project) => project.data.kind === 'system');
 const featuredSkills = projects.filter((project) => project.data.kind === 'skill').slice(0, 3);
 const notes = (await getCollection('notes', ({ data }) => !data.draft))
-  .sort((a, b) => {
-    const da = a.data.publishedAt?.valueOf();
-    const db = b.data.publishedAt?.valueOf();
-    if (da != null && db != null && da !== db) return db - da;
-    if (da != null && db == null) return -1;
-    if (da == null && db != null) return 1;
-    return (a.data.order ?? 0) - (b.data.order ?? 0);
-  })
+  .sort(
+    (a, b) =>
+      b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf() ||
+      (a.data.title ?? '').localeCompare(b.data.title ?? '', 'zh-CN'),
+  )
   .slice(0, 4);
 
 function excerpt(body: string, max = 90): string {
@@ -136,7 +134,7 @@ const noteTeasers = notes.map((note) => ({
               <div class="meta">
                 <span>{post.data.category}</span>
                 <time datetime={post.data.publishedAt.toISOString()}>
-                  {post.data.publishedAt.toISOString().slice(0, 7)}
+                  {formatContentDate(post.data.publishedAt).slice(0, 7)}
                 </time>
                 {post.data.readingMinutes && <span>{post.data.readingMinutes} min</span>}
               </div>
@@ -155,12 +153,10 @@ const noteTeasers = notes.map((note) => ({
           </div>
           <div class="reading-column note-flow">
             {noteTeasers.map(({ note, title, excerpt }) => (
-              <a class:list={['note-line', { 'has-date': note.data.publishedAt }]} href="/notes/">
-                {note.data.publishedAt ? (
-                  <time datetime={note.data.publishedAt.toISOString()}>
-                    {note.data.publishedAt.toISOString().slice(0, 10)}
-                  </time>
-                ) : null}
+              <a class="note-line has-date" href="/notes/">
+                <time datetime={note.data.publishedAt.toISOString()}>
+                  {formatContentDate(note.data.publishedAt)}
+                </time>
                 <div class="note-text">
                   {title && <strong>{title}</strong>}
                   <span>{excerpt}</span>

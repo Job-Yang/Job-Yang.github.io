@@ -1,7 +1,7 @@
 ---
 title: "Multi-Agent Wiki 调研报告：一份\\\"反框架崇拜\\\"的多智能体工程手册"
 description: "这是一个由社区维护、聚焦\"多智能体（Multi-Agent System，MAS）\"的工程化参考站。作者的立场非常鲜明："
-publishedAt: 2026-08-13
+publishedAt: 2026-05-25T12:39:17.000Z
 category: "【费曼·实战复盘】"
 tags: []
 draft: false

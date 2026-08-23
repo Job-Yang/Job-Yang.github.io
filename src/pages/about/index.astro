@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageBackdrop from '../../components/PageBackdrop.astro';
 ---
 
 <BaseLayout
@@ -7,7 +8,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   description="关于老羊，以及微信公众号「老羊只是电子羊」。"
   active="about"
 >
-  <div class="space-fallback" slot="background"></div>
+  <PageBackdrop
+    slot="background"
+    src="/images/cosmic/about-planet-horizon.webp"
+    position="center right"
+    mobilePosition="62% top"
+    mobileOpacity={0.58}
+    effect="planet"
+  />
   <div class="page-shell">
     <div class="reading about-page">
       <section>
@@ -122,6 +130,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   @media (max-width: 620px) {
     .about-page {
       padding-top: 64px;
+    }
+
+    .about-page h1 {
+      font-size: 38px;
     }
 
     .wechat {

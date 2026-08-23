@@ -1,0 +1,297 @@
+<aside class="ambient-audio" data-ambient-audio aria-label="首页背景音乐">
+  <audio preload="metadata"></audio>
+  <button class="audio-toggle" type="button" aria-label="播放背景音乐" title="播放或暂停背景音乐">
+    <span class="audio-meter" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="audio-copy">
+      <span class="audio-state">BGM</span>
+      <span class="track-name" aria-live="polite"></span>
+    </span>
+  </button>
+  <button class="audio-next" type="button" aria-label="切换背景音乐" title="切换背景音乐">
+    <span aria-hidden="true">↦</span>
+  </button>
+</aside>
+
+<script>
+  const host = document.querySelector('[data-ambient-audio]') as HTMLElement;
+  if (host) {
+    const audio = host.querySelector('audio') as HTMLAudioElement;
+    const toggle = host.querySelector('.audio-toggle') as HTMLButtonElement;
+    const next = host.querySelector('.audio-next') as HTMLButtonElement;
+    const state = host.querySelector('.audio-state') as HTMLSpanElement;
+    const name = host.querySelector('.track-name') as HTMLSpanElement;
+    const tracks = [
+      {
+        src: '/assets/cosmic/echoes-in-the-stone.mp3',
+        title: 'Echoes in the Stone',
+      },
+      {
+        src: '/assets/cosmic/echoes-of-the-void.mp3',
+        title: 'Echoes of the Void',
+      },
+    ];
+    const fadeSeconds = 5;
+    const targetVolume = 0.34;
+    let current = Math.floor(Math.random() * tracks.length);
+    let wantsPlayback = sessionStorage.getItem('ambient-bgm') !== 'paused';
+    let audioContext: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let frequencyData: Uint8Array<ArrayBuffer> | null = null;
+    let meterFrame = 0;
+
+    const averageBand = (data: Uint8Array<ArrayBuffer>, start: number, end: number) => {
+      let total = 0;
+      for (let index = start; index < end; index += 1) total += data[index] ?? 0;
+      return total / Math.max(end - start, 1) / 255;
+    };
+
+    const drawMeter = () => {
+      if (!analyser || !frequencyData || audio.paused) {
+        host.style.setProperty('--meter-low', '0.12');
+        host.style.setProperty('--meter-mid', '0.08');
+        host.style.setProperty('--meter-high', '0.05');
+        return;
+      }
+      analyser.getByteFrequencyData(frequencyData);
+      const third = Math.floor(frequencyData.length / 3);
+      const low = averageBand(frequencyData, 0, third);
+      const mid = averageBand(frequencyData, third, third * 2);
+      const high = averageBand(frequencyData, third * 2, frequencyData.length);
+      host.style.setProperty('--meter-low', String(Math.min(1, 0.2 + low * 2.8)));
+      host.style.setProperty('--meter-mid', String(Math.min(1, 0.14 + mid * 3)));
+      host.style.setProperty('--meter-high', String(Math.min(1, 0.1 + high * 3.5)));
+      host.dataset.audioLevel = ((low + mid + high) / 3).toFixed(3);
+      meterFrame = requestAnimationFrame(drawMeter);
+    };
+
+    const setupMeter = async () => {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.78;
+        frequencyData = new Uint8Array(analyser.frequencyBinCount);
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+      }
+      if (audioContext.state === 'suspended') await audioContext.resume();
+      cancelAnimationFrame(meterFrame);
+      meterFrame = requestAnimationFrame(drawMeter);
+    };
+
+    const updateUi = () => {
+      const playing = !audio.paused && !audio.ended;
+      host.classList.toggle('playing', playing);
+      toggle.setAttribute('aria-label', playing ? '暂停背景音乐' : '播放背景音乐');
+      state.textContent = playing ? 'PAUSE' : 'BGM';
+      name.textContent = tracks[current].title;
+    };
+
+    const selectTrack = (index: number, autoplay = false) => {
+      current = (index + tracks.length) % tracks.length;
+      audio.src = tracks[current].src;
+      audio.volume = targetVolume;
+      audio.load();
+      updateUi();
+      if (autoplay) {
+        audio.play().then(updateUi).catch(updateUi);
+      }
+    };
+
+    const play = async () => {
+      wantsPlayback = true;
+      sessionStorage.setItem('ambient-bgm', 'playing');
+      audio.volume = targetVolume;
+      await setupMeter();
+      audio.play().then(updateUi).catch(updateUi);
+    };
+
+    const pause = () => {
+      wantsPlayback = false;
+      sessionStorage.setItem('ambient-bgm', 'paused');
+      audio.pause();
+      cancelAnimationFrame(meterFrame);
+      drawMeter();
+      updateUi();
+    };
+
+    toggle.addEventListener('click', () => {
+      if (audio.paused) play();
+      else pause();
+    });
+
+    next.addEventListener('click', () => {
+      selectTrack(current + 1, wantsPlayback);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (!Number.isFinite(audio.duration)) return;
+      const remaining = audio.duration - audio.currentTime;
+      audio.volume =
+        remaining < fadeSeconds
+          ? targetVolume * Math.max(remaining / fadeSeconds, 0)
+          : targetVolume;
+    });
+
+    audio.addEventListener('ended', () => {
+      selectTrack(current + 1, wantsPlayback);
+    });
+    audio.addEventListener('play', () => {
+      setupMeter().catch(() => {});
+      updateUi();
+    });
+    audio.addEventListener('pause', updateUi);
+
+    selectTrack(current);
+
+    if (wantsPlayback) {
+      audio.play().then(updateUi).catch(() => {
+        const resume = (event: Event) => {
+          if (event.target instanceof Node && host.contains(event.target)) return;
+          document.removeEventListener('pointerdown', resume);
+          document.removeEventListener('keydown', resume);
+          if (!wantsPlayback) return;
+          setupMeter()
+            .then(() => audio.play())
+            .then(updateUi)
+            .catch(updateUi);
+        };
+        document.addEventListener('pointerdown', resume, { passive: true });
+        document.addEventListener('keydown', resume);
+      });
+    }
+
+    window.addEventListener(
+      'pagehide',
+      () => {
+        cancelAnimationFrame(meterFrame);
+        audioContext?.close();
+      },
+      { once: true },
+    );
+  }
+</script>
+
+<style>
+  .ambient-audio {
+    position: fixed;
+    top: 72px;
+    right: 28px;
+    z-index: 70;
+    display: grid;
+    width: 220px;
+    grid-template-columns: minmax(0, 1fr) 40px;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(3, 3, 3, 0.88);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(18px);
+  }
+
+  .ambient-audio button {
+    display: inline-flex;
+    height: 40px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+
+  .audio-toggle {
+    min-width: 0;
+    padding: 0 12px !important;
+    justify-content: flex-start !important;
+    gap: 8px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .audio-copy {
+    display: grid;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .audio-state {
+    color: var(--ink);
+    font: 9px/1.2 var(--mono);
+    letter-spacing: 0.1em;
+  }
+
+  .audio-meter {
+    display: flex;
+    width: 15px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .audio-meter i {
+    width: 2px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform-origin: center;
+    transition: transform 80ms linear, opacity 160ms linear;
+  }
+
+  .audio-meter i:nth-child(1) {
+    transform: scaleY(var(--meter-low, 0.12));
+  }
+
+  .audio-meter i:nth-child(2) {
+    transform: scaleY(var(--meter-mid, 0.08));
+  }
+
+  .audio-meter i:nth-child(3) {
+    transform: scaleY(var(--meter-high, 0.05));
+  }
+
+  .audio-next {
+    font-size: 18px;
+  }
+
+  .ambient-audio button:hover,
+  .ambient-audio button:focus-visible {
+    color: var(--ink);
+  }
+
+  .ambient-audio:hover {
+    border-color: rgba(245, 185, 113, 0.5);
+  }
+
+  .track-name {
+    display: block;
+    max-width: 142px;
+    overflow: hidden;
+    color: var(--ink-faint);
+    font: 8px/1.35 var(--mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 720px) {
+    .ambient-audio {
+      top: 64px;
+      right: 18px;
+      width: 78px;
+      grid-template-columns: 40px 34px;
+    }
+
+    .audio-copy {
+      display: none;
+    }
+
+    .audio-toggle {
+      justify-content: center !important;
+      padding: 0 !important;
+    }
+  }
+
+</style>

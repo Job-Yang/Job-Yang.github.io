@@ -1,11 +1,12 @@
 ---
 title: "一个真正能查问题的 Oncall 助手应该怎么设计？"
 description: "它不是根据知识库回答常见问题，而是会查指标、实验、日志和源码，用证据排除假设，最后给出根因和止损建议。"
-publishedAt: 2026-08-18
+publishedAt: 2026-08-18T14:15:33.000Z
 category: "AI / 工程"
 tags: ["Oncall Agent", "iLoop", "持续诊断", "证据闭环"]
 featured: true
 pinned: true
+pinOrder: 4
 editorialRank: 96
 draft: false
 source: public-rewrite

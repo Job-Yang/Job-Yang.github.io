@@ -1,7 +1,7 @@
 ---
 title: "Agent / Skill / MCP：区别、选型与实战"
 description: "最关键的认知：它们不在同一层。Agent 在最外层，Skill / MCP 是喂给它的\"料\"。"
-publishedAt: 2026-08-13
+publishedAt: 2026-06-05T08:32:13.000Z
 category: "【费曼·调研】"
 tags: []
 draft: false

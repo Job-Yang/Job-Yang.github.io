@@ -1,7 +1,7 @@
 ---
 title: "PocketLens：客户端工程师从零到一把多模态 AI 装进 iPhone"
 description: "以 iPhone 12 Pro Max 为设备基线，从本地图片问答走到相机、语音、流式输出和端云路由，完整跑通一个多模态 AI 客户端。"
-publishedAt: 2026-07-29
+publishedAt: 2026-07-29T09:57:55.000Z
 category: "iOS / AI"
 tags: ["PocketLens", "多模态", "端侧 AI", "iOS"]
 featured: true

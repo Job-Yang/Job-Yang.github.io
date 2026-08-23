@@ -1,7 +1,7 @@
 ---
 title: "obra/superpowers 调研：AI 编码 Agent 的全流程自治框架"
 description: "Skill 无需手动调用，Agent 根据上下文自动激活对应 skill："
-publishedAt: 2026-08-13
+publishedAt: 2026-05-22T08:08:31.000Z
 category: "【费曼·调研】"
 tags: []
 draft: false

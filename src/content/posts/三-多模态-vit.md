@@ -1,7 +1,7 @@
 ---
 title: "三、多模态 ViT"
 description: "大模型怎么看懂一张猫的图片？对客户端开发来说，这就叫\"统一数据模型 (Unified Model)\"。"
-publishedAt: 2026-08-13
+publishedAt: 2026-07-06T08:22:52.000Z
 category: "AI 底层原理连载"
 tags: []
 draft: false
@@ -77,13 +77,13 @@ flowchart TD
 | 交叉融合 | Flamingo、BLIP-2 | CALayer mask，文字主干上"贴"图像信息 | 高效处理多张图、长视频 |
 
 > 📚 **推荐阅读**：
-> 
+>
 > \- [An Image is Worth 16x16 Words (Dosovitskiy et al., 2020)](https://arxiv.org/abs/2010.11929)：ViT 架构开山之作。
-> 
+>
 > \- [Learning Transferable Visual Models From Natural Language Supervision (OpenAI CLIP, 2021)](https://arxiv.org/abs/2103.00020)：多模态对齐核心基石。
 
 ---
 
 > [!NOTE]
 > **下期预告 · 第 5 期**
-> 会读会看之后，模型还差最后一口气：像人一样**慢慢想**，而不是脱口而出。下一篇，聊最前沿的深度思考模型 System 2——用算力换逻辑。
+> 会读会看之后，模型还差最后一口气：像人一样**慢慢想**，而不是脱口而出。下一篇，聊最前沿的深度思考模型 System 2，用算力换逻辑。

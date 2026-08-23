@@ -1,7 +1,7 @@
 ---
 title: "XcodeBuildMCP 还能这么玩？"
-description: "整体分四层,从下往上各管一段:"
-publishedAt: 2026-08-13
+description: "整体分四层，从下往上各管一段："
+publishedAt: 2026-05-19T13:13:21.000Z
 category: "【费曼·调研】"
 tags: []
 draft: false
@@ -12,26 +12,26 @@ review_required: true
 ---
 > [!NOTE]
 > **一句话定位**：XcodeBuildMCP 把 `xcodebuild` / `xcrun simctl` / AXe / LLDB / xcresult 全部包成 MCP 工具，给 IDE 智能体一个稳定、结构化、可并发的 iOS/macOS 工程操作面板。
-> **本篇定位**：跳过安装小白教程，专注 **高阶玩法** —— UI 自动化与录屏、LLDB 调试、测试与覆盖率、**多工程并行**，以及来自 8 个 App 实战的社区配置工程经验。
+> **本篇定位**：跳过安装小白教程，专注 高阶玩法：UI 自动化与录屏、LLDB 调试、测试与覆盖率、**多工程并行**，以及来自 8 个 App 实战的社区配置工程经验。
 > **核心信源**：[XcodeBuildMCP Docs](https://www.xcodebuildmcp.com/docs)、Blake Crosley 的 [iOS Agent Development Practitioner's Guide](https://blakecrosley.com/guides/ios-agent-development)（8 个上架 App / 293 个 Swift 文件实战）、Sentry 官方 workshop、Cameron Cooke 在 VS Code 频道的演示、Reddit r/iOSProgramming、Level Up Coding《自动化 80% iOS 工作流》。
 
-# 原理速览:它到底怎么跑起来的
+# 原理速览：它到底怎么跑起来的
 
 > [!NOTE]
-> 一句话:它把 Xcode 那套命令行工具(`xcodebuild` / `simctl` / `devicectl` / `lldb` / `AXe`)包成一层 MCP 中间层,让 Agent 用稳定的工具接口去操控 Xcode,而不是自己拼又长又脆的命令行。
+> 一句话：它把 Xcode 那套命令行工具（`xcodebuild` / `simctl` / `devicectl` / `lldb` / `AXe`）包成一层 MCP 中间层，让 Agent 用稳定的工具接口去操控 Xcode，而不是自己拼又长又脆的命令行。
 
-整体分四层,从下往上各管一段:
+整体分四层，从下往上各管一段：
 
 | 层 | 干的活 | 底层依赖 |
 |-|-|-|
-| **协议层** | MCP over stdio,跟 Agent 客户端对话;Server 模式和 CLI 模式共用同一份代码、同一份配置 | Model Context Protocol |
-| **工具层** | 82 个 tool 把命令行薄封装一层,工具名和参数**按版本号锁定**,Xcode 怎么变接口不变 | xcodebuild / simctl / devicectl / lldb |
-| **输出层** | 把原始日志**预解析成结构化诊断**,编译错误单独拎出来,Agent 不用自己从几百行里捞 | 自研解析 + NDJSON 流 |
-| **状态层** | session defaults 设一次工程/scheme/模拟器后免重复供参;per-workspace daemon 托管录屏、调试、抓日志这类有状态操作 | 后台守护进程 |
+| **协议层** | MCP over stdio，跟 Agent 客户端对话；Server 模式和 CLI 模式共用同一份代码、同一份配置 | Model Context Protocol |
+| **工具层** | 82 个 tool 把命令行薄封装一层，工具名和参数**按版本号锁定**，Xcode 怎么变接口不变 | xcodebuild / simctl / devicectl / lldb |
+| **输出层** | 把原始日志**预解析成结构化诊断**，编译错误单独拎出来，Agent 不用自己从几百行里捞 | 自研解析 + NDJSON 流 |
+| **状态层** | session defaults 设一次工程/scheme/模拟器后免重复供参；per-workspace daemon 托管录屏、调试、抓日志这类有状态操作 | 后台守护进程 |
 
 ## UI 自动化是怎么做到的
 
-关键在它接了一个叫 **AXe** 的桥(早期版本用 Facebook 的 `idb_companion`),这个桥底层调的是 **Apple 自己的 Accessibility(无障碍)API** 加 **HID(模拟硬件输入)**。所以 Agent 既能像真人一样点屏幕、滑动、打字,又能"看见"界面上有哪些元素 [XcodeBuildMCP UI Automation](https://www.async-let.com/posts/xcodebuild-ui-automation)。一个典型闭环长这样:
+关键在它接了一个叫 **AXe** 的桥(早期版本用 Facebook 的 `idb_companion`），这个桥底层调的是 **Apple 自己的 Accessibility(无障碍)API** 加 **HID(模拟硬件输入)**。所以 Agent 既能像真人一样点屏幕、滑动、打字，又能"看见"界面上有哪些元素 [XcodeBuildMCP UI Automation](https://www.async-let.com/posts/xcodebuild-ui-automation)。一个典型闭环长这样：
 
 ```mermaid
 flowchart TD
@@ -44,19 +44,19 @@ flowchart TD
   F -->|符合| G[完成]
 ```
 
-## 问题一:运行起来自动跳转一个 URL Scheme,能吗?
+## 问题一：运行起来自动跳转一个 URL Scheme，能吗？
 
-能。模拟器跳 URL Scheme / Deeplink 的底层就是 `xcrun simctl openurl myapp://path`,XcodeBuildMCP 把它包成一个工具。所以你让 Agent "启动后跳到某个页面",它会先 `build_run_sim` 把 app 跑起来,再调 openurl 把你的 scheme 发给模拟器,系统路由到你的 app,触发 `SceneDelegate` / `onOpenURL` 里的处理逻辑——和你手动在 Safari 里敲这个链接是完全一样的效果。
+能。模拟器跳 URL Scheme / Deeplink 的底层就是 `xcrun simctl openurl myapp://path`,XcodeBuildMCP 把它包成一个工具。所以你让 Agent "启动后跳到某个页面"，它会先 `build_run_sim` 把 app 跑起来，再调 openurl 把你的 scheme 发给模拟器，系统路由到你的 app，触发 `SceneDelegate` / `onOpenURL` 里的处理逻辑——和你手动在 Safari 里敲这个链接是完全一样的效果。
 
-## 问题二:能找到某个 UI 元素并触发点击吗?
+## 问题二：能找到某个 UI 元素并触发点击吗？
 
-能,而且有两条路:
+能，而且有两条路：
 
-1. **按坐标点**:先 `describe_ui` 把整棵 accessibility 层级 dump 出来(每个元素的类型、label、frame 坐标都在里面),Agent 算出目标元素的中心点,再 `tap x y` 点下去。
-2. **按无障碍标识点**:AXe 支持直接用 accessibility id / label 定位元素并点击,不用自己算坐标——前提是你给控件设了 `accessibilityIdentifier`。
+1. **按坐标点**：先 `describe_ui` 把整棵 accessibility 层级 dump 出来（每个元素的类型、label、frame 坐标都在里面），Agent 算出目标元素的中心点，再 `tap x y` 点下去。
+2. **按无障碍标识点**：AXe 支持直接用 accessibility id / label 定位元素并点击，不用自己算坐标，前提是你给控件设了 `accessibilityIdentifier`。
 
 > [!NOTE]
-> 常踩的坑:别拿 `screenshot` 的像素去猜坐标。截图是给人和模型"看个大概"的,真正能精确点中的坐标在 `describe_ui` 返回的 frame 里,以它为准。
+> 常踩的坑：别拿 `screenshot` 的像素去猜坐标。截图是给人和模型"看个大概"的，真正能精确点中的坐标在 `describe_ui` 返回的 frame 里，以它为准。
 
 ---
 
@@ -85,7 +85,7 @@ brew install cameroncooke/xcodebuildmcp/xcodebuildmcp
 | **Codex CLI** + XcodeBuildMCP | "第二意见" 评审、headless 批处理、CI 集成；适合 SpriteKit / Metal 这种容易模型偏见的领域 | Hook 系统不如 Claude Code 成熟（v0.119.0+ 才支持） |
 
 > [!NOTE]
-> **Blake 的搭配公式**：90% 的 MCP 调用走 XcodeBuildMCP（不依赖 Xcode 进程，更快更稳）；剩下 10% 走 Apple 的 `xcrun mcpbridge`，专门用它独有的三件事 —— `ExecuteSnippet`（Swift REPL）、`RenderPreview`（无头跑 SwiftUI Preview）、`XcodeListNavigatorIssues`（拿 Xcode Analyzer 实时诊断，不只是 build error）。
+> **Blake 的搭配公式**：90% 的 MCP 调用走 XcodeBuildMCP（不依赖 Xcode 进程，更快更稳）；剩下 10% 走 Apple 的 `xcrun mcpbridge`，专门用它独有的三件事：`ExecuteSnippet`（Swift REPL）、`RenderPreview`（无头跑 SwiftUI Preview）、`XcodeListNavigatorIssues`（拿 Xcode Analyzer 实时诊断，不只是 build error）。
 
 ---
 
@@ -137,7 +137,7 @@ flowchart LR
 | 阶段 | 工具 | 说明 |
 |-|-|-|
 | 启动 / 接入 | `debug_launch_sim`、`debug_attach_sim`、`debug_attach_macos` | launch 会同时 build + install + 起 LLDB；attach 走 PID 或 bundleId |
-| 断点 | `debug_set_breakpoint`、`debug_list_breakpoints`、`debug_remove_breakpoint` | 支持文件:行、Symbol、正则；条件断点用 `condition` 字段 |
+| 断点 | `debug_set_breakpoint`、`debug_list_breakpoints`、`debug_remove_breakpoint` | 支持文件：行、Symbol、正则；条件断点用 `condition` 字段 |
 | 执行控制 | `debug_continue`、`debug_step_over/in/out`、`debug_pause` | 所有命令是异步的，下一步用 `debug_get_state` 拉当前线程状态 |
 | 查看现场 | `debug_get_threads`、`debug_get_frames`、`debug_get_variables` | variables 默认按 scope（locals/args/registers）分组返回 |
 | 表达式 | `debug_evaluate` | 等价 `po` / `p`，结果走结构化 envelope，避免解析 LLDB 文本 |
@@ -218,7 +218,7 @@ flowchart LR
 | 构建产物 | 每个 workspace 独立 `derivedDataPath` | session defaults 或 per-call 参数 |
 | 配置层级 | `session_set_defaults` > `config.yaml` > env | 同一台 Mac 多工程互不串 |
 
-## 5.2 玩法 A：多工程并行 —— 每个工程一个 `.cursor/mcp.json`
+## 5.2 玩法 A：多工程并行：每个工程一个 `.cursor/mcp.json`
 
 ```json
 {
@@ -248,7 +248,7 @@ flowchart LR
 
 两个 Cursor / VS Code / Claude Desktop 窗口同时开，各自的 Agent 会拉起独立 daemon、独立 DerivedData、独立 sim 上下文，**真正并行 build / test / debug**。
 
-## 5.3 玩法 B：同工程多 Feature 并行 —— Git Worktree
+## 5.3 玩法 B：同工程多 Feature 并行：Git Worktree
 
 > [!NOTE]
 > 多 Claude Code 会话开在同一目录会互相踩 `DerivedData` 与未提交改动；naive 复制仓库又同步不了 commit。社区现在主推 **git worktree 隔离**。
@@ -273,7 +273,7 @@ cd ../MyApp-refactor   && XCODEBUILDMCP_CWD=$PWD claude
 - **Branch 隔离**：天然走 PR 流；Agent commit 在自己分支，最后人来 review + merge
 - **对比赛马**：让 3 个 Agent 在 3 个 worktree 里实现同一个 feature，挑最干净的那个 merge
 
-## 5.4 玩法 C：Monorepo —— 用 Profile 区分子工程
+## 5.4 玩法 C：Monorepo：用 Profile 区分子工程
 
 ```yaml
 sessionDefaultsProfiles:
@@ -303,10 +303,10 @@ sessionDefaultsProfiles:
 ## 6.1 必备六段式
 
 1. **Project Overview**：Bundle ID、最低部署版本、架构（SwiftUI + @Observable / UIKit / SpriteKit）、Swift 版本
-2. **Project Structure**：每个文件后跟一行行内注释，例如 `TimerManager.swift # Timer state, logic, and repeat handling` —— Blake 说这是"**单位字符产出最高的文档**"
+2. **Project Structure**：每个文件后跟一行行内注释，例如 `TimerManager.swift # Timer state, logic, and repeat `handling，Blake 说这是"**单位字符产出最高的文档**"
 3. **Build & Test Commands**：写出 raw `xcodebuild` 命令 + 一句 "Prefer MCP tools (build_sim, test_sim) over raw commands"
 4. **Key Patterns and Rules**：例如"`@Query` 只能在 View 里、`modelContext.fetch()` 在 Manager 里"
-5. **Things the Agent Must Never Do**：负向约束比正向建议管用得多 —— 二元判定 vs 启发式
+5. **Things the Agent Must Never Do**：负向约束比正向建议管用得多，二元判定 vs 启发式
 6. **Framework-Specific Context**：HealthKit 权限、SwiftData 关系、SpriteKit 节点层级、Metal pipeline 这些 Agent 看不出来的隐性知识
 
 ## 6.2 教会 Agent 用 MCP（这段直接抄进 CLAUDE.md）
@@ -340,7 +340,7 @@ MCP returns structured JSON. Bash returns unstructured text.
 | PostToolUse | 每次写完代码自动 `build_sim` + `test_sim`，把失败原因塞回上下文 | 多文件改完之后 |
 | Stop | 会话结束自动 commit + 打 tag，方便回滚 | Agent 主动结束 |
 
-Blake 在他的 Claw 项目里用了 **84 个 hooks** 当编排层 —— 这套基础设施跨工程通用，迁过来只需要改一下路径。
+Blake 在他的 Claw 项目里用了 **84 个 hooks** 当编排层，这套基础设施跨工程通用，迁过来只需要改一下路径。
 
 ---
 
@@ -377,7 +377,7 @@ Blake 在他的 Claw 项目里用了 **84 个 hooks** 当编排层 —— 这套
 
 | 坑 | 现象 | 解法 |
 |-|-|-|
-| Agent 改 `.pbxproj` | 工程打不开 / scheme 消失 | PreToolUse hook 拦截；新增文件让用户在 Xcode 手动加进 target —— 这条边界**不能妥协** |
+| Agent 改 `.pbxproj` | 工程打不开 / scheme 消失 | PreToolUse hook 拦截；新增文件让用户在 Xcode 手动加进 target，这条边界**不能妥协** |
 | Code Signing | Agent 跑 `build_device` 一直失败 | 先在 Xcode 里手动开 Auto Signing 一次，让 Xcode 把证书写进 keychain，之后 MCP 才能复用 |
 | Apple MCP 一调就 hang | Xcode 没开 / 没接受过 license | Apple 的 `xcrun mcpbridge` 走 XPC 必须 Xcode 在跑；XcodeBuildMCP 没这个限制，优先它 |
 | Metal 视觉问题 | Agent build 通过但渲染错乱 | Simulator Metal 不代表设备 GPU；CLAUDE.md 强制写"**NEVER test Metal visual output in simulator — device only**" |
@@ -407,67 +407,67 @@ Blake 在他的 Claw 项目里用了 **84 个 hooks** 当编排层 —— 这套
 > **用好 XcodeBuildMCP 的两条铁律**：
 > 1. **显式传 ID**：多机 / 多工程时，`simulatorUuid`、`workspacePath`、`profile` 全部显式传，不要依赖默认。
 > 2. **用 structured envelope**：所有工具默认走结构化 schema，遇到一手日志先看 `data`，看不到再 fallback `raw`，避免让 Agent 解析未结构化文本。
-> **社区一段话结论**：让 XcodeBuildMCP 真正出货的 4 件事不是 prompt 工程，而是 **配置工程** —— 一份扎实的 CLAUDE.md（六段式 + MCP 优先指令）+ 一组保命的 hooks（首要：拦 .pbxproj 写入）+ 用 git worktree 把多 Agent 隔离开 + 三个 Runtime 各司其职。
+> **社区一段话结论**：让 XcodeBuildMCP 真正出货的 4 件事不是 prompt 工程，而是 配置工程：一份扎实的 CLAUDE.md（六段式 + MCP 优先指令）+ 一组保命的 hooks（首要：拦 .pbxproj 写入）+ 用 git worktree 把多 Agent 隔离开 + 三个 Runtime 各司其职。
 
 # 12. 新版本新特性(v2.6.x·基于旧版 2.5.x 的增量)
 
 > [!NOTE]
-> **深度起底看这里**:上面这节是 v2.6.x 的增量清单(有哪些新工具、新参数、怎么迁移)。如果你想搞懂**新 UI 自动化到底怎么跑起来的**——无障碍为什么算「私有 API」、elementRef「号码牌」和 screen hash「指纹」的底层原理、有没有中央服务器、本地 CLI 点一个按钮的完整交互流程、以及为什么快——单独写了一篇起底:[XcodeBuildMCP UI 自动化起底:从截图猜坐标到「号码牌」直操](/posts/xcodebuildmcp-ui-自动化起底/)。一句话剧透:没有新的定位原理,只是把甩给大模型的脏活自己接管了,省的是跟模型的来回。
+> **深度起底看这里**：上面这节是 v2.6.x 的增量清单（有哪些新工具、新参数、怎么迁移）。如果你想搞懂**新 UI 自动化到底怎么跑起来的**，讲清无障碍为什么算「私有 API」、elementRef「号码牌」和 screen hash「指纹」的底层原理、有没有中央服务器、本地 CLI 点一个按钮的完整交互流程、以及为什么快，单独写了一篇起底：[XcodeBuildMCP UI 自动化起底：从截图猜坐标到「号码牌」直操](/posts/xcodebuildmcp-ui-自动化起底/)。一句话剧透：没有新的定位原理，只是把甩给大模型的脏活自己接管了，省的是跟模型的来回。
 
 > [!NOTE]
-> 本篇正文的工具清单与玩法是基于 **v2.5.x** 封装调研的。2026-06 官方连发 **v2.6.0 / v2.6.1 / v2.6.2**,对 **UI 自动化**做了一次范式级重写(从"截图猜坐标"升级为"元素引用直接操作"),并新增了 headless、nextSteps 等能力。以下按"UI 自动化优先"梳理增量,信源:[XcodeBuildMCP Changelog](https://www.xcodebuildmcp.com/docs/changelog)、[Tools Reference](https://www.xcodebuildmcp.com/docs/tools)。当前线上 **v2.6.2 / 82 tools / 15 workflows / 需 Xcode 16+**。
+> 本篇正文的工具清单与玩法是基于 **v2.5.x** 封装调研的。2026-06 官方连发 **v2.6.0 / v2.6.1 / v2.6.2**，对 **UI 自动化**做了一次范式级重写（从"截图猜坐标"升级为"元素引用直接操作"），并新增了 headless、nextSteps 等能力。以下按"UI 自动化优先"梳理增量，信源：[XcodeBuildMCP Changelog](https://www.xcodebuildmcp.com/docs/changelog)、[Tools Reference](https://www.xcodebuildmcp.com/docs/tools)。当前线上 **v2.6.2 / 82 tools / 15 workflows / 需 Xcode 16+**。
 
 ## 12.1 UI 自动化范式重写(v2.6.0 的核心)
 
 > [!NOTE]
-> **一句话**:UI 工具不再只回一句"操作成功",而是**每次操作后顺带回传一份当前前台界面的轻量快照** —— 带稳定元素引用(elementRef,如 e1/e2)+ 屏幕哈希(screen hash)。Agent 拿到后可以**直接选下一个控件**,不用再截一次图、也不用重跑一次完整 accessibility dump。
+> **一句话**：UI 工具不再只回一句"操作成功"，而是**每次操作后顺带回传一份当前前台界面的轻量快照** ，带稳定元素引用（elementRef，如 e1/e2）+ 屏幕哈希（screen hash）。Agent 拿到后可以**直接选下一个控件**，不用再截一次图、也不用重跑一次完整 accessibility dump。
 
-在官方一个确定性的 Weather App 任务里,这套"操作即带上下文"的机制把 **墙钟时间砍掉约 70%、token 用量约 68%、工具调用次数约 76%**[XcodeBuildMCP Changelog](https://www.xcodebuildmcp.com/docs/changelog)。
+在官方一个确定性的 Weather App 任务里，这套"操作即带上下文"的机制把 **墙钟时间砍掉约 70%、token 用量约 68%、工具调用次数约 76%**[XcodeBuildMCP Changelog](https://www.xcodebuildmcp.com/docs/changelog)。
 
-**新旧闭环对比(这是和正文第 2 章最大的差异)**:
+**新旧闭环对比（这是和正文第 2 章最大的差异）**：
 
 | 维度 | 旧版 2.5.x(正文写法) | 新版 2.6.x |
 |-|-|-|
-| 看界面 | `describe_ui` dump 整棵树 → 自己算中心点坐标 | `snapshot_ui` 返回**稳定 elementRef + screen hash**,候选控件按真实无障碍数据排序 |
-| 点控件 | `tap x y`(按坐标) | `tap` 直接传 elementRef,不再猜坐标 |
-| 下一步 | 每步后重新 `screenshot` / 重新 describe | 上一步结果里已带快照 + `nextSteps` 建议,直接接着点 |
+| 看界面 | `describe_ui` dump 整棵树 → 自己算中心点坐标 | `snapshot_ui` 返回**稳定 elementRef + screen hash**，候选控件按真实无障碍数据排序 |
+| 点控件 | `tap x y`(按坐标) | `tap` 直接传 elementRef，不再猜坐标 |
+| 下一步 | 每步后重新 `screenshot` / 重新 describe | 上一步结果里已带快照 + `nextSteps` 建议，直接接着点 |
 | 多步同屏 | 一步一次往返 | `batch` 一次调用跑完多个同屏 tap |
-| 免刷新 | 无 | 传 `sinceScreenHash`,屏幕没变就跳过整份快照 |
+| 免刷新 | 无 | 传 `sinceScreenHash`，屏幕没变就跳过整份快照 |
 
 > [!NOTE]
-> **迁移提醒**:正文第 2 章"别拿截图像素猜坐标、用 `describe_ui` 的 frame"的建议在 2.6 进一步升级 —— 现在**连坐标都不用算了**,优先用 `snapshot_ui` 给的 elementRef 直接操作。`describe_ui` 时代的坐标流可作为兜底(自定义控件 / 无 a11y 标识时)。
+> **迁移提醒**：正文第 2 章"别拿截图像素猜坐标、用 `describe_ui` 的 frame"的建议在 2.6 进一步升级，现在**连坐标都不用算了**，优先用 `snapshot_ui` 给的 elementRef 直接操作。`describe_ui` 时代的坐标流可作为兜底（自定义控件 / 无 a11y 标识时）。
 
 ## 12.2 UI 自动化新增工具 / 参数
 
 | 新增项 | 类型 | 作用 | 关键点 |
 |-|-|-|-|
-| `wait_for_ui` | 新工具 | 轮询界面直到条件满足 | 谓词支持:元素存在 / enabled / focus / 可见文本 / 布局稳定(settled),替代盲目 sleep |
-| `batch` | 新工具 | 一次调用执行一串 elementRef 动作 | 入参 key 是 `steps`(不是 commands),每步形如 `{"action":"tap","elementRef":"e1"}`;开关类控件省略 preDelay/postDelay |
-| `drag` | 新工具 | 基于可见 elementRef 的拖拽手势 | 展开 sheet、滚动真实列表区域,**不用屏幕坐标**;执行后回传刷新后的 UI 快照 |
-| `snapshot_ui` | 增强 | 返回稳定 elementRef + screen hash | 传 `sinceScreenHash`(MCP)/ `--since-screen-hash`(CLI),屏幕没变时跳过完整快照 |
-| `type_text` | 增强 | 新增 `replaceExisting` | 替换输入框现有内容,而不是追加 |
+| `wait_for_ui` | 新工具 | 轮询界面直到条件满足 | 谓词支持：元素存在 / enabled / focus / 可见文本 / 布局稳定（settled），替代盲目 sleep |
+| `batch` | 新工具 | 一次调用执行一串 elementRef 动作 | 入参 key 是 `steps`（不是 commands），每步形如 `{"action":"tap","elementRef":"e1"}`；开关类控件省略 preDelay/postDelay |
+| `drag` | 新工具 | 基于可见 elementRef 的拖拽手势 | 展开 sheet、滚动真实列表区域，**不用屏幕坐标**；执行后回传刷新后的 UI 快照 |
+| `snapshot_ui` | 增强 | 返回稳定 elementRef + screen hash | 传 `sinceScreenHash`(MCP)/ `--since-screen-hash`（CLI），屏幕没变时跳过完整快照 |
+| `type_text` | 增强 | 新增 `replaceExisting` | 替换输入框现有内容，而不是追加 |
 
 > [!NOTE]
-> **v2.6.1 补丁**:修了 tab bar 项发现问题,Agent 现在能正确切换 `UITabBar` 的 tab([#439/#441](https://www.xcodebuildmcp.com/docs/changelog))。做底部 tab 导航的 UI 流建议直接升到 2.6.1+。
+> **v2.6.1 补丁**：修了 tab bar 项发现问题，Agent 现在能正确切换 `UITabBar` 的 tab([#439/#441](https://www.xcodebuildmcp.com/docs/changelog))。做底部 tab 导航的 UI 流建议直接升到 2.6.1+。
 
-## 12.3 nextSteps:机器可读的"下一步建议"
+## 12.3 nextSteps：机器可读的"下一步建议"
 
 > [!NOTE]
-> 结果里新增 `nextSteps` 字段,把"接下来该干嘛"结构化给出来,Agent 不用再从 prose 里猜:
-> - MCP 端:`structuredContent` 里带 **MCP 工具调用提示**(指向具体 elementRef,而非猜的坐标)
-> - CLI 端:`--output json` 里带 **可直接执行的 shell 命令行**  
-> 带 `nextSteps` 的结果 schema 升到 **version 2**;老的 v1 schema 文件仍保留给存量校验器,不算破坏性变更。
+> 结果里新增 `nextSteps` 字段，把"接下来该干嘛"结构化给出来，Agent 不用再从 prose 里猜：
+> - MCP 端：`structuredContent` 里带 **MCP 工具调用提示**（指向具体 elementRef，而非猜的坐标）
+> - CLI 端：`--output json` 里带 **可直接执行的 shell 命令行**
+> 带 `nextSteps` 的结果 schema 升到 **version 2**；老的 v1 schema 文件仍保留给存量校验器，不算破坏性变更。
 
 ## 12.4 其他值得打开 / 注意的增量
 
 | 项 | 说明 | 归类 |
 |-|-|-|
-| `XCODEBUILDMCP_HEADLESS_LAUNCH` | 新增可选 headless 模式:macOS app 后台启动、不把模拟器窗口抢到前台(模拟器仍照常 boot),键盘快捷键类动作会**明确 fast-fail** 提示需要前台焦点。**适合 CI / 无人值守跑批**,不打断你手头操作 | 环境变量 |
-| 结构化输出修复 | 发布的 schema 现在**自包含**,解决了 JSON Schema 2020-12 校验器的 `PointerToNowhere` 类加载失败;之前载不进工具的 MCP 客户端恢复正常 | 修复 |
-| `debug_attach_sim` 校验 | schema 明确 `pid` 必须**单独用**(不能与 bundleId / waitFor 同时给);非法的 `pid + waitFor:true` 在调 LLDB 前就报错 | 修复 |
-| `type_text` 国际字符 | AXe 打不出的字符(重音符 / 其他国际字符)现在在聚焦输入框**之前**就给出可恢复错误,不再是笼统的输入失败 | 修复 |
-| CLI 数字数组入参 | 逗号分隔如 `--key-codes 23,18,14` 现在正确按数字解析,不再校验失败 | 修复 |
-| `xcodebuildmcp upgrade`(v2.6.2) | 更新检查以**最新 GitHub release** 为准(不再用过期的包管理器元数据),跨多版本升级能正确显示目标版本 release notes | 修复 |
+| `XCODEBUILDMCP_HEADLESS_LAUNCH` | 新增可选 headless 模式：macOS app 后台启动、不把模拟器窗口抢到前台（模拟器仍照常 boot），键盘快捷键类动作会**明确 fast-fail** 提示需要前台焦点。**适合 CI / 无人值守跑批**，不打断你手头操作 | 环境变量 |
+| 结构化输出修复 | 发布的 schema 现在**自包含**，解决了 JSON Schema 2020-12 校验器的 `PointerToNowhere` 类加载失败；之前载不进工具的 MCP 客户端恢复正常 | 修复 |
+| `debug_attach_sim` 校验 | schema 明确 `pid` 必须**单独用**（不能与 bundleId / waitFor 同时给）；非法的 `pid + waitFor:true` 在调 LLDB 前就报错 | 修复 |
+| `type_text` 国际字符 | AXe 打不出的字符(重音符 / 其他国际字符)现在在聚焦输入框**之前**就给出可恢复错误，不再是笼统的输入失败 | 修复 |
+| CLI 数字数组入参 | 逗号分隔如 `--key-codes 23,18,14` 现在正确按数字解析，不再校验失败 | 修复 |
+| `xcodebuildmcp upgrade`(v2.6.2) | 更新检查以**最新 GitHub release** 为准（不再用过期的包管理器元数据），跨多版本升级能正确显示目标版本 release notes | 修复 |
 
 ## 12.5 新版 UI 自动化推荐闭环
 
@@ -487,4 +487,4 @@ flowchart TD
 ```
 
 > [!NOTE]
-> **升级动作**:`brew upgrade xcodebuildmcp` 或 `npm i -g xcodebuildmcp@latest`,也可直接 `xcodebuildmcp upgrade`(v2.6.2 起以最新 release 为准)。正文里所有 `describe_ui` + `tap x y` 的 UI 玩法,建议同步改写成 `snapshot_ui` + elementRef + `batch` 的新范式。
+> **升级动作**:`brew upgrade xcodebuildmcp` 或 `npm i -g xcodebuildmcp@latest`，也可直接 `xcodebuildmcp upgrade`（v2.6.2 起以最新 release 为准）。正文里所有 `describe_ui` + `tap x y` 的 UI 玩法，建议同步改写成 `snapshot_ui` + elementRef + `batch` 的新范式。

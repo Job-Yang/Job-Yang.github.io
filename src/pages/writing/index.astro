@@ -1,6 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SpaceModel from '../../components/SpaceModel.astro';
+import { formatContentDate } from '../../lib/dates';
 import { getLegacyPosts } from '../../lib/legacy';
 import { comparePosts } from '../../lib/posts';
 
@@ -14,7 +16,9 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
   description="关于 AI Agent、iOS、软件工程与实验记录的公开文章索引。"
   active="writing"
 >
-  <div class="space-fallback" slot="background"></div>
+  <div class="space-fallback writing-background" slot="background">
+    <SpaceModel model="station" class="writing-station" />
+  </div>
   <div class="page-shell">
     <header class="writing-intro writing-width">
       <div class="eyebrow">Writing Index</div>
@@ -39,7 +43,7 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
               <p>{post.data.description}</p>
               <div class="post-meta">
                 <time datetime={post.data.publishedAt.toISOString()}>
-                  {post.data.publishedAt.toISOString().slice(0, 10)}
+                  {formatContentDate(post.data.publishedAt)}
                 </time>
                 <span>{post.data.category}</span>
                 {post.data.readingMinutes && <span>{post.data.readingMinutes} min</span>}
@@ -88,6 +92,20 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
 </script>
 
 <style>
+  .writing-background {
+    overflow: hidden;
+  }
+
+  :global(.space-model.writing-station) {
+    position: absolute;
+    top: 6vh;
+    right: -5vw;
+    width: min(34vw, 560px);
+    height: 64vh;
+    opacity: 0.46;
+    mask-image: linear-gradient(90deg, transparent, black 32%);
+  }
+
   .writing-width {
     width: min(calc(100% - 72px), 1120px);
     margin-inline: auto;
@@ -252,6 +270,10 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
   }
 
   @media (max-width: 580px) {
+    :global(.space-model.writing-station) {
+      display: none;
+    }
+
     .writing-width {
       width: min(calc(100% - 36px), 1120px);
     }

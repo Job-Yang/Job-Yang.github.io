@@ -1,7 +1,7 @@
 ---
 title: "GitHub Spec Kit 技术调研报告"
 description: "调研对象：GitHub Spec Kit 官方文档"
-publishedAt: 2026-08-13
+publishedAt: 2026-05-20T10:07:04.000Z
 category: "【费曼·调研】"
 tags: []
 draft: false

@@ -1,14 +1,13 @@
 ---
 title: 软件的成本大头，从来不在写代码
 description: AI 把代码生产压到近乎免费，却把瓶颈推向理解、验证、信任和上下文。软件工程没有变便宜，只是成本搬家了。
-publishedAt: 2026-08-12
+publishedAt: 2026-07-06T03:52:23.000Z
 category: AI / 工程
 tags:
   - AI Agent
   - 软件工程
   - 理解债
 featured: true
-pinned: true
 editorialRank: 88
 readingMinutes: 14
 source: public-rewrite

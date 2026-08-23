@@ -1,9 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SpaceModel from '../components/SpaceModel.astro';
 ---
 
 <BaseLayout title="页面不存在" description="这个页面已经漂出航线。">
-  <div class="space-fallback" slot="background"></div>
+  <div class="space-fallback lost-background" slot="background">
+    <SpaceModel model="probe" class="lost-probe" />
+  </div>
   <section class="not-found reading">
     <div class="eyebrow">404 / Lost in Space</div>
     <h1 class="display">这个页面<br />已经漂出航线。</h1>
@@ -13,6 +16,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <style>
+  .lost-background {
+    overflow: hidden;
+  }
+
+  :global(.space-model.lost-probe) {
+    position: absolute;
+    top: 4vh;
+    right: 0;
+    width: min(58vw, 840px);
+    height: 82vh;
+    opacity: 0.72;
+    transform: rotate(-7deg);
+    mask-image: linear-gradient(90deg, transparent, black 26%);
+  }
+
   .not-found {
     position: relative;
     z-index: 2;
@@ -29,5 +47,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   p {
     margin-bottom: 32px;
     color: var(--ink-dim);
+  }
+
+  @media (max-width: 720px) {
+    :global(.space-model.lost-probe) {
+      top: 16vh;
+      right: -40vw;
+      width: 110vw;
+      height: 66vh;
+      opacity: 0.42;
+    }
   }
 </style>

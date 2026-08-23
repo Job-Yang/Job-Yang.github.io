@@ -18,7 +18,7 @@
  */
 
 import * as THREE from 'three/webgpu';
-import { uniform } from 'three/tsl';
+import { texture, uniform } from 'three/tsl';
 import { createBlackHoleShader } from './blackhole-shader.js';
 
 // ============================================================================
@@ -84,6 +84,8 @@ export class BlackHoleSimulation {
       starBrightness: uniform(config.starBrightness ?? 1.0),
       lensingAnchorsEnabled: uniform(config.lensingAnchorsEnabled ? 1.0 : 0.0),
       lensingAnchorBrightness: uniform(config.lensingAnchorBrightness ?? 0.8),
+      deepFieldTexture: config.deepFieldTexture ? texture(config.deepFieldTexture) : null,
+      deepFieldBrightness: uniform(config.deepFieldBrightness ?? 0.7),
 
       // === Nebula Layer 1 ===
       nebulaEnabled: uniform(config.nebulaEnabled ? 1.0 : 0.0),

@@ -1,11 +1,12 @@
 ---
 title: "论研发 Agent 的持续交付：iLoop 的设计思路"
 description: "iLoop 不做包办一切的超级 Agent，而是补上研发链路里常被忽略的反馈层：在真实工程和设备里，结果到底对不对，证据在哪里。"
-publishedAt: 2026-08-18
+publishedAt: 2026-06-13T12:25:11.000Z
 category: "AI / 工程"
 tags: ["iLoop", "VDD", "Agent Kernel", "持续交付"]
 featured: true
 pinned: true
+pinOrder: 1
 editorialRank: 98
 draft: false
 source: public-rewrite
