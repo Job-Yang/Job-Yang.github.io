@@ -10,7 +10,7 @@ tags:
   - Agent Skill
   - Video Analysis
   - UI Debugging
-order: 2
+order: 3
 featured: true
 draft: false
 visual: video

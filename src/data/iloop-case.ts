@@ -1,0 +1,283 @@
+export type CaseTone = 'pass' | 'fail' | 'return' | 'neutral';
+
+export interface CaseEvent {
+  node: number;
+  result: CaseTone;
+  message: string;
+  label?: string;
+}
+
+export interface ILoopRound {
+  id: string;
+  name: string;
+  state: string;
+  stateLabel: string;
+  focus: string;
+  summary: Array<[CaseTone, string]>;
+  finalLabel: string;
+  finalMessage: string;
+  events: CaseEvent[];
+}
+
+const event = (
+  node: number,
+  result: CaseTone,
+  message: string,
+  label = '',
+): CaseEvent => ({ node, result, message, label });
+
+export const ILOOP_STAGES = [
+  '目标边界',
+  '候选假设',
+  '最小改动',
+  '依赖生成',
+  '编译反馈',
+  '运行取证',
+  '证据判定',
+  '记录续跑',
+] as const;
+
+export const ILOOP_ROUNDS: ILoopRound[] = [
+  {
+    id: 'R01',
+    name: '连续十几个小时，跨夜续跑',
+    state: 'continued',
+    stateLabel: 'CONTINUED',
+    focus: '长任务靠外置状态续跑，不靠一个对话窗口硬撑。',
+    summary: [['pass', '8 节点通过'], ['pass', '跨夜续跑']],
+    finalLabel: '续跑',
+    finalMessage: '上下文重建后从下一候选继续，而非从头来',
+    events: [
+      event(0, 'pass', '恢复近百兆 SDK 的裁剪目标、边界和上次断点'),
+      event(1, 'pass', '读取未决候选，选择下一组最小闭包'),
+      event(2, 'pass', '只处理当前候选，不混入其它改动'),
+      event(3, 'pass', '重新生成依赖并记录本轮差异'),
+      event(4, 'pass', '构建通过，当前闭包未引入编译问题'),
+      event(5, 'pass', '拉起关键入口，未发现新增运行异常'),
+      event(6, 'pass', '本轮证据达到继续推进的门槛'),
+      event(7, 'pass', '写入证据与下一候选，跨夜后可从这里续跑'),
+    ],
+  },
+  {
+    id: 'R02',
+    name: '三次编译红，逐层补齐闭包',
+    state: 'accepted',
+    stateLabel: 'REPAIRED',
+    focus: '把连续编译错误当成依赖图探针，而不是重复撞同一个错误。',
+    summary: [['fail', '编译失败 ×3'], ['return', '逐层修复'], ['pass', '全链路通过']],
+    finalLabel: '修复完成',
+    finalMessage: '三次不同错误逐层暴露依赖，补回最小子闭包后构建通过',
+    events: [
+      event(0, 'pass', '锁定设置相关闭包，不扩大到整个模块'),
+      event(1, 'pass', '提出“该闭包可以独立排除”的候选假设'),
+      event(2, 'pass', '应用第一版最小裁剪改动'),
+      event(3, 'pass', '生成依赖图，准备第一次编译'),
+      event(4, 'fail', '编译 1 失败：外部模块仍强引用面板控制器'),
+      event(3, 'return', '补回控制器，重新生成依赖'),
+      event(4, 'fail', '编译 2 失败：内部 API 闭包仍缺失'),
+      event(3, 'return', '补回内部 API，第二次收窄依赖闭包'),
+      event(4, 'fail', '编译 3 失败：继续暴露服务强链接'),
+      event(3, 'return', '补回最后一段强链接，生成最小完整闭包'),
+      event(4, 'pass', '第四次编译通过，依赖闭包完整'),
+      event(5, 'pass', '关键入口拉起，运行链路正常'),
+      event(6, 'pass', '编译与运行证据共同支持本轮改动'),
+      event(7, 'pass', '记录三次失败和修复路径，进入下一候选'),
+    ],
+  },
+  {
+    id: 'R03',
+    name: '整块裁剪失败，主动收窄边界',
+    state: 'accepted',
+    stateLabel: 'NARROWED',
+    focus: '目录边界不等于业务边界，失败后必须缩小切口。',
+    summary: [['fail', '边界过宽'], ['return', '主动收窄'], ['pass', '验证通过']],
+    finalLabel: '收窄通过',
+    finalMessage: '只裁专用面板，保留共享命令与模型',
+    events: [
+      event(0, 'pass', '目标是裁掉专用 UI，不影响共享能力'),
+      event(1, 'pass', '先验证“整个目录都是独立闭包”的假设'),
+      event(2, 'pass', '第一版尝试排除整块专用 UI'),
+      event(3, 'pass', '生成依赖后发现共享命令仍在闭包内'),
+      event(4, 'fail', '链接失败：共享模型仍被其它链路使用'),
+      event(3, 'return', '撤销整块排除，只保留专用面板裁剪'),
+      event(4, 'pass', '收窄边界后重新编译通过'),
+      event(5, 'pass', '共享能力与目标页面均可正常运行'),
+      event(6, 'pass', '证据支持“只裁专用面板”的新边界'),
+      event(7, 'pass', '记录边界收窄结论并继续下一轮'),
+    ],
+  },
+  {
+    id: 'R04',
+    name: '三个候选同根因失败，止损跳过',
+    state: 'skipped',
+    stateLabel: 'SKIPPED',
+    focus: '连续失败说明假设已经被证伪，继续重试没有意义。',
+    summary: [['fail', '同根因失败 ×3'], ['return', '完整回补'], ['pass', '跳过并记录']],
+    finalLabel: '跳过',
+    finalMessage: '三个候选连续命中同一根因，保留该簇并切换下一候选',
+    events: [
+      event(0, 'pass', '圈定低频候选簇，要求失败后可完整恢复'),
+      event(1, 'pass', '选择第一个看似独立的候选'),
+      event(2, 'pass', '应用候选 1 的最小排除改动'),
+      event(3, 'pass', '生成候选 1 的依赖'),
+      event(4, 'fail', '候选 1 编译失败：存在闭包外引用'),
+      event(3, 'return', '回补候选 1，切换候选 2 并重新生成依赖'),
+      event(4, 'fail', '候选 2 再次命中同一类闭包外引用'),
+      event(3, 'return', '回补候选 2，切换候选 3 并重新生成依赖'),
+      event(4, 'fail', '候选 3 第三次命中同一根因'),
+      event(3, 'return', '回补候选 3，恢复现场后停止继续重试'),
+      event(6, 'neutral', '同根因达到止损阈值，判定该候选簇跳过', '跳过'),
+      event(7, 'pass', '记录三次失败与跳过原因，切换下一候选'),
+    ],
+  },
+  {
+    id: 'R05',
+    name: 'UI 证据否决后，回补恢复',
+    state: 'accepted',
+    stateLabel: 'RECOVERED',
+    focus: '构建成功和进程存活，都不能代替用户真正看到的页面。',
+    summary: [['fail', 'UI 证据否决'], ['return', '回补闭包'], ['pass', '再验证通过']],
+    finalLabel: '恢复通过',
+    finalMessage: '回补最小依赖后重新验证，关键 UI 恢复完整',
+    events: [
+      event(0, 'pass', '要求页面关键控件完整，而不只是能启动'),
+      event(1, 'pass', '假设当前裁剪不会影响目标页面'),
+      event(2, 'pass', '应用最小裁剪并保留可回退点'),
+      event(3, 'pass', '依赖生成成功，没有悬空引用'),
+      event(4, 'pass', '二进制构建通过，App 可以拉起'),
+      event(5, 'fail', 'UI 树与截图发现评论、关闭等关键元素缺失'),
+      event(2, 'return', '回退最小改动，补回 UI 所需依赖闭包'),
+      event(3, 'pass', '按新边界重新生成依赖'),
+      event(4, 'pass', '修复后再次编译通过'),
+      event(5, 'pass', '重新取证，关键 UI 元素恢复完整'),
+      event(6, 'pass', '视觉证据支持修复后的裁剪方案'),
+      event(7, 'pass', '记录 UI 反证与回补结果，继续下一轮'),
+    ],
+  },
+  {
+    id: 'R06',
+    name: '真机不崩，仍缺三类关键证据',
+    state: 'partial',
+    stateLabel: 'PARTIAL',
+    focus: '没有崩溃只能证明“活着”，不能证明功能正确。',
+    summary: [['fail', '证据不足'], ['return', '补采证据'], ['pass', 'PARTIAL 并记录']],
+    finalLabel: '证据不足',
+    finalMessage: '保持 PARTIAL，不用“没崩”冒充严格通过',
+    events: [
+      event(0, 'pass', '严格口径要求运行、视觉与关键日志同时成立'),
+      event(1, 'pass', '验证“真机不崩即可支持结论”的假设'),
+      event(2, 'pass', '应用候选改动并保留恢复点'),
+      event(3, 'pass', '依赖生成通过'),
+      event(4, 'pass', '真机构建、安装和启动均成功'),
+      event(5, 'pass', '目标入口可打开，进程持续存活'),
+      event(6, 'fail', '证据判定失败：缺截图、UI 层级和关键日志'),
+      event(5, 'return', '补采当前环境可获得的运行证据'),
+      event(6, 'neutral', '特殊场景证据仍不足，本轮保持 PARTIAL', '证据不足'),
+      event(7, 'pass', '记录证据缺口，不把“没崩”写成完成'),
+    ],
+  },
+  {
+    id: 'R07',
+    name: '本机生效，冷环境依赖却回灌',
+    state: 'accepted',
+    stateLabel: 'FORMALIZED',
+    focus: '单机成功不是可交付证据，换环境后仍成立才算闭环。',
+    summary: [['fail', '冷环境回灌'], ['return', '正式拆分'], ['pass', '双环境通过']],
+    finalLabel: '双环境通过',
+    finalMessage: '正式无依赖变体在两台环境构建一致',
+    events: [
+      event(0, 'pass', '要求裁剪结果在本机和冷环境都可复现'),
+      event(1, 'pass', '验证“本地 patch 已形成稳定方案”的假设'),
+      event(2, 'pass', '应用临时无依赖改动'),
+      event(3, 'pass', '本地缓存让依赖生成看起来正常'),
+      event(4, 'fail', '冷环境构建失败：旧依赖重新进入产物'),
+      event(3, 'return', '撤销临时 patch，改用正式无依赖变体'),
+      event(4, 'pass', '两台环境重新构建均通过'),
+      event(5, 'pass', '关键入口在冷环境正常运行'),
+      event(6, 'pass', '跨环境证据支持正式依赖方案'),
+      event(7, 'pass', '记录异机回灌根因与正式修复'),
+    ],
+  },
+  {
+    id: 'R08',
+    name: '源码零引用，运行时注册仍在',
+    state: 'guarded',
+    stateLabel: 'GUARDED',
+    focus: '静态扫描只能提出候选，动态入口是否存在决定能不能删。',
+    summary: [['fail', '动态注册反证'], ['return', '停止删除'], ['pass', '保留补证']],
+    finalLabel: '保留补证',
+    finalMessage: '证据不足，不修改工程并标记待补证',
+    events: [
+      event(0, 'pass', '删除前必须排除动态注册和特殊场景入口'),
+      event(1, 'pass', '源码直接引用为零，先列为候选'),
+      event(2, 'pass', '保持工程不变，只做反证检查'),
+      event(3, 'pass', '检查运行时组件表和配置入口'),
+      event(4, 'pass', '静态扫描确认没有直接调用'),
+      event(5, 'pass', '普通页面未观察到目标组件'),
+      event(6, 'fail', '运行时注册仍存在，零引用不足以证明可删'),
+      event(5, 'return', '补查特殊场景，仍无法排除动态入口'),
+      event(6, 'neutral', '证据不足，判定保留候选并继续补证', '保留补证'),
+      event(7, 'pass', '记录动态注册反证，本轮不修改工程'),
+    ],
+  },
+  {
+    id: 'R09',
+    name: 'Release 分析受阻，业务改动不背锅',
+    state: 'skipped',
+    stateLabel: 'BLOCKED',
+    focus: '环境故障必须和业务回归分开归因，不能为了过构建乱改代码。',
+    summary: [['fail', '工具链阻塞'], ['return', '隔离故障'], ['pass', '跳过并记录']],
+    finalLabel: '环境阻塞',
+    finalMessage: '不改基础设施、不虚报收益，恢复可用环境继续下一批',
+    events: [
+      event(0, 'pass', '目标是用 Release 产物量化真实收益'),
+      event(1, 'pass', '先区分业务失败与分析环境故障'),
+      event(2, 'pass', '保持业务改动不变，单独检查工具链'),
+      event(3, 'pass', '生成 Release 分析输入'),
+      event(4, 'fail', '分析工具与新构建配置不兼容'),
+      event(3, 'return', '隔离工具链故障，恢复可用分析环境'),
+      event(6, 'neutral', '判定为环境阻塞，不归因到业务改动', '环境阻塞'),
+      event(7, 'pass', '记录阻塞且不虚报收益，继续可验证批次'),
+    ],
+  },
+  {
+    id: 'R10',
+    name: '资源误删，只恢复明确强依赖',
+    state: 'accepted',
+    stateLabel: 'RECOVERED',
+    focus: '回退也要最小化，不能因为一个缺口把整包资源全部搬回。',
+    summary: [['fail', '资源缺失'], ['return', '最小点恢复'], ['pass', '再验证通过']],
+    finalLabel: '点恢复通过',
+    finalMessage: '不整包回拉其它无关资源',
+    events: [
+      event(0, 'pass', '只恢复运行强依赖，不整包撤销裁剪收益'),
+      event(1, 'pass', '假设缺口来自少量配置和图片'),
+      event(2, 'pass', '对照资源声明定位明确缺失项'),
+      event(3, 'pass', '第一版依赖生成通过'),
+      event(4, 'pass', '重新构建通过'),
+      event(5, 'fail', '运行取证发现基础配置悬空和部分图片缺失'),
+      event(2, 'return', '只补回强依赖配置与明确缺失图片'),
+      event(3, 'pass', '按点恢复结果重新生成依赖'),
+      event(4, 'pass', '点恢复后再次构建通过'),
+      event(5, 'pass', '关键入口与图片资源恢复正常'),
+      event(6, 'pass', '证据限定了需要恢复的最小集合'),
+      event(7, 'pass', '记录点恢复结果，保留其它裁剪收益'),
+    ],
+  },
+];
+
+export const ILOOP_CONSTRAINTS = [
+  ['C1', '目标没有现成答案', '只能说“尽可能瘦身”，没人能给最终删除清单'],
+  ['C2', '百万行级候选，边界动态', '反射、DI、配置和特殊场景让静态无引用失效'],
+  ['C3', '改动必须最小且可回退', '一刀过大会让编译错误和行为回归无法归因'],
+  ['C4', '每轮都要拿真实反馈', '生成依赖、编译、日志、UI 树、截图缺一不可'],
+  ['C5', '失败要修，也要知道停', '同类错误可修；顽固候选必须回补并跳过'],
+  ['C6', '十天级周期，人力不可达', '人工无法持续完成修改、验证、记录和下一轮决策'],
+] as const;
+
+export const ILOOP_VERDICTS = [
+  ['人工手改', 'kill', '✗ 不可达', '人能判断单个问题，但十天内读不完、改不完，也盯不住数百次反馈。'],
+  ['规则脚本', 'kill', '✗ 不成立', '脚本需要确定规则；这里的边界来自编译、运行和业务现场，写不成一套静态规则。'],
+  ['普通 AI 单次改', 'kill', '✗ 走不完', '能给一次修改，却不会持有长程状态、读取下一次反馈、回退并自行换候选。'],
+  ['AI Agent', 'win', '✓ 唯一可执行解', '持有目标与进度，调用工具拿反馈，根据证据修复、回退、跳过，再决定下一轮。'],
+] as const;

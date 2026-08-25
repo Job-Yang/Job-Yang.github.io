@@ -20,6 +20,8 @@ export async function GET() {
     url: `/writing/${p.id}/`,
     text: `${p.data.title} ${p.data.description} ${plain(p.body ?? '')}`,
     excerpt: p.data.description,
+    publishedAt: p.data.publishedAt.toISOString(),
+    updatedAt: (p.data.updatedAt ?? p.data.publishedAt).toISOString(),
   }));
   const notes = (await getCollection('notes', ({ data }) => !data.draft)).map((n) => ({
     type: 'note',
@@ -29,6 +31,8 @@ export async function GET() {
     url: '/notes/',
     text: `${n.data.title ?? ''} ${plain(n.body ?? '')}`,
     excerpt: plain(n.body ?? '', 90),
+    publishedAt: n.data.publishedAt.toISOString(),
+    updatedAt: n.data.publishedAt.toISOString(),
   }));
   const projects = (await getCollection('projects', ({ data }) => !data.draft)).map((p) => ({
     type: 'project',
@@ -38,6 +42,8 @@ export async function GET() {
     url: `/projects/${p.id}/`,
     text: `${p.data.title} ${p.data.description} ${p.data.statement} ${plain(p.body ?? '')}`,
     excerpt: p.data.statement,
+    publishedAt: null,
+    updatedAt: null,
   }));
   return new Response(JSON.stringify([...posts, ...notes, ...projects]), {
     headers: { 'Content-Type': 'application/json' },

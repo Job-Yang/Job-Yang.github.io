@@ -2,151 +2,691 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="搜索" description="搜索全部文章、手记与沉淀。">
-  <div class="space-fallback" slot="background"></div>
-  <div class="page-shell">
-    <header class="page-intro reading">
-      <div class="eyebrow">Search</div>
+<BaseLayout
+  title="搜索"
+  description="搜索全部文章、手记与沉淀。"
+  active="search"
+>
+  <div class="space-fallback search-background" slot="background"></div>
+  <div class="page-shell search-shell">
+    <header class="search-intro wide">
+      <div class="eyebrow">Content Index</div>
       <h1 class="display">搜索<span>。</span></h1>
-      <p>按标题、正文或分类检索全部文章、手记与沉淀。</p>
+      <p>从文章、手记和工程沉淀里，找到一个具体判断或一次真实实践。</p>
     </header>
 
-    <section class="reading search-panel">
-      <input
-        id="q"
-        type="search"
-        placeholder="输入关键词…"
-        autocomplete="off"
-        aria-label="搜索关键词"
-      />
-      <p id="hint" class="hint">共 <span id="total">0</span> 项可搜索内容</p>
-      <ul id="results" class="results"></ul>
-      <p id="empty" class="empty" hidden>没有匹配的内容。</p>
+    <section class="search-workspace wide" aria-label="站内搜索">
+      <div class="search-dock">
+        <div class="search-field">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            id="q"
+            type="search"
+            placeholder="搜索 iLoop、Agent、端侧推理…"
+            autocomplete="off"
+            aria-label="搜索关键词"
+            aria-controls="results"
+          />
+          <kbd aria-label="按斜杠键聚焦搜索">/</kbd>
+          <button id="clear" type="button" aria-label="清空搜索" title="清空搜索" hidden>×</button>
+        </div>
+
+        <div class="search-toolbar">
+          <div class="filters" role="tablist" aria-label="内容类型">
+            <button type="button" role="tab" aria-selected="true" data-type="all">全部</button>
+            <button type="button" role="tab" aria-selected="false" data-type="article">文章</button>
+            <button type="button" role="tab" aria-selected="false" data-type="note">手记</button>
+            <button type="button" role="tab" aria-selected="false" data-type="project">沉淀</button>
+          </div>
+          <p id="status" class="status" aria-live="polite">正在建立索引</p>
+        </div>
+      </div>
+
+      <div class="result-shell">
+        <header class="result-head">
+          <span id="result-label">最近更新</span>
+          <span id="result-count"></span>
+        </header>
+        <ol id="results" class="results"></ol>
+        <div id="empty" class="empty" hidden>
+          <strong>没有找到匹配内容</strong>
+          <p>换一个更短的关键词，或切回“全部”再试。</p>
+        </div>
+      </div>
     </section>
   </div>
 </BaseLayout>
 
 <script>
+  interface SearchItem {
+    type: 'article' | 'note' | 'project';
+    title: string;
+    category: string;
+    tags: string[];
+    url: string;
+    text: string;
+    excerpt: string;
+    publishedAt: string | null;
+    updatedAt: string | null;
+  }
+
   const input = document.getElementById('q') as HTMLInputElement;
-  const list = document.getElementById('results') as HTMLUListElement;
-  const empty = document.getElementById('empty') as HTMLParagraphElement;
-  const totalEl = document.getElementById('total') as HTMLSpanElement;
-  let data: any[] = [];
+  const clear = document.getElementById('clear') as HTMLButtonElement;
+  const list = document.getElementById('results') as HTMLOListElement;
+  const empty = document.getElementById('empty') as HTMLDivElement;
+  const status = document.getElementById('status') as HTMLParagraphElement;
+  const resultLabel = document.getElementById('result-label') as HTMLSpanElement;
+  const resultCount = document.getElementById('result-count') as HTMLSpanElement;
+  const filters = [...document.querySelectorAll<HTMLButtonElement>('[data-type]')];
+  let data: SearchItem[] = [];
+  let activeType = 'all';
 
   const params = new URLSearchParams(location.search);
   const initial = params.get('q') ?? '';
+  const initialType = params.get('type');
+  if (['article', 'note', 'project'].includes(initialType ?? '')) {
+    activeType = initialType as SearchItem['type'];
+  }
 
   fetch('/search.json')
     .then((r) => r.json())
-    .then((json) => {
+    .then((json: SearchItem[]) => {
       data = json;
-      if (totalEl) totalEl.textContent = String(data.length);
-      if (initial) {
-        input.value = initial;
-        run(initial);
-      }
+      input.value = initial;
+      syncFilters();
+      run(initial);
+    })
+    .catch(() => {
+      status.textContent = '索引加载失败';
+      empty.hidden = false;
+      empty.querySelector('strong')!.textContent = '搜索索引暂时不可用';
+      empty.querySelector('p')!.textContent = '刷新页面后重试。';
     });
 
-  function run(query: string) {
-    const q = query.trim().toLowerCase();
-    list.innerHTML = '';
-    if (!q) {
-      empty.hidden = true;
+  const typeLabels: Record<SearchItem['type'], string> = {
+    article: '文章',
+    note: '手记',
+    project: '沉淀',
+  };
+  const countLabels: Record<SearchItem['type'], string> = {
+    article: '篇文章',
+    note: '篇手记',
+    project: '项沉淀',
+  };
+
+  function normalize(value: string) {
+    return value.trim().toLocaleLowerCase('zh-CN');
+  }
+
+  function score(item: SearchItem, query: string) {
+    const title = normalize(item.title);
+    const category = normalize(item.category);
+    const tags = normalize(item.tags.join(' '));
+    const excerpt = normalize(item.excerpt);
+    const text = normalize(item.text);
+    if (title === query) return 220;
+    let value = 0;
+    if (title.startsWith(query)) value += 130;
+    else if (title.includes(query)) value += 90;
+    if (tags.includes(query)) value += 55;
+    if (category.includes(query)) value += 35;
+    if (excerpt.includes(query)) value += 24;
+    if (text.includes(query)) value += 10;
+    return value;
+  }
+
+  function appendHighlighted(target: HTMLElement, text: string, query: string) {
+    if (!query) {
+      target.textContent = text;
       return;
     }
-    const hits = data
-      .filter((item) => item.text.toLowerCase().includes(q))
-      .slice(0, 40);
-    empty.hidden = hits.length > 0;
-    for (const hit of hits) {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <a href="${hit.url}">
-          <div class="meta"><span>${hit.category}</span></div>
-          <h3>${hit.title || hit.excerpt}</h3>
-          ${hit.title ? `<p>${hit.excerpt}</p>` : ''}
-        </a>`;
-      list.appendChild(li);
+    const lower = normalize(text);
+    let start = 0;
+    let match = lower.indexOf(query);
+    while (match >= 0) {
+      target.append(document.createTextNode(text.slice(start, match)));
+      const mark = document.createElement('mark');
+      mark.textContent = text.slice(match, match + query.length);
+      target.append(mark);
+      start = match + query.length;
+      match = lower.indexOf(query, start);
     }
+    target.append(document.createTextNode(text.slice(start)));
+  }
+
+  function itemDate(item: SearchItem) {
+    const value = item.updatedAt ?? item.publishedAt;
+    if (!value) return '';
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(value));
+  }
+
+  function syncFilters() {
+    filters.forEach((button) => {
+      button.setAttribute(
+        'aria-selected',
+        String(button.dataset.type === activeType),
+      );
+    });
+  }
+
+  function updateUrl(query: string) {
+    const next = new URL(location.href);
+    if (query.trim()) next.searchParams.set('q', query.trim());
+    else next.searchParams.delete('q');
+    if (activeType === 'all') next.searchParams.delete('type');
+    else next.searchParams.set('type', activeType);
+    history.replaceState({}, '', next);
+  }
+
+  function makeResult(item: SearchItem, query: string, index: number) {
+    const row = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = item.url;
+    link.dataset.resultIndex = String(index);
+
+    const meta = document.createElement('div');
+    meta.className = 'result-meta';
+    const kind = document.createElement('span');
+    kind.className = 'result-kind';
+    kind.textContent = typeLabels[item.type];
+    const category = document.createElement('span');
+    category.textContent = item.category;
+    meta.append(kind, category);
+    const date = itemDate(item);
+    if (date) {
+      const time = document.createElement('time');
+      time.dateTime = item.updatedAt ?? item.publishedAt ?? '';
+      time.textContent = date;
+      meta.append(time);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'result-body';
+    const title = document.createElement('h2');
+    appendHighlighted(title, item.title || item.excerpt, query);
+    const excerpt = document.createElement('p');
+    appendHighlighted(excerpt, item.excerpt, query);
+    body.append(title, excerpt);
+
+    const tail = document.createElement('div');
+    tail.className = 'result-tail';
+    item.tags.slice(0, 2).forEach((tag) => {
+      const label = document.createElement('span');
+      label.textContent = `#${tag}`;
+      tail.append(label);
+    });
+    const arrow = document.createElement('b');
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '↗';
+    tail.append(arrow);
+
+    link.append(meta, body, tail);
+    row.append(link);
+    return row;
+  }
+
+  function run(query: string) {
+    const q = normalize(query);
+    const typed = data.filter(
+      (item) => activeType === 'all' || item.type === activeType,
+    );
+    const hits = q
+      ? typed
+          .map((item) => ({ item, score: score(item, q) }))
+          .filter(({ score }) => score > 0)
+          .sort(
+            (a, b) =>
+              b.score - a.score ||
+              Date.parse(b.item.updatedAt ?? '') -
+                Date.parse(a.item.updatedAt ?? ''),
+          )
+          .slice(0, 40)
+          .map(({ item }) => item)
+      : typed
+          .sort(
+            (a, b) =>
+              Date.parse(b.updatedAt ?? '') - Date.parse(a.updatedAt ?? ''),
+          )
+          .slice(0, 12);
+
+    list.replaceChildren(...hits.map((item, index) => makeResult(item, q, index)));
+    clear.hidden = !query;
+    empty.hidden = hits.length > 0;
+    resultLabel.textContent = q ? `“${query.trim()}”` : '最近更新';
+    resultCount.textContent = `${hits.length} 条`;
+    const sourceLabel =
+      activeType === 'all'
+        ? '项内容'
+        : countLabels[activeType as SearchItem['type']];
+    status.textContent = q
+      ? `从 ${typed.length} ${sourceLabel}中找到 ${hits.length} 条`
+      : activeType === 'all'
+        ? `共 ${data.length} 项可搜索内容`
+        : `共 ${typed.length} ${sourceLabel}，显示最近 ${hits.length} 条`;
+    updateUrl(query);
   }
 
   let timer: number;
-  input?.addEventListener('input', () => {
+  input.addEventListener('input', () => {
     clearTimeout(timer);
     timer = window.setTimeout(() => run(input.value), 120);
+  });
+
+  clear.addEventListener('click', () => {
+    input.value = '';
+    run('');
+    input.focus();
+  });
+
+  filters.forEach((button) => {
+    button.addEventListener('click', () => {
+      activeType = button.dataset.type ?? 'all';
+      syncFilters();
+      run(input.value);
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    const target = event.target as HTMLElement;
+    const typing =
+      target.matches('input, textarea, [contenteditable="true"]');
+    if (event.key === '/' && !typing) {
+      event.preventDefault();
+      input.focus();
+      return;
+    }
+    if (event.key === 'Escape' && document.activeElement === input) {
+      if (input.value) {
+        input.value = '';
+        run('');
+      } else {
+        input.blur();
+      }
+      return;
+    }
+    const links = [...list.querySelectorAll<HTMLAnchorElement>('a')];
+    if (!links.length) return;
+    const activeIndex = links.indexOf(document.activeElement as HTMLAnchorElement);
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      links[Math.min(activeIndex + 1, links.length - 1)]?.focus();
+    } else if (event.key === 'ArrowUp' && activeIndex >= 0) {
+      event.preventDefault();
+      if (activeIndex === 0) input.focus();
+      else links[activeIndex - 1]?.focus();
+    } else if (
+      event.key === 'Enter' &&
+      document.activeElement === input &&
+      links[0]
+    ) {
+      links[0].click();
+    }
   });
 </script>
 
 <style>
-  .search-panel {
-    padding-block: 44px 90px;
+  .search-background {
+    background:
+      linear-gradient(rgba(3, 3, 3, 0.78), rgba(3, 3, 3, 0.94)),
+      repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent calc(25% - 1px),
+        rgba(255, 255, 255, 0.025) 25%
+      ),
+      #030303;
+  }
+
+  .search-shell {
+    padding-bottom: 110px;
+  }
+
+  .search-intro {
+    padding: 66px 0 34px;
+  }
+
+  .search-intro h1 {
+    margin: 14px 0 14px;
+    font-size: 56px;
+    line-height: 1.08;
+  }
+
+  .search-intro h1 span {
+    color: var(--accent);
+  }
+
+  .search-intro p {
+    max-width: 640px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+  }
+
+  .search-workspace {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+    gap: 48px;
+    align-items: start;
+  }
+
+  .search-dock {
+    position: sticky;
+    top: 82px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(8, 8, 8, 0.82);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(18px);
+  }
+
+  .search-field {
+    display: grid;
+    min-height: 58px;
+    grid-template-columns: 32px minmax(0, 1fr) auto 32px;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .search-icon {
+    color: var(--accent);
+    font: 24px var(--serif);
+    transform: rotate(-16deg);
   }
 
   #q {
     width: 100%;
-    padding: 16px 20px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
+    min-width: 0;
+    padding: 0 8px 0 2px;
+    -webkit-appearance: none;
+    appearance: none;
+    border: 0;
+    background: transparent;
     color: var(--ink);
-    font-size: 16px;
+    font-size: 17px;
     outline: none;
-    transition: border-color 180ms ease;
   }
 
-  #q:focus {
-    border-color: var(--accent);
-  }
-
-  .hint {
-    margin: 14px 2px 24px;
+  #q::placeholder {
     color: var(--ink-faint);
-    font: 12px var(--mono);
+  }
+
+  #q::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search-field kbd {
+    padding: 2px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 4px;
+    color: var(--ink-faint);
+    background: rgba(255, 255, 255, 0.04);
+    font: 10px var(--mono);
+  }
+
+  #clear {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 20px;
+  }
+
+  #clear:hover {
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  #clear:focus-visible,
+  .filters button:focus-visible,
+  .results :global(a:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .search-toolbar {
+    display: grid;
+    padding-top: 12px;
+    gap: 14px;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .filters button {
+    min-height: 34px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 5px;
+    color: var(--ink-faint);
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .filters button[aria-selected="true"] {
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .status {
+    margin: 0;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .result-shell {
+    min-width: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .result-head {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  #result-label {
+    min-width: 0;
+    padding-right: 16px;
+    overflow: hidden;
+    color: var(--accent);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .results {
     display: grid;
-    gap: 0;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .results li {
+  .results :global(li) {
     border-bottom: 1px solid var(--line);
   }
 
-  .results a {
-    display: block;
-    padding: 22px 0;
+  .results :global(a) {
+    display: grid;
+    min-height: 146px;
+    padding: 22px 4px;
+    grid-template-columns: 120px minmax(0, 1fr) 150px;
+    gap: 24px;
+    align-items: start;
+    color: inherit;
     text-decoration: none;
+    transition: background 160ms ease, padding 160ms ease;
   }
 
-  .results .meta {
+  .results :global(a:hover),
+  .results :global(a:focus-visible) {
+    padding-inline: 14px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .results :global(.result-meta) {
+    display: grid;
+    gap: 5px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .results :global(.result-kind) {
     color: var(--accent);
-    font: 11px var(--mono);
-    margin-bottom: 7px;
   }
 
-  .results h3 {
-    margin: 0 0 6px;
+  .results :global(.result-body) {
+    min-width: 0;
+  }
+
+  .results :global(h2) {
+    margin: 0 0 10px;
     color: var(--ink);
-    font-size: 18px;
-    line-height: 1.45;
+    font-family: var(--serif);
+    font-size: 25px;
+    font-weight: 400;
+    line-height: 1.35;
   }
 
-  .results a:hover h3 {
+  .results :global(a:hover h2) {
     color: var(--accent);
   }
 
-  .results p {
+  .results :global(p) {
     margin: 0;
     color: var(--ink-dim);
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .results :global(mark) {
+    padding: 0;
+    color: var(--ink);
+    background: rgba(245, 185, 113, 0.24);
+  }
+
+  .results :global(.result-tail) {
+    display: flex;
+    min-width: 0;
+    min-height: 28px;
+    align-items: flex-start;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 5px 8px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .results :global(.result-tail b) {
+    margin-left: 8px;
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 400;
   }
 
   .empty {
+    padding: 64px 0;
     color: var(--ink-faint);
-    font-size: 15px;
+  }
+
+  .empty strong {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+  }
+
+  .empty p {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 900px) {
+    .search-workspace {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 28px;
+    }
+
+    .search-dock {
+      position: static;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .search-intro {
+      padding: 48px 0 28px;
+    }
+
+    .search-intro h1 {
+      font-size: 44px;
+    }
+
+    .search-workspace {
+      width: calc(100% - 36px);
+    }
+
+    .search-dock {
+      padding: 9px;
+    }
+
+    .search-field {
+      min-height: 52px;
+    }
+
+    .search-field kbd {
+      display: none;
+    }
+
+    .search-field {
+      grid-template-columns: 30px minmax(0, 1fr) 32px;
+    }
+
+    .results :global(a) {
+      min-height: 0;
+      padding: 20px 0;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px 14px;
+    }
+
+    .results :global(a:hover),
+    .results :global(a:focus-visible) {
+      padding-inline: 8px;
+    }
+
+    .results :global(.result-meta) {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, auto);
+      justify-content: start;
+      gap: 8px;
+    }
+
+    .results :global(h2) {
+      font-size: 21px;
+    }
+
+    .results :global(.result-tail) {
+      width: 26px;
+    }
+
+    .results :global(.result-tail span) {
+      display: none;
+    }
   }
 </style>

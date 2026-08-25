@@ -25,13 +25,13 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
     <SpaceModel model="probe" class="notes-probe" />
   </div>
   <div class="page-shell">
-    <header class="page-intro reading">
+    <header class="page-intro notes-width">
       <div class="eyebrow">Forge Notes</div>
       <h1 class="display">手记<span>。</span></h1>
       <p>还没长成文章的想法，先记在这里。短的一句，长的一段，都是过程。</p>
     </header>
 
-    <section class="reading notes-feed">
+    <section class="notes-width notes-feed">
       {rendered.length === 0 && <p class="empty">还没有公开的手记。</p>}
       {rendered.map(({ note, Content }) => (
         <article class="note-card">
@@ -84,14 +84,19 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
     overflow: hidden;
   }
 
-  :global(.space-model.notes-probe) {
+  .notes-background :global(.space-model.notes-probe) {
     position: absolute;
-    top: 4vh;
+    top: 6vh;
     right: -5vw;
-    width: min(43vw, 680px);
-    height: min(70vh, 680px);
-    opacity: 0.5;
-    mask-image: linear-gradient(90deg, transparent, black 30%);
+    width: min(34vw, 560px);
+    height: 64vh;
+    opacity: 0.44;
+    mask-image: linear-gradient(90deg, transparent, black 24%);
+  }
+
+  .notes-width {
+    width: min(calc(100% - 72px), 1120px);
+    margin-inline: auto;
   }
 
   .notes-feed {
@@ -293,13 +298,25 @@ const hasMermaid = notes.some((note) => note.body?.includes('```mermaid'));
     font: 12px var(--mono);
   }
 
+  @media (max-width: 1100px) {
+    .notes-background :global(.space-model.notes-probe) {
+      right: -16vw;
+      width: min(50vw, 560px);
+      opacity: 0.36;
+    }
+  }
+
   @media (max-width: 720px) {
-    :global(.space-model.notes-probe) {
+    .notes-background :global(.space-model.notes-probe) {
       top: 2vh;
-      right: -34vw;
-      width: 96vw;
+      right: -42vw;
+      width: 94vw;
       height: 54vh;
-      opacity: 0.3;
+      opacity: 0.24;
+    }
+
+    .notes-width {
+      width: min(calc(100% - 36px), 1120px);
     }
 
     .notes-feed {

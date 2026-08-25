@@ -256,6 +256,42 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
     height: auto;
   }
 
+  .prose .process-flow {
+    display: grid;
+    margin: 34px 0;
+    padding: 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    list-style: none;
+    border-block: 1px solid var(--line);
+  }
+
+  .prose .process-flow li {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    min-height: 96px;
+    padding: 20px 28px 20px 18px;
+    place-items: center start;
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .prose .process-flow li::after {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    color: var(--accent);
+    content: "→";
+    font: 14px var(--mono);
+    opacity: 0.62;
+    transform: translateY(-50%);
+  }
+
+  .prose .process-flow li:last-child::after {
+    content: none;
+  }
+
   .prose ul,
   .prose ol {
     margin: 0 0 30px;
@@ -322,6 +358,27 @@ const { title, description, category, publishedAt, readingMinutes, image } = Ast
   .copy-btn:hover {
     color: var(--ink);
     border-color: rgba(255, 255, 255, 0.24);
+  }
+
+  @media (max-width: 680px) {
+    .prose .process-flow {
+      grid-template-columns: 1fr;
+    }
+
+    .prose .process-flow li {
+      min-height: 0;
+      padding: 16px 34px 16px 2px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+    }
+
+    .prose .process-flow li::after {
+      right: 8px;
+      content: "↓";
+    }
+
+    .prose .process-flow li:last-child {
+      border-bottom: 0;
+    }
   }
 
   .toc {

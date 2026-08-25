@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ForgeExperience from '../../components/ForgeExperience.astro';
 import PageBackdrop from '../../components/PageBackdrop.astro';
 ---
 
@@ -16,7 +17,8 @@ import PageBackdrop from '../../components/PageBackdrop.astro';
     mobileOpacity={0.58}
     effect="planet"
   />
-  <div class="page-shell">
+  <ForgeExperience returnLabel="返回关于我" worldLabel="老羊的铁匠铺" />
+  <div class="page-shell" data-forge-background>
     <div class="reading about-page">
       <section>
         <div class="eyebrow">About Job Yang</div>
@@ -26,6 +28,19 @@ import PageBackdrop from '../../components/PageBackdrop.astro';
           <p>
             这里没什么宏大目标，主要就是记录：我读到的、想到的、以及踩过的坑。
           </p>
+          <button
+            class="forge-entry"
+            type="button"
+            data-forge-open
+            aria-controls="forge-experience"
+            aria-expanded="false"
+          >
+            <span>
+              <strong>进入老羊的铁匠铺</strong>
+              <small>3D INTERACTIVE SELF-INTRODUCTION</small>
+            </span>
+            <b aria-hidden="true">→</b>
+          </button>
           <p>这个网站主要放两类内容：</p>
           <ul>
             <li><strong>文章：</strong>AI Agent、软件工程、iOS 与技术趋势的长期思考。</li>
@@ -95,6 +110,55 @@ import PageBackdrop from '../../components/PageBackdrop.astro';
     text-decoration: none;
   }
 
+  .forge-entry {
+    display: flex;
+    width: min(100%, 420px);
+    min-height: 76px;
+    margin: 6px 0 30px;
+    padding: 16px 18px;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid rgba(245, 185, 113, 0.34);
+    border-radius: 7px;
+    background: rgba(12, 9, 6, 0.72);
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .forge-entry:hover {
+    border-color: rgba(245, 185, 113, 0.72);
+    background: rgba(245, 185, 113, 0.09);
+    transform: translateY(-2px);
+  }
+
+  .forge-entry:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .forge-entry span {
+    display: grid;
+    gap: 6px;
+  }
+
+  .forge-entry strong {
+    font-size: 15px;
+  }
+
+  .forge-entry small {
+    color: var(--accent);
+    font: 9px var(--mono);
+    letter-spacing: 0.11em;
+  }
+
+  .forge-entry b {
+    color: var(--accent);
+    font-size: 22px;
+    font-weight: 400;
+  }
+
   .wechat {
     display: grid;
     margin-top: 86px;
@@ -138,6 +202,11 @@ import PageBackdrop from '../../components/PageBackdrop.astro';
 
     .wechat {
       grid-template-columns: 1fr;
+    }
+
+    .forge-entry {
+      width: 100%;
+      min-height: 74px;
     }
   }
 </style>

@@ -1,6 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import ILoopGalaxy from '../components/ILoopGalaxy.astro';
+import ILoopCaseStudy from '../components/ILoopCaseStudy.astro';
 import ProjectVisual from '../components/ProjectVisual.astro';
 
 interface Props {
@@ -25,7 +25,7 @@ const isILoop = title === 'iLoop';
 
 <BaseLayout title={title} description={description} active="projects" article>
   <div class="project-background" slot="background"></div>
-  <article class:list={['project-page', `project-${visual}`, `project-kind-${kind}`]}>
+  <article class:list={['project-page', `project-${visual}`, `project-kind-${kind}`, { 'project-iloop': isILoop }]}>
     <header class="project-hero wide">
       <div class="hero-copy">
         <a class="back" href="/projects/">← 返回全部沉淀</a>
@@ -38,14 +38,18 @@ const isILoop = title === 'iLoop';
           ) : (
             status && <span class="project-status">{status}</span>
           )}
-          <a class="secondary-action" href="#story">了解它为什么存在 ↓</a>
+          <a class="secondary-action" href={isILoop ? '#live-trim-case' : '#story'}>
+            {isILoop ? '看真实案例 ↓' : '了解它为什么存在 ↓'}
+          </a>
         </div>
+        {isILoop && (
+          <div class="hero-thesis">
+            <strong>AI 说“完成了”不算数，验过才算数。</strong>
+            <span>iLoop 给 Agent 补上上下文、真实反馈和持续纠偏的工作循环。</span>
+          </div>
+        )}
       </div>
-      {isILoop ? (
-        <div class="hero-galaxy" aria-label="iLoop 验证驱动闭环演示">
-          <ILoopGalaxy />
-        </div>
-      ) : !isSystem && (
+      {!isSystem && (
         <div class="hero-visual">
           <ProjectVisual type={visual} priority />
         </div>
@@ -55,7 +59,7 @@ const isILoop = title === 'iLoop';
     {
       isSystem ? (
         <>
-          <section id="story" class="story-section wide">
+          {!isILoop && <section id="story" class="story-section wide">
             <div class="section-label">01 · 为什么需要</div>
             <div class="story-heading">
               <h2 class="display">AI 写得越来越快，<br />“完成”却越来越难相信。</h2>
@@ -71,7 +75,9 @@ const isILoop = title === 'iLoop';
                 并留下一份别人能重跑、能复核的证据”。
               </p>
             </div>
-          </section>
+          </section>}
+
+          {isILoop && <ILoopCaseStudy />}
 
           <section class="system-feedback">
             <div class="wide">
@@ -277,7 +283,9 @@ const isILoop = title === 'iLoop';
     <section class="details-section">
       <div class="details-inner wide">
         <aside>
-          <div class="section-label">{isSystem ? '07 · 当前状态' : '04 · 使用与边界'}</div>
+          <div class="section-label">
+            {isSystem ? '07 · 当前状态' : isWriting || isVideo ? '04 · 使用与边界' : '01 · 使用与边界'}
+          </div>
           <div class="project-facts">
             <div><span>TYPE</span><strong>{isSystem ? 'Agent System' : 'Agent Skill'}</strong></div>
             <div><span>FOCUS</span><strong>{tags.join(' / ')}</strong></div>
@@ -384,6 +392,55 @@ const isILoop = title === 'iLoop';
 
   .project-kind-system .hero-copy {
     max-width: 560px;
+  }
+
+  .project-iloop .project-hero {
+    min-height: 0;
+    padding-block: 30px 26px;
+    grid-template-columns: minmax(0, 860px);
+  }
+
+  .project-iloop .back {
+    margin-bottom: 12px;
+  }
+
+  .project-iloop .hero-copy h1 {
+    margin-block: 10px 16px;
+    font-size: clamp(52px, 6vw, 76px);
+  }
+
+  .project-iloop .hero-copy {
+    max-width: 860px;
+  }
+
+  .project-iloop .hero-copy > p {
+    max-width: 760px;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .project-iloop .hero-actions {
+    margin-top: 20px;
+  }
+
+  .hero-thesis {
+    display: grid;
+    margin-top: 20px;
+    padding-top: 16px;
+    gap: 5px;
+    border-top: 1px solid var(--line);
+  }
+
+  .hero-thesis strong {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .hero-thesis span {
+    color: var(--ink-faint);
+    font-size: 12px;
+    line-height: 1.55;
   }
 
   .hero-copy {
@@ -1395,6 +1452,10 @@ const isILoop = title === 'iLoop';
 
     .hero-galaxy .galaxy {
       min-height: 390px;
+    }
+
+    .project-iloop .project-hero {
+      padding-block: 26px 34px;
     }
 
     .story-section,

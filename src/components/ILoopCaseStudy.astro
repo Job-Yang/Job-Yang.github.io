@@ -1,0 +1,1334 @@
+---
+import {
+  ILOOP_CONSTRAINTS,
+  ILOOP_ROUNDS,
+  ILOOP_STAGES,
+  ILOOP_VERDICTS,
+} from '../data/iloop-case';
+---
+
+<section class="case-study" id="live-trim-case" data-iloop-case>
+  <header class="case-intro">
+    <div class="eyebrow section-label">01 · 一个真实案例</div>
+    <h2 class="display">AI Agent 遇到复杂问题，<br /><span>是怎么一步步解决的？</span></h2>
+    <p>
+      这是一次真实但脱敏的<strong>直播 SDK 包体裁剪</strong>：一个迭代多年、跨团队维护的
+      <strong>近百兆 SDK</strong>，要在<strong>十天级周期</strong>内从<strong>百万行级代码</strong>
+      中逐轮识别可删闭包，还不能破坏核心直播业务。最终做到<strong>约四成整体优化</strong>。
+    </p>
+  </header>
+
+  <div class="case-tabs" role="tablist" aria-label="案例视图">
+    <button type="button" class="active" role="tab" aria-selected="true" data-tab="why">
+      <span>01</span>为什么只能是 Agent
+    </button>
+    <button type="button" role="tab" aria-selected="false" data-tab="loop">
+      <span>02</span>裁剪 Loop 实况
+    </button>
+  </div>
+
+  <div class="case-panel active" data-panel="why" role="tabpanel">
+    <p class="panel-lead">
+      六条约束同时成立，四种方案接受同一轮审判。前三条路走不完，AI Agent 才成为可执行解。
+    </p>
+    <div class="case-controls">
+      <button type="button" class="primary" data-funnel-play>▶ 开始推演</button>
+      <button type="button" data-funnel-reset>↺ 重置</button>
+      <span data-funnel-status>READY</span>
+    </div>
+    <div class="constraint-board" data-board>
+      <svg aria-hidden="true" data-connections></svg>
+      <div class="constraint-column">
+        <div class="column-label"><span>A</span>现实约束 / CONSTRAINTS</div>
+        <div class="constraint-list">
+          {ILOOP_CONSTRAINTS.map(([id, title, detail]) => (
+            <div class="constraint" data-constraint>
+              <span>{id}</span>
+              <div><strong>{title}</strong><small>{detail}</small></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="verdict-column">
+        <div class="column-label"><span>B</span>候选方案 / VERDICT</div>
+        <div class="verdict-list">
+          {ILOOP_VERDICTS.map(([name, result, verdict, detail]) => (
+            <div class="verdict" data-verdict data-result={result}>
+              <div><strong>{name}</strong><span data-verdict-label>— 待判定</span></div>
+              <p>{detail}</p>
+              <template>{verdict}</template>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="case-panel" data-panel="loop" role="tabpanel" hidden>
+    <p class="panel-lead">
+      每一轮都走同一条 iLoop：<strong>{ILOOP_STAGES.join(' → ')}</strong>。点任意一轮，
+      看 Agent 为什么继续、修复、跳过或补证。
+    </p>
+    <div class="loop-layout">
+      <aside class="round-list" aria-label="真实问题模式">
+        <div class="round-list-head">
+          <span>TASK LOG / 真实问题模式</span><strong data-round-count>R01 / 10</strong>
+        </div>
+        {ILOOP_ROUNDS.map((round, index) => (
+          <button
+            type="button"
+            class:list={['round-row', { active: index === 0 }]}
+            data-round={index}
+            aria-label={`${round.id} ${round.name} ${round.stateLabel}`}
+          >
+            <div>
+              <span>{round.id}</span><strong>{round.name}</strong><em>{round.stateLabel}</em>
+            </div>
+            <p>
+              {round.summary.map(([tone, text], summaryIndex) => (
+                <>
+                  {summaryIndex > 0 && <i>→</i>}
+                  <span data-tone={tone}>{text}</span>
+                </>
+              ))}
+            </p>
+          </button>
+        ))}
+      </aside>
+
+      <div class="loop-main">
+        <header class="round-head">
+          <div>
+            <p><span data-round-id>R01</span> <span data-round-position>ROUND 01 / 10</span> · <b data-round-status>等待回放</b></p>
+            <h3 data-round-title>{ILOOP_ROUNDS[0].name}</h3>
+            <small><span>本轮关键</span><b data-round-focus>{ILOOP_ROUNDS[0].focus}</b></small>
+          </div>
+          <div class="round-actions">
+            <button type="button" class="primary" data-replay>▶ 从头回放</button>
+            <button type="button" data-next-round>下一轮 ›</button>
+            <button type="button" data-sound aria-pressed="true" title="切换节点音效">♪ 音效</button>
+          </div>
+          <div class="round-progress"><i data-progress></i></div>
+        </header>
+
+        <div class="route-stage">
+          <canvas data-route-canvas aria-hidden="true"></canvas>
+          <div class="route-label">iLoop RUN<small>同一目标，多轮最小闭包推进</small></div>
+          <div class="route-legend" aria-label="节点状态">
+            <span class="pending">◆ 未执行</span><span class="current">◆ 执行中</span>
+            <span class="passed">◆ 通过</span><span class="failed">◆ 失败</span>
+          </div>
+          <div class="stage-layer">
+            {ILOOP_STAGES.map((stage, index) => (
+              <div class:list={['stage-mark', index < 4 ? 'top' : 'bottom']} data-stage={index}>
+                <i class="station"></i>
+                <span class="stage-copy">
+                  <small>{String(index + 1).padStart(2, '0')}</small>
+                  <strong>{stage}</strong>
+                  <i></i>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="live-trace">
+          <header>
+            <span>LIVE TRACE / 节点执行日志</span>
+            <strong data-live-status>WAITING</strong>
+          </header>
+          <div class="trace-feed" data-trace aria-live="polite">
+            <p class="trace-empty">等待探针进入第一个节点…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { ILOOP_CONSTRAINTS, ILOOP_ROUNDS, ILOOP_STAGES } from '../data/iloop-case';
+
+  const root = document.querySelector<HTMLElement>('[data-iloop-case]');
+  if (root) {
+    const $ = <T extends Element>(selector: string) => root.querySelector<T>(selector);
+    const $$ = <T extends Element>(selector: string) => [...root.querySelectorAll<T>(selector)];
+    const sleep = (ms: number, token: number) =>
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(token === routeToken), ms));
+
+    let activeRound = 0;
+    let routeToken = 0;
+    let frame = 0;
+    let probeProgress = 0;
+    let width = 0;
+    let height = 0;
+    let stars: Array<{ x: number; y: number; size: number; alpha: number }> = [];
+    let audioEnabled = true;
+    let audioContext: AudioContext | null = null;
+    let funnelTimers: number[] = [];
+    let autoplay = false;
+    let autoplayTimer = 0;
+    const canvas = $<HTMLCanvasElement>('[data-route-canvas]');
+    const context = canvas?.getContext('2d');
+    const stageLayout = [
+      { x: .12, y: .35, p: 0 }, { x: .34, y: .35, p: .16 },
+      { x: .56, y: .35, p: .32 }, { x: .78, y: .35, p: .48 },
+      { x: .78, y: .70, p: .56 }, { x: .56, y: .70, p: .7066667 },
+      { x: .34, y: .70, p: .8533333 }, { x: .12, y: .70, p: 1 },
+    ];
+
+    function showPanel(name: string) {
+      $$<HTMLButtonElement>('[data-tab]').forEach((button) => {
+        const active = button.dataset.tab === name;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+      });
+      $$<HTMLElement>('[data-panel]').forEach((panel) => {
+        const active = panel.dataset.panel === name;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+      });
+      if (name === 'loop') requestAnimationFrame(resizeRoute);
+    }
+
+    $$<HTMLButtonElement>('[data-tab]').forEach((button) => {
+      button.addEventListener('click', () => showPanel(button.dataset.tab || 'why'));
+    });
+
+    function resetFunnel() {
+      funnelTimers.forEach(clearTimeout);
+      funnelTimers = [];
+      $$('[data-constraint]').forEach((item) => item.classList.remove('lit'));
+      $$<HTMLElement>('[data-verdict]').forEach((item) => {
+        item.className = 'verdict';
+        $('[data-funnel-status]')!.textContent = 'READY';
+        item.querySelector('[data-verdict-label]')!.textContent = '— 待判定';
+      });
+      $('[data-funnel-play]')!.textContent = '▶ 开始推演';
+      drawConnections(false);
+    }
+
+    function playFunnel() {
+      resetFunnel();
+      $('[data-funnel-play]')!.textContent = '◌ 推演中…';
+      $('[data-funnel-status]')!.textContent = 'LOADING CONSTRAINTS…';
+      $$('[data-constraint]').forEach((item, index) => {
+        funnelTimers.push(window.setTimeout(() => item.classList.add('lit'), 240 + index * 240));
+      });
+      const convergence = 240 + ILOOP_CONSTRAINTS.length * 240 + 180;
+      funnelTimers.push(window.setTimeout(() => {
+        drawConnections(true);
+        $('[data-funnel-status]')!.textContent = 'CONVERGED';
+      }, convergence));
+      $$<HTMLElement>('[data-verdict]').forEach((item, index) => {
+        funnelTimers.push(window.setTimeout(() => {
+          const result = item.dataset.result || '';
+          item.classList.add('judged', result);
+          item.querySelector('[data-verdict-label]')!.textContent =
+            item.querySelector('template')?.content.textContent || '';
+          if (result === 'win') {
+            $('[data-funnel-status]')!.textContent = 'RESOLVED → AI AGENT';
+            $('[data-funnel-play]')!.textContent = '✓ 推演完成';
+            funnelTimers.push(window.setTimeout(() => {
+              showPanel('loop');
+              runRound(0);
+            }, 900));
+          }
+        }, convergence + 560 + index * 620));
+      });
+    }
+
+    $('[data-funnel-play]')?.addEventListener('click', playFunnel);
+    $('[data-funnel-reset]')?.addEventListener('click', resetFunnel);
+
+    function drawConnections(active: boolean) {
+      const svg = $<SVGElement>('[data-connections]');
+      const board = $<HTMLElement>('[data-board]');
+      if (!svg || !board || matchMedia('(max-width: 900px)').matches) {
+        if (svg) svg.innerHTML = '';
+        return;
+      }
+      const bounds = board.getBoundingClientRect();
+      const constraints = $$<HTMLElement>('[data-constraint]');
+      const verdicts = $$<HTMLElement>('[data-verdict]');
+      const pinchX = bounds.width / 2;
+      const pinchY = bounds.height / 2;
+      const splitX = pinchX + 32;
+      const color = active ? 'rgba(245,185,113,.62)' : 'rgba(245,185,113,.13)';
+      let paths = '';
+      constraints.forEach((item) => {
+        const rect = item.getBoundingClientRect();
+        const x = rect.right - bounds.left;
+        const y = rect.top - bounds.top + rect.height / 2;
+        paths += `<path d="M ${x} ${y} C ${x + 30} ${y}, ${pinchX - 52} ${pinchY}, ${pinchX} ${pinchY}" fill="none" stroke="${color}" stroke-width="1.2"/>`;
+      });
+      paths += `<path d="M ${pinchX} ${pinchY - 11} L ${pinchX} ${pinchY + 11} M ${pinchX} ${pinchY} L ${splitX} ${pinchY}" fill="none" stroke="${color}" stroke-width="${active ? 3 : 1.5}" stroke-linecap="round"/>`;
+      verdicts.forEach((item) => {
+        const rect = item.getBoundingClientRect();
+        const x = rect.left - bounds.left;
+        const y = rect.top - bounds.top + rect.height / 2;
+        paths += `<path d="M ${splitX} ${pinchY} C ${splitX + 25} ${pinchY}, ${x - 30} ${y}, ${x} ${y}" fill="none" stroke="${color}" stroke-width="1.2"/>`;
+      });
+      svg.setAttribute('viewBox', `0 0 ${bounds.width} ${bounds.height}`);
+      svg.innerHTML = paths;
+    }
+
+    function resizeRoute() {
+      if (!canvas || !context) return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width) return;
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * devicePixelRatio;
+      canvas.height = height * devicePixelRatio;
+      context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      stars = Array.from({ length: 70 }, () => ({
+        x: Math.random(), y: Math.random(), size: Math.random() < .85 ? 1 : 2,
+        alpha: .1 + Math.random() * .45,
+      }));
+      drawRoute();
+    }
+
+    function routePoint(t: number) {
+      if (t <= .48) return { x: .12 + .66 * (t / .48), y: .35, angle: 0 };
+      if (t <= .56) {
+        const u = (t - .48) / .08;
+        return { x: .78 + .09 * Math.sin(Math.PI * u), y: .35 + .35 * u, angle: Math.PI / 2 };
+      }
+      const u = (t - .56) / .44;
+      return { x: .78 - .66 * u, y: .70, angle: Math.PI };
+    }
+
+    function drawRoute() {
+      if (!context) return;
+      context.fillStyle = '#070707';
+      context.fillRect(0, 0, width, height);
+      stars.forEach((star) => {
+        context.globalAlpha = star.alpha;
+        context.fillStyle = '#cfc9bd';
+        context.fillRect(star.x * width, star.y * height, star.size, star.size);
+      });
+      context.globalAlpha = 1;
+      context.strokeStyle = 'rgba(245,185,113,.5)';
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(width * .12, height * .35);
+      context.lineTo(width * .78, height * .35);
+      context.bezierCurveTo(width * .90, height * .35, width * .90, height * .70, width * .78, height * .70);
+      context.lineTo(width * .12, height * .70);
+      context.stroke();
+      context.fillStyle = 'rgba(245,185,113,.52)';
+      for (let x = 0; x < 4; x++) for (let y = 0; y < 3; y++) {
+        context.globalAlpha = .3 + ((x + y) % 3) * .2;
+        context.fillRect(width * .045 + x * 11, height * .35 - 22 + y * 11, 8, 8);
+      }
+      context.globalAlpha = 1;
+      const point = routePoint(probeProgress);
+      context.save();
+      context.translate(width * point.x, height * point.y);
+      context.rotate(point.angle);
+      context.shadowColor = 'rgba(245,185,113,.72)';
+      context.shadowBlur = 12;
+      context.fillStyle = '#f5b971';
+      context.beginPath();
+      context.roundRect(-8, -3, 16, 6, 3);
+      context.fill();
+      context.restore();
+    }
+
+    function moveProbe(target: number, token: number, duration = 380) {
+      const from = probeProgress;
+      const start = performance.now();
+      return new Promise<boolean>((resolve) => {
+        const step = (now: number) => {
+          if (token !== routeToken) return resolve(false);
+          const raw = Math.min(1, (now - start) / duration);
+          const eased = raw < .5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
+          probeProgress = from + (target - from) * eased;
+          drawRoute();
+          if (raw < 1) frame = requestAnimationFrame(step);
+          else resolve(true);
+        };
+        frame = requestAnimationFrame(step);
+      });
+    }
+
+    function setStage(index: number, state = '', docked = false) {
+      const stage = $<HTMLElement>(`[data-stage="${index}"]`);
+      if (!stage) return;
+      stage.className = `stage-mark ${index < 4 ? 'top' : 'bottom'}${state ? ` ${state}` : ''}${docked ? ' docked' : ''}`;
+    }
+
+    function resetStages() {
+      ILOOP_STAGES.forEach((_, index) => setStage(index));
+    }
+
+    function ensureAudio() {
+      if (!audioEnabled) return null;
+      const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtor) return null;
+      audioContext ??= new AudioCtor();
+      if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+      return audioContext;
+    }
+
+    function playCue(kind: string) {
+      const audio = ensureAudio();
+      if (!audio || audio.state !== 'running') return;
+      const cue: Record<string, [number, number, number]> = {
+        dock: [520, .035, .1], pass: [720, .025, .12], fail: [170, .05, .2],
+        return: [360, .04, .16], neutral: [260, .03, .13], complete: [880, .035, .22],
+      };
+      const [frequency, volume, duration] = cue[kind] || cue.dock;
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      oscillator.type = kind === 'fail' ? 'sawtooth' : 'sine';
+      oscillator.frequency.value = frequency;
+      if (kind === 'complete') oscillator.frequency.exponentialRampToValueAtTime(1174, audio.currentTime + duration);
+      gain.gain.setValueAtTime(.0001, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(volume, audio.currentTime + .012);
+      gain.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + duration);
+      oscillator.connect(gain).connect(audio.destination);
+      oscillator.start();
+      oscillator.stop(audio.currentTime + duration + .02);
+    }
+
+    function setStatus(text: string, tone = '') {
+      const titleStatus = $<HTMLElement>('[data-round-status]');
+      const liveStatus = $<HTMLElement>('[data-live-status]');
+      if (titleStatus) titleStatus.textContent = text;
+      if (liveStatus) {
+        liveStatus.textContent = text.toUpperCase();
+        liveStatus.dataset.tone = tone;
+      }
+    }
+
+    function addTrace(
+      event: typeof ILOOP_ROUNDS[number]['events'][number],
+      eventIndex: number,
+    ) {
+      const feed = $<HTMLElement>('[data-trace]')!;
+      feed.querySelector('.trace-empty')?.remove();
+      const row = document.createElement('div');
+      row.className = 'trace-entry running';
+      row.innerHTML = `<span>${String(eventIndex + 1).padStart(2, '0')}</span><strong>${ILOOP_STAGES[event.node]}</strong><p>${event.message}</p><em>执行中</em>`;
+      feed.appendChild(row);
+      feed.scrollTop = feed.scrollHeight;
+      return row;
+    }
+
+    function finishTrace(row: HTMLElement, result: string, label = '') {
+      const labels: Record<string, string> = {
+        pass: '通过', fail: '失败', return: '已回退', neutral: label || '保留',
+      };
+      row.className = `trace-entry ${result}`;
+      row.querySelector('em')!.textContent = labels[result];
+      if (result === 'return') row.querySelector('span')!.textContent = '↩';
+    }
+
+    function renderRound(index: number) {
+      const round = ILOOP_ROUNDS[index];
+      activeRound = index;
+      $$<HTMLElement>('[data-round]').forEach((item, itemIndex) => item.classList.toggle('active', itemIndex === index));
+      $('[data-round-count]')!.textContent = `${round.id} / ${String(ILOOP_ROUNDS.length).padStart(2, '0')}`;
+      $('[data-round-id]')!.textContent = round.id;
+      $('[data-round-position]')!.textContent = `ROUND ${String(index + 1).padStart(2, '0')} / ${String(ILOOP_ROUNDS.length).padStart(2, '0')}`;
+      $('[data-round-title]')!.textContent = round.name;
+      $('[data-round-focus]')!.textContent = round.focus;
+      $('[data-trace]')!.innerHTML = '<p class="trace-empty">等待探针进入第一个节点…</p>';
+      ($<HTMLElement>('[data-progress]')!).style.width = `${((index + 1) / ILOOP_ROUNDS.length) * 100}%`;
+      setStatus('等待回放', 'neutral');
+      resetStages();
+      probeProgress = 0;
+      drawRoute();
+    }
+
+    async function runRound(index: number) {
+      routeToken++;
+      cancelAnimationFrame(frame);
+      renderRound(index);
+      const token = routeToken;
+      const round = ILOOP_ROUNDS[index];
+      setStatus('运行中', 'current');
+      for (let eventIndex = 0; eventIndex < round.events.length; eventIndex++) {
+        const event = round.events[eventIndex];
+        setStage(event.node, 'current');
+        if (!await moveProbe(stageLayout[event.node].p, token, event.result === 'return' ? 500 : 350)) return false;
+        setStage(event.node, 'current', true);
+        const row = addTrace(event, eventIndex);
+        playCue('dock');
+        if (!await sleep(event.result === 'fail' ? 520 : 350, token)) return false;
+        const state = event.result === 'pass' || event.result === 'return'
+          ? 'pass' : event.result === 'fail' ? 'fail' : 'neutral';
+        setStage(event.node, state, true);
+        finishTrace(row, event.result, event.label);
+        playCue(event.result);
+        setStatus(
+          event.result === 'fail' ? '发现异常' :
+          event.result === 'return' ? '修复后重试' :
+          event.result === 'neutral' ? event.label || '保留并继续' : '继续推进',
+          event.result,
+        );
+        if (!await sleep(event.result === 'fail' ? 620 : 260, token)) return false;
+        setStage(event.node, state);
+      }
+      const summary = document.createElement('div');
+      const summaryTone = ['continued', 'accepted'].includes(round.state) ? 'pass' : 'neutral';
+      summary.className = `trace-entry summary ${summaryTone}`;
+      summary.innerHTML = `<span>✓</span><strong>本轮结论</strong><p>${round.finalMessage}</p><em>${round.finalLabel}</em>`;
+      $('[data-trace]')!.appendChild(summary);
+      setStatus(round.finalLabel, summaryTone);
+      playCue('complete');
+      return true;
+    }
+
+    $$<HTMLButtonElement>('[data-round]').forEach((button) => {
+      button.addEventListener('click', () => {
+        stopAutoplay();
+        runRound(Number(button.dataset.round));
+      });
+    });
+    function stopAutoplay() {
+      autoplay = false;
+      clearTimeout(autoplayTimer);
+      routeToken++;
+      cancelAnimationFrame(frame);
+      $('[data-replay]')!.textContent = '▶ 从头回放';
+    }
+
+    async function advanceAutoplay(index: number) {
+      if (!autoplay) return;
+      const completed = await runRound(index);
+      if (!autoplay || !completed) return;
+      if (index >= ILOOP_ROUNDS.length - 1) {
+        stopAutoplay();
+        return;
+      }
+      autoplayTimer = window.setTimeout(() => advanceAutoplay(index + 1), 900);
+    }
+
+    $('[data-replay]')?.addEventListener('click', () => {
+      if (autoplay) {
+        stopAutoplay();
+        return;
+      }
+      autoplay = true;
+      $('[data-replay]')!.textContent = 'Ⅱ 暂停';
+      advanceAutoplay(0);
+    });
+    $('[data-next-round]')?.addEventListener('click', () => {
+      stopAutoplay();
+      runRound((activeRound + 1) % ILOOP_ROUNDS.length);
+    });
+    $('[data-sound]')?.addEventListener('click', () => {
+      audioEnabled = !audioEnabled;
+      const button = $<HTMLButtonElement>('[data-sound]')!;
+      button.setAttribute('aria-pressed', String(audioEnabled));
+      button.textContent = audioEnabled ? '♪ 音效' : '♪ 静音';
+      if (audioEnabled) playCue('dock');
+    });
+    root.addEventListener('pointerdown', () => ensureAudio(), { once: true });
+
+    const observer = new ResizeObserver(() => {
+      drawConnections(false);
+      resizeRoute();
+    });
+    observer.observe(root);
+    renderRound(0);
+    drawConnections(false);
+    resizeRoute();
+  }
+</script>
+
+<style>
+  .case-study {
+    --case-bg: #070707;
+    --case-surface: #0d0d10;
+    --case-surface-2: #121216;
+    --case-line: rgba(255, 255, 255, 0.09);
+    --case-dim: #aaa7a2;
+    --case-faint: #77736d;
+    --case-gold: #f5b971;
+    --case-green: #65c982;
+    --case-red: #e06552;
+    width: min(1420px, calc(100% - 44px));
+    margin: 0 auto;
+    padding: 34px 0 100px;
+    scroll-margin-top: 76px;
+    color: var(--ink);
+  }
+
+  .case-intro {
+    max-width: 900px;
+  }
+
+  .case-intro h2 {
+    margin: 14px 0 16px;
+    font-size: clamp(38px, 4.5vw, 58px);
+    line-height: 1.12;
+  }
+
+  .case-intro h2 span {
+    white-space: nowrap;
+  }
+
+  .case-intro > p {
+    max-width: 860px;
+    margin: 0;
+    color: var(--case-dim);
+    font-size: 17px;
+    line-height: 1.8;
+  }
+
+  .case-intro strong,
+  .panel-lead strong {
+    color: var(--ink);
+    font-weight: 650;
+  }
+
+  .case-tabs {
+    display: flex;
+    width: max-content;
+    margin: 28px 0 24px;
+    overflow: hidden;
+    border: 1px solid var(--case-line);
+    border-radius: 8px;
+    background: var(--case-surface);
+  }
+
+  button {
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .case-tabs button {
+    padding: 14px 24px;
+    background: transparent;
+    color: var(--case-dim);
+    font-size: 15px;
+  }
+
+  .case-tabs button span {
+    margin-right: 9px;
+    color: var(--case-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .case-tabs button.active {
+    background: rgba(245, 185, 113, 0.13);
+    color: var(--case-gold);
+  }
+
+  .case-panel[hidden] {
+    display: none;
+  }
+
+  .panel-lead {
+    max-width: 960px;
+    margin: 0 0 28px;
+    color: var(--case-dim);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .constraint-board {
+    position: relative;
+    display: grid;
+    min-height: 540px;
+    overflow: hidden;
+    grid-template-columns: 1fr 1.05fr;
+    gap: 88px;
+    border: 1px solid var(--case-line);
+    border-radius: 10px;
+    background: var(--case-surface);
+  }
+
+  [data-connections] {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .constraint-column,
+  .verdict-column {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .column-label {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--case-line);
+    color: var(--case-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.11em;
+  }
+
+  .column-label span {
+    margin-right: 9px;
+    color: var(--case-gold);
+  }
+
+  .constraint-list,
+  .verdict-list {
+    display: flex;
+    padding: 16px 18px;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .verdict-list {
+    justify-content: center;
+  }
+
+  .constraint,
+  .verdict {
+    border: 1px solid var(--case-line);
+    border-radius: 7px;
+    background: var(--case-surface-2);
+    transition: opacity 360ms, transform 360ms, border-color 360ms, box-shadow 360ms;
+  }
+
+  .constraint {
+    display: flex;
+    padding: 12px 14px;
+    gap: 12px;
+    opacity: 0.28;
+    transform: translateX(-7px);
+  }
+
+  .constraint.lit {
+    opacity: 1;
+    transform: none;
+    border-color: rgba(245, 185, 113, 0.36);
+  }
+
+  .constraint > span {
+    width: 28px;
+    flex: 0 0 auto;
+    color: var(--case-gold);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .constraint strong,
+  .constraint small {
+    display: block;
+  }
+
+  .constraint strong {
+    font-size: 15px;
+  }
+
+  .constraint small {
+    margin-top: 4px;
+    color: var(--case-dim);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .verdict {
+    padding: 15px 17px;
+    opacity: 0.3;
+  }
+
+  .verdict.judged {
+    opacity: 1;
+  }
+
+  .verdict > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .verdict strong {
+    font-size: 16px;
+  }
+
+  .verdict span {
+    color: var(--case-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .verdict p {
+    margin: 8px 0 0;
+    color: var(--case-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .verdict.kill {
+    border-color: rgba(224, 101, 82, 0.35);
+  }
+
+  .verdict.kill strong {
+    color: var(--case-dim);
+  }
+
+  .verdict.kill span {
+    color: var(--case-red);
+  }
+
+  .verdict.win {
+    border-color: var(--case-green);
+    background: rgba(101, 201, 130, 0.09);
+    box-shadow: 0 0 30px rgba(101, 201, 130, 0.14);
+  }
+
+  .verdict.win strong,
+  .verdict.win span {
+    color: var(--case-green);
+  }
+
+  .case-controls,
+  .round-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .case-controls {
+    margin: -8px 0 18px;
+  }
+
+  .case-controls button,
+  .round-actions button {
+    min-height: 42px;
+    padding: 0 17px;
+    border: 1px solid var(--case-line);
+    border-radius: 7px;
+    background: var(--case-surface);
+    color: var(--ink);
+    font-size: 14px;
+  }
+
+  .case-controls button.primary,
+  .round-actions button.primary {
+    border-color: rgba(245, 185, 113, 0.58);
+    background: rgba(245, 185, 113, 0.12);
+    color: var(--case-gold);
+  }
+
+  .case-controls > span {
+    margin-left: 5px;
+    color: var(--case-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .loop-layout {
+    display: grid;
+    grid-template-columns: 390px minmax(0, 1fr);
+    gap: 26px;
+  }
+
+  .round-list,
+  .route-stage,
+  .live-trace {
+    border: 1px solid var(--case-line);
+    border-radius: 9px;
+    background: var(--case-surface);
+  }
+
+  .round-list {
+    align-self: start;
+    overflow: hidden;
+  }
+
+  .round-list-head {
+    display: flex;
+    padding: 15px 17px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--case-line);
+    color: var(--case-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.09em;
+  }
+
+  .round-list-head strong {
+    color: var(--case-gold);
+    font-weight: 500;
+  }
+
+  .round-row {
+    display: block;
+    width: 100%;
+    padding: 13px 17px;
+    border-bottom: 1px solid var(--case-line);
+    border-left: 2px solid transparent;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    transition: background 180ms, opacity 180ms;
+  }
+
+  .round-row:last-child {
+    border-bottom: 0;
+  }
+
+  .round-row.active {
+    border-left-color: var(--case-gold);
+    background: rgba(245, 185, 113, 0.12);
+  }
+
+  .round-row > div {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .round-row > div > span {
+    color: var(--case-faint);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .round-row > div > strong {
+    min-width: 0;
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .round-row > div > em {
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(101, 201, 130, 0.1);
+    color: var(--case-green);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-style: normal;
+  }
+
+  .round-row p {
+    margin: 7px 0 0;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .round-row p i {
+    margin: 0 6px;
+    color: var(--case-faint);
+    font-style: normal;
+  }
+
+  [data-tone="pass"] { color: var(--case-green); }
+  [data-tone="fail"] { color: var(--case-red); }
+  [data-tone="return"] { color: var(--case-gold); }
+  [data-tone="neutral"] { color: var(--case-dim); }
+
+  .loop-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .round-head {
+    display: grid;
+    padding: 4px 2px 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 20px;
+  }
+
+  .round-head > div:first-child > p {
+    margin: 0;
+    color: var(--case-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.07em;
+  }
+
+  [data-round-id],
+  [data-round-focus] {
+    color: var(--case-gold);
+  }
+
+  .round-head h3 {
+    margin: 7px 0 0;
+    font-size: 27px;
+    line-height: 1.3;
+  }
+
+  .round-head small {
+    display: block;
+    margin-top: 7px;
+    color: var(--case-dim);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .round-head small > span {
+    margin-right: 8px;
+    color: var(--case-gold);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .round-head small b {
+    color: var(--case-dim);
+    font-weight: 400;
+  }
+
+  .round-progress {
+    position: relative;
+    height: 3px;
+    grid-column: 1 / -1;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--case-line);
+  }
+
+  .round-progress i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 10%;
+    border-radius: inherit;
+    background: var(--case-gold);
+    transition: width 300ms;
+  }
+
+  .route-stage {
+    position: relative;
+    height: 430px;
+    overflow: hidden;
+  }
+
+  [data-route-canvas] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .route-label {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    color: var(--case-gold);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .route-label small {
+    display: block;
+    margin-top: 4px;
+    color: var(--case-dim);
+    font-size: 11px;
+  }
+
+  .route-legend {
+    position: absolute;
+    top: 23px;
+    right: 22px;
+    display: flex;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+
+  .route-legend .pending { color: #b8b5ad; }
+  .route-legend .current { color: var(--case-gold); }
+  .route-legend .passed { color: var(--case-green); }
+  .route-legend .failed { color: var(--case-red); }
+
+  .stage-layer {
+    position: absolute;
+    inset: 0;
+  }
+
+  .stage-mark {
+    position: absolute;
+    z-index: 2;
+    width: 126px;
+    height: 24px;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    transition: filter 250ms;
+  }
+
+  .stage-mark:nth-child(1) { left: 12%; top: 35%; }
+  .stage-mark:nth-child(2) { left: 34%; top: 35%; }
+  .stage-mark:nth-child(3) { left: 56%; top: 35%; }
+  .stage-mark:nth-child(4) { left: 78%; top: 35%; }
+  .stage-mark:nth-child(5) { left: 78%; top: 70%; }
+  .stage-mark:nth-child(6) { left: 56%; top: 70%; }
+  .stage-mark:nth-child(7) { left: 34%; top: 70%; }
+  .stage-mark:nth-child(8) { left: 12%; top: 70%; }
+
+  .station {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #b8b5ad;
+    background: var(--case-surface);
+    box-shadow: 0 0 0 5px rgba(7, 7, 7, 0.78);
+    transform: translate(-50%, -50%) rotate(45deg);
+    transition: transform 250ms, border-color 250ms, box-shadow 250ms;
+  }
+
+  .station::after {
+    position: absolute;
+    inset: 5px;
+    background: #b8b5ad;
+    content: "";
+  }
+
+  .stage-copy {
+    position: absolute;
+    left: 50%;
+    width: 126px;
+    transform: translateX(-50%);
+  }
+
+  .stage-mark.top .stage-copy { bottom: 23px; }
+  .stage-mark.bottom .stage-copy { top: 23px; }
+
+  .stage-copy small,
+  .stage-copy strong,
+  .stage-copy > i {
+    display: block;
+  }
+
+  .stage-copy small {
+    margin-bottom: 5px;
+    color: #b8b5ad;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+
+  .stage-copy strong {
+    color: #b8b5ad;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .stage-copy > i {
+    width: 28px;
+    height: 2px;
+    margin: 7px auto 0;
+    background: #b8b5ad;
+    opacity: 0.7;
+  }
+
+  .stage-mark.current .station,
+  .stage-mark.current .stage-copy strong,
+  .stage-mark.current .stage-copy small { border-color: var(--case-gold); color: var(--case-gold); }
+  .stage-mark.current .station::after,
+  .stage-mark.current .stage-copy > i { background: var(--case-gold); }
+  .stage-mark.pass .station,
+  .stage-mark.pass .stage-copy strong,
+  .stage-mark.pass .stage-copy small { border-color: var(--case-green); color: var(--case-green); }
+  .stage-mark.pass .station::after,
+  .stage-mark.pass .stage-copy > i { background: var(--case-green); }
+  .stage-mark.fail .station,
+  .stage-mark.fail .stage-copy strong,
+  .stage-mark.fail .stage-copy small { border-color: var(--case-red); color: var(--case-red); }
+  .stage-mark.fail .station::after,
+  .stage-mark.fail .stage-copy > i { background: var(--case-red); }
+  .stage-mark.neutral .stage-copy strong,
+  .stage-mark.neutral .stage-copy small { color: var(--case-dim); }
+  .stage-mark.docked .station {
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.32);
+    box-shadow: 0 0 0 7px rgba(245, 185, 113, 0.08), 0 0 20px rgba(245, 185, 113, 0.34);
+  }
+
+  .live-trace {
+    min-height: 220px;
+    overflow: hidden;
+  }
+
+  .live-trace > header {
+    display: flex;
+    padding: 13px 16px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--case-line);
+    color: var(--case-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  [data-live-status] {
+    color: var(--case-gold);
+    font-size: 10px;
+  }
+
+  .trace-feed {
+    height: 210px;
+    overflow: auto;
+    padding: 8px 0;
+    scrollbar-color: var(--case-faint) transparent;
+    scrollbar-width: thin;
+  }
+
+  .trace-empty {
+    padding: 24px 16px;
+    color: var(--case-faint);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  :global(.trace-entry) {
+    display: grid;
+    padding: 8px 16px;
+    grid-template-columns: 32px 80px minmax(0, 1fr) auto;
+    gap: 10px;
+    border-left: 2px solid transparent;
+    align-items: start;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  :global(.trace-entry span) { color: var(--case-faint); }
+  :global(.trace-entry strong) { color: var(--case-dim); font-weight: 500; }
+  :global(.trace-entry p) { margin: 0; color: var(--ink); }
+  :global(.trace-entry em) { color: var(--case-dim); font-size: 10px; font-style: normal; }
+  :global(.trace-entry.running) { border-left-color: var(--case-gold); background: rgba(245,185,113,.1); }
+  :global(.trace-entry.running strong),
+  :global(.trace-entry.running em) { color: var(--case-gold); }
+  :global(.trace-entry.pass strong),
+  :global(.trace-entry.pass em) { color: var(--case-green); }
+  :global(.trace-entry.fail) { border-left-color: var(--case-red); background: rgba(224,101,82,.07); }
+  :global(.trace-entry.fail strong),
+  :global(.trace-entry.fail p),
+  :global(.trace-entry.fail em) { color: var(--case-red); }
+  :global(.trace-entry.return) { border-left-color: var(--case-gold); background: rgba(245,185,113,.07); }
+  :global(.trace-entry.return strong),
+  :global(.trace-entry.return p),
+  :global(.trace-entry.return em) { color: var(--case-gold); }
+  :global(.trace-entry.summary) { margin-top: 4px; border-top: 1px solid var(--case-line); }
+
+  @media (max-width: 980px) {
+    .loop-layout,
+    .constraint-board {
+      grid-template-columns: 1fr;
+    }
+
+    .constraint-board {
+      gap: 0;
+    }
+
+    [data-connections] {
+      display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .case-study {
+      width: calc(100% - 36px);
+      padding: 30px 0 76px;
+    }
+
+    .case-intro h2 {
+      font-size: 34px;
+    }
+
+    .case-intro h2 span {
+      white-space: normal;
+    }
+
+    .case-intro > p,
+    .panel-lead {
+      font-size: 15px;
+    }
+
+    .case-tabs {
+      width: 100%;
+    }
+
+    .case-tabs button {
+      min-width: 0;
+      padding: 12px 8px;
+      flex: 1;
+      font-size: 13px;
+    }
+
+    .round-actions {
+      grid-row: 2;
+      flex-wrap: wrap;
+    }
+
+    .round-head {
+      grid-template-columns: 1fr;
+    }
+
+    .round-head h3 {
+      font-size: 21px;
+    }
+
+    .round-progress {
+      grid-row: 3;
+    }
+
+    .route-stage {
+      height: 410px;
+    }
+
+    .route-legend {
+      display: none;
+    }
+
+    .stage-mark,
+    .stage-copy {
+      width: 78px;
+    }
+
+    .station {
+      width: 14px;
+      height: 14px;
+    }
+
+    .station::after {
+      inset: 4px;
+    }
+
+    .stage-copy strong {
+      font-size: 12px;
+      white-space: normal;
+    }
+
+    .stage-copy small {
+      font-size: 9px;
+    }
+
+    :global(.trace-entry) {
+      padding: 9px 12px;
+      grid-template-columns: 26px 66px minmax(0, 1fr);
+      gap: 7px;
+      font-size: 11px;
+    }
+
+    :global(.trace-entry em) {
+      grid-column: 3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .constraint,
+    .verdict,
+    .station {
+      transition: none;
+    }
+  }
+</style>

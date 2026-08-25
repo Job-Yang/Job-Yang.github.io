@@ -1,6 +1,6 @@
 ---
 interface Props {
-  active?: 'writing' | 'notes' | 'projects' | 'about';
+  active?: 'writing' | 'notes' | 'projects' | 'about' | 'search';
 }
 
 const { active } = Astro.props;
@@ -16,7 +16,7 @@ const isHome = Astro.url.pathname === '/';
       <a class:list={{ active: active === 'notes' }} aria-current={active === 'notes' ? 'page' : undefined} href="/notes/">手记</a>
       <a class:list={{ active: active === 'projects' }} aria-current={active === 'projects' ? 'page' : undefined} href="/projects/">沉淀</a>
       <a class:list={{ active: active === 'about' }} aria-current={active === 'about' ? 'page' : undefined} href="/about/">关于</a>
-      <a href="/search/">搜索</a>
+      <a class:list={{ active: active === 'search' }} aria-current={active === 'search' ? 'page' : undefined} href="/search/">搜索</a>
       <a href="/rss.xml">RSS</a>
     </div>
   </div>

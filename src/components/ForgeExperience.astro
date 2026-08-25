@@ -1,0 +1,326 @@
+---
+interface Props {
+  returnLabel?: string;
+  worldLabel?: string;
+}
+
+const {
+  returnLabel = '返回关于我',
+  worldLabel = '铁匠铺世界',
+} = Astro.props;
+---
+
+<section
+  class="forge-experience"
+  id="forge-experience"
+  data-forge-experience
+  aria-label="3D 铁匠铺"
+  aria-hidden="true"
+  hidden
+>
+  <div class="forge-bar">
+    <div class="forge-tabs" role="group" aria-label="铁匠铺导航">
+      <button type="button" data-forge-close>
+        <span class="back-arrow" aria-hidden="true">←</span> {returnLabel}
+      </button>
+      <strong>{worldLabel} <span>3D LIVE</span></strong>
+    </div>
+    <a
+      href="https://jobyang.cn/npc_voice_panel_3d/"
+      target="_blank"
+      rel="noreferrer"
+    >
+      独立打开 ↗
+    </a>
+  </div>
+
+  <div
+    class="forge-frame"
+    data-forge-frame
+    data-src="https://jobyang.cn/npc_voice_panel_3d/"
+  >
+    <div class="forge-loading" data-forge-loading aria-live="polite">
+      <i aria-hidden="true"></i>
+      <span>正在生火</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  const experience = document.querySelector('[data-forge-experience]') as HTMLElement | null;
+  const frameHost = document.querySelector('[data-forge-frame]') as HTMLElement | null;
+  const loading = document.querySelector('[data-forge-loading]') as HTMLElement | null;
+  const openers = [...document.querySelectorAll('[data-forge-open]')] as HTMLButtonElement[];
+  const closers = [...document.querySelectorAll('[data-forge-close]')] as HTMLButtonElement[];
+
+  if (experience && frameHost) {
+    const background = document.querySelector('[data-forge-background]') as HTMLElement | null;
+    const footer = document.querySelector('body > footer') as HTMLElement | null;
+    let resumeBlackHole = false;
+    let resumeAudio = false;
+
+    const setLauncherState = (open: boolean) => {
+      openers.forEach((button) => {
+        button.setAttribute('aria-expanded', String(open));
+      });
+    };
+
+    const pauseBackground = () => {
+      const controller = (window as any).blackHoleControls;
+      const state = controller?.getState?.();
+      resumeBlackHole = Boolean(state && !state.paused);
+      if (resumeBlackHole) controller.togglePause();
+
+      const audio = document.querySelector('[data-ambient-audio] audio') as HTMLAudioElement | null;
+      resumeAudio = Boolean(audio && !audio.paused);
+      if (resumeAudio) audio?.pause();
+    };
+
+    const resumeBackground = () => {
+      const controller = (window as any).blackHoleControls;
+      const state = controller?.getState?.();
+      if (resumeBlackHole && state?.paused) controller.togglePause();
+      resumeBlackHole = false;
+
+      if (resumeAudio) {
+        const audio = document.querySelector('[data-ambient-audio] audio') as HTMLAudioElement | null;
+        audio?.play().catch(() => {});
+      }
+      resumeAudio = false;
+    };
+
+    const mountFrame = () => {
+      if (frameHost.querySelector('iframe')) return;
+      loading?.removeAttribute('hidden');
+      const frame = document.createElement('iframe');
+      frame.title = '老杨的 3D 铁匠铺';
+      frame.src = frameHost.dataset.src ?? '';
+      frame.allow = 'autoplay; fullscreen';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.addEventListener('load', () => {
+        loading?.setAttribute('hidden', '');
+        try {
+          const style = frame.contentDocument?.createElement('style');
+          if (style && frame.contentDocument?.head) {
+            style.textContent = '.topbar{display:none!important}';
+            frame.contentDocument.head.appendChild(style);
+          }
+        } catch {
+          // Local preview is cross-origin; production uses the same jobyang.cn origin.
+        }
+      });
+      frameHost.appendChild(frame);
+    };
+
+    const open = () => {
+      pauseBackground();
+      mountFrame();
+      experience.hidden = false;
+      experience.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('forge-mode');
+      if (background) background.inert = true;
+      if (footer) footer.inert = true;
+      setLauncherState(true);
+      requestAnimationFrame(() => closers[0]?.focus());
+    };
+
+    const close = () => {
+      if (experience.hidden) return;
+      experience.hidden = true;
+      experience.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('forge-mode');
+      if (background) background.inert = false;
+      if (footer) footer.inert = false;
+      frameHost.querySelector('iframe')?.remove();
+      loading?.removeAttribute('hidden');
+      setLauncherState(false);
+      resumeBackground();
+      openers[0]?.focus();
+    };
+
+    openers.forEach((button) => button.addEventListener('click', open));
+    closers.forEach((button) => button.addEventListener('click', close));
+    window.addEventListener('blackhole:ready', () => {
+      if (experience.hidden) return;
+      const controller = (window as any).blackHoleControls;
+      if (!controller?.getState?.().paused) {
+        controller.togglePause();
+        resumeBlackHole = true;
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !experience.hidden) close();
+    });
+    window.addEventListener('pagehide', resumeBackground, { once: true });
+  }
+</script>
+
+<style>
+  .forge-experience {
+    position: fixed;
+    inset: 52px 0 0;
+    z-index: 45;
+    overflow: hidden;
+    background: #0d0905;
+  }
+
+  .forge-experience[hidden] {
+    display: none;
+  }
+
+  .forge-bar {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    z-index: 2;
+    display: flex;
+    width: min(calc(100% - 32px), 620px);
+    min-height: 44px;
+    padding: 4px;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(8, 6, 4, 0.78);
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.36);
+    backdrop-filter: blur(18px);
+    transform: translateX(-50%);
+  }
+
+  .forge-tabs {
+    display: inline-flex;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .forge-tabs button,
+  .forge-tabs strong,
+  .forge-bar > a {
+    min-height: 34px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 5px;
+    color: rgba(240, 224, 200, 0.72);
+    background: transparent;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .forge-tabs button {
+    cursor: pointer;
+  }
+
+  .forge-tabs strong {
+    display: inline-flex;
+    align-items: center;
+    color: #fff4df;
+    background: rgba(255, 170, 100, 0.14);
+    font-weight: 500;
+  }
+
+  .forge-tabs strong span {
+    margin-left: 6px;
+    color: #ff9955;
+    font: 9px var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  .forge-tabs .back-arrow {
+    margin-right: 5px;
+    color: #ff9955;
+  }
+
+  .forge-bar > a {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .forge-tabs button:hover,
+  .forge-bar > a:hover {
+    color: #fff4df;
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .forge-tabs button:focus-visible,
+  .forge-bar > a:focus-visible {
+    outline: 2px solid #ff9955;
+    outline-offset: 2px;
+  }
+
+  .forge-frame {
+    position: absolute;
+    inset: 64px 0 0;
+  }
+
+  .forge-frame :global(iframe) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .forge-frame :global(iframe) {
+    display: block;
+    border: 0;
+    background: #0d0905;
+  }
+
+  .forge-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-content: center;
+    gap: 12px;
+    color: #ffaa66;
+    background: #0d0905;
+    font: 11px var(--mono);
+    letter-spacing: 0.12em;
+    text-align: center;
+  }
+
+  .forge-loading[hidden] {
+    display: none;
+  }
+
+  .forge-loading i {
+    width: 28px;
+    height: 28px;
+    margin-inline: auto;
+    border: 2px solid rgba(255, 170, 100, 0.18);
+    border-top-color: #ff7733;
+    border-radius: 50%;
+    animation: forge-spin 900ms linear infinite;
+  }
+
+  :global(body.forge-mode) {
+    overflow: hidden;
+  }
+
+  :global(body.forge-mode .render-control),
+  :global(body.forge-mode .ambient-audio) {
+    visibility: hidden;
+  }
+
+  @keyframes forge-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .forge-bar {
+      top: 10px;
+      width: calc(100% - 20px);
+    }
+
+    .forge-tabs button,
+    .forge-tabs strong,
+    .forge-bar > a {
+      padding-inline: 10px;
+      font-size: 12px;
+    }
+
+    .forge-frame {
+      inset-block-start: 58px;
+    }
+  }
+</style>

@@ -89,6 +89,10 @@ const noteTeasers = notes.map((note) => ({
                 </div>
               </div>
 
+              <a class="iloop-case-link" href="/projects/iloop/#live-trim-case">
+                看 AI Agent 怎么解决复杂问题 <span>→</span>
+              </a>
+
               <nav class="iloop-links" aria-label="iLoop 相关内容">
                 <a href="/writing/iloop-设计思路/"><em>i</em>Loop 设计</a>
                 <a href="/writing/vdd-面向验证的开发/">VDD</a>
@@ -424,6 +428,38 @@ const noteTeasers = notes.map((note) => ({
     color: var(--ink-faint);
     font-size: 13px;
     line-height: 1.6;
+  }
+
+  .iloop-case-link {
+    display: inline-flex;
+    min-height: 44px;
+    margin-top: 30px;
+    padding: 0 17px;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid rgba(245, 185, 113, 0.4);
+    border-radius: 7px;
+    background: rgba(245, 185, 113, 0.08);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .iloop-case-link span {
+    color: var(--accent);
+    transition: transform 180ms ease;
+  }
+
+  .iloop-case-link:hover {
+    border-color: rgba(245, 185, 113, 0.7);
+    background: rgba(245, 185, 113, 0.13);
+    transform: translateY(-2px);
+  }
+
+  .iloop-case-link:hover span {
+    transform: translateX(3px);
   }
 
   .iloop-links {
