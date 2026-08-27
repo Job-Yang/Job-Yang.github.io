@@ -1,8 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
+import ActivityFeed from '../components/ActivityFeed.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BlackHoleBackdrop from '../components/BlackHoleBackdrop.astro';
 import ILoopGalaxy from '../components/ILoopGalaxy.astro';
+import LearningSpotlight from '../components/learning/LearningSpotlight.astro';
 import { formatContentDate } from '../lib/dates';
 import { comparePosts } from '../lib/posts';
 
@@ -53,53 +55,51 @@ const noteTeasers = notes.map((note) => ({
         <a class="primary" href="/writing/">读文章 →</a>
         <a class="secondary" href="/notes/">看看手记</a>
       </div>
+      <a class="hero-scroll-cue" href="#live-work">
+        <span>NOW · 正在发生</span>
+        <b aria-hidden="true">↓</b>
+      </a>
     </section>
 
     <div class="lower">
-      <section class="content-section wide" id="selected-work">
-        <div class="section-head">
-          <h2>系统</h2>
-          <a class="pill" href="/projects/">全部沉淀 →</a>
-        </div>
+      <section class="content-section wide now-section" id="live-work">
+        <ActivityFeed mode="compact" limit={4} />
+      </section>
+
+      <section class="content-section feature-section wide" id="learning">
+        <LearningSpotlight compact />
+      </section>
+
+      <section class="content-section feature-section wide" id="selected-work">
         {featuredSystem && (
           <div class="iloop-showcase">
             <div class="iloop-copy">
+              <div class="section-head feature-head">
+                <h2>系统</h2>
+                <a class="pill" href="/projects/">全部沉淀 →</a>
+              </div>
               <span class="eyebrow">{featuredSystem.data.eyebrow}</span>
               <h3 class="display"><em>i</em>Loop</h3>
               <p class="iloop-statement">
                 让 Agent 在真实工程里持续交付。先定义要验证什么，再拿可复核的证据决定是否闭环。
               </p>
 
-              <div class="iloop-capabilities">
-                <div>
-                  <strong>三档放权</strong>
-                  <p>L1 只分析，L2 可以改代码并验证，L3 才会连续执行。</p>
-                </div>
-                <div>
-                  <strong>真实取证</strong>
-                  <p>不按固定清单跑工具。按问题选择日志、Crash，或 UI 树、截图与自动化。</p>
-                </div>
-                <div>
-                  <strong>持续病例</strong>
-                  <p>保存目标、假设、观测和反证；换一轮仍能据此继续判断。</p>
-                </div>
-                <div>
-                  <strong>独立验收</strong>
-                  <p>用证据对照标准；高风险任务交独立 Agent 复核。</p>
-                </div>
+              <div class="feature-actions">
+                <a class="feature-primary" href="/projects/iloop/#live-trim-case">
+                  看复杂任务回放 <span>→</span>
+                </a>
+                <a class="feature-secondary" href={featuredSystem.data.github} target="_blank" rel="noreferrer">
+                  查看开源仓库 ↗
+                </a>
               </div>
-
-              <a class="iloop-case-link" href="/projects/iloop/#live-trim-case">
-                看 AI Agent 怎么解决复杂问题 <span>→</span>
-              </a>
 
               <nav class="iloop-links" aria-label="iLoop 相关内容">
                 <a href="/writing/iloop-设计思路/"><em>i</em>Loop 设计</a>
                 <a href="/writing/vdd-面向验证的开发/">VDD</a>
                 <a href="/writing/oncall-助手/">Oncall</a>
-                <a href={featuredSystem.data.github} target="_blank" rel="noreferrer">
-                  已开源 · 查看仓库 ↗
-                </a>
+                <span>L1/L2/L3 分级放权</span>
+                <span>真实取证</span>
+                <span>独立验收</span>
               </nav>
             </div>
             <ILoopGalaxy />
@@ -114,11 +114,11 @@ const noteTeasers = notes.map((note) => ({
             GitHub 技能仓 ↗
           </a>
         </div>
-        <div class="home-skills">
+        <div class="home-list home-skills">
           {featuredSkills.map((project, index) => (
-            <a class="home-skill" href={`/projects/${project.id}/`}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <div>
+            <a class="home-row home-skill" href={`/projects/${project.id}/`}>
+              <div class="home-row-meta">{String(index + 1).padStart(2, '0')}</div>
+              <div class="home-row-copy">
                 <h3>{project.data.title}</h3>
                 <p>{project.data.statement}</p>
               </div>
@@ -132,18 +132,20 @@ const noteTeasers = notes.map((note) => ({
           <h2>最近写的</h2>
           <a class="pill" href="/writing/">全部文章 →</a>
         </div>
-        <div class="reading-column cards">
+        <div class="home-list reading-column">
           {posts.map((post) => (
-            <a class="card glass" href={`/writing/${post.id}/`}>
-              <div class="meta">
-                <span>{post.data.category}</span>
+            <a class="home-row post-line" href={`/writing/${post.id}/`}>
+              <div class="home-row-meta">
                 <time datetime={post.data.publishedAt.toISOString()}>
-                  {formatContentDate(post.data.publishedAt).slice(0, 7)}
+                  {formatContentDate(post.data.publishedAt)}
                 </time>
+                <span>{post.data.category}</span>
                 {post.data.readingMinutes && <span>{post.data.readingMinutes} min</span>}
               </div>
-              <h3>{post.data.title}</h3>
-              <p>{post.data.description}</p>
+              <div class="home-row-copy">
+                <h3>{post.data.title}</h3>
+                <p>{post.data.description}</p>
+              </div>
             </a>
           ))}
         </div>
@@ -155,15 +157,17 @@ const noteTeasers = notes.map((note) => ({
             <h2>最近在想</h2>
             <a class="pill" href="/notes/">全部手记 →</a>
           </div>
-          <div class="reading-column note-flow">
+          <div class="home-list reading-column note-flow">
             {noteTeasers.map(({ note, title, excerpt }) => (
-              <a class="note-line has-date" href="/notes/">
-                <time datetime={note.data.publishedAt.toISOString()}>
-                  {formatContentDate(note.data.publishedAt)}
-                </time>
-                <div class="note-text">
-                  {title && <strong>{title}</strong>}
-                  <span>{excerpt}</span>
+              <a class="home-row note-line" href="/notes/">
+                <div class="home-row-meta">
+                  <time datetime={note.data.publishedAt.toISOString()}>
+                    {formatContentDate(note.data.publishedAt)}
+                  </time>
+                </div>
+                <div class="home-row-copy">
+                  {title && <h3>{title}</h3>}
+                  <p>{excerpt}</p>
                 </div>
               </a>
             ))}
@@ -178,7 +182,7 @@ const noteTeasers = notes.map((note) => ({
             资深 iOS 工程师，先后在美团、字节跳动做客户端。最近在全面转向 AI，一边学它、一边用它重做自己的工具。
             这里主要记录：我读到的、想到的、以及踩过的坑。
           </p>
-          <a href="/about/">更多关于我与公众号 →</a>
+          <a href="/about/">更多关于我 →</a>
         </div>
       </section>
     </div>
@@ -241,10 +245,17 @@ const noteTeasers = notes.map((note) => ({
     text-wrap: pretty;
   }
 
+  .home :global(.pill) {
+    min-height: 40px;
+    padding-inline: 17px;
+    font-size: 15px;
+  }
+
   .hero {
+    position: relative;
     display: flex;
-    min-height: calc(100vh - 58px);
-    padding-block: 42px;
+    min-height: calc(100svh - 52px);
+    padding: 42px 0 82px;
     flex-direction: column;
     justify-content: center;
   }
@@ -265,7 +276,7 @@ const noteTeasers = notes.map((note) => ({
     margin: 24px 0 26px;
     font-size: clamp(44px, 6.8vw, 68px);
     line-height: 1.06;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   .hero h1 em {
@@ -302,7 +313,7 @@ const noteTeasers = notes.map((note) => ({
     padding: 0 22px;
     align-items: center;
     border-radius: 11px;
-    font-size: 14px;
+    font-size: 16px;
     text-decoration: none;
     transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
   }
@@ -338,27 +349,103 @@ const noteTeasers = notes.map((note) => ({
     background: rgba(255, 255, 255, 0.07);
   }
 
+  .hero-scroll-cue {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    min-height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+    text-decoration: none;
+  }
+
+  .hero-scroll-cue b {
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 400;
+    animation: home-scroll-cue 1.8s ease-in-out infinite;
+  }
+
+  .hero-scroll-cue:hover {
+    color: var(--accent);
+  }
+
+  @keyframes home-scroll-cue {
+    50% {
+      transform: translateY(5px);
+    }
+  }
+
   .lower {
-    background: linear-gradient(180deg, transparent, rgba(3, 3, 3, 0.64) 8%, rgba(3, 3, 3, 0.78));
-    backdrop-filter: blur(3px);
+    background: transparent;
   }
 
   .content-section {
-    padding-block: 62px;
-    border-top: 1px solid var(--line);
+    position: relative;
+    padding-block: clamp(54px, 6vw, 84px);
+    isolation: isolate;
+  }
+
+  .content-section + .content-section {
+    margin-top: clamp(26px, 4vw, 58px);
+  }
+
+  .content-section::before {
+    position: absolute;
+    top: 0;
+    bottom: -24px;
+    left: 50%;
+    z-index: -1;
+    width: 100vw;
+    background: linear-gradient(
+      90deg,
+      rgba(3, 3, 3, 0.48) 0%,
+      rgba(3, 3, 3, 0.32) 58%,
+      rgba(3, 3, 3, 0.22) 100%
+    );
+    content: "";
+    mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.72) 28%,
+      #000 calc(100% - 24px),
+      transparent 100%
+    );
+    pointer-events: none;
+    transform: translateX(-50%);
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.72) 28%,
+      #000 calc(100% - 24px),
+      transparent 100%
+    );
+  }
+
+  .feature-section {
+    padding-block: 22px;
+  }
+
+  .now-section {
+    padding-block: 64px 74px;
   }
 
   .section-head {
     display: flex;
     max-width: 1120px;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     align-items: center;
     justify-content: space-between;
   }
 
   .section-head h2 {
     margin: 0;
-    font-size: 15px;
+    font-size: 18px;
+    font-weight: 600;
   }
 
   .reading-column {
@@ -368,25 +455,22 @@ const noteTeasers = notes.map((note) => ({
   .iloop-showcase {
     display: grid;
     max-width: 1360px;
-    padding: 42px clamp(24px, 3.4vw, 48px) 34px;
-    grid-template-columns: minmax(340px, 0.78fr) minmax(620px, 1.22fr);
-    gap: clamp(38px, 5vw, 82px);
+    padding-block: 18px 36px;
+    grid-template-columns: minmax(340px, 0.72fr) minmax(600px, 1.28fr);
+    gap: clamp(44px, 7vw, 100px);
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    background:
-      linear-gradient(90deg, rgba(3, 3, 3, 0.30), rgba(3, 3, 3, 0.10)),
-      rgba(3, 3, 3, 0.04);
-    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(5px) saturate(88%);
   }
 
   .iloop-copy {
     min-width: 0;
   }
 
+  .feature-head {
+    margin-bottom: 34px;
+  }
+
   .iloop-copy > .eyebrow {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .iloop-copy h3 {
@@ -405,287 +489,154 @@ const noteTeasers = notes.map((note) => ({
     max-width: 540px;
     margin: 0;
     color: var(--ink-dim);
-    font-size: 16px;
-    line-height: 1.75;
+    font-size: 17px;
+    line-height: 1.65;
   }
 
-  .iloop-capabilities {
-    display: grid;
-    margin-top: 34px;
-    gap: 22px;
+  .feature-actions {
+    display: flex;
+    margin-top: 28px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
-  .iloop-capabilities strong {
-    display: block;
-    margin-bottom: 4px;
+  .feature-actions a {
+    display: inline-flex;
+    min-height: 42px;
+    padding: 0 14px;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
     color: var(--ink);
     font-size: 15px;
-    font-weight: 640;
-  }
-
-  .iloop-capabilities p {
-    margin: 0;
-    color: var(--ink-faint);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  .iloop-case-link {
-    display: inline-flex;
-    min-height: 44px;
-    margin-top: 30px;
-    padding: 0 17px;
-    align-items: center;
-    gap: 20px;
-    border: 1px solid rgba(245, 185, 113, 0.4);
-    border-radius: 7px;
-    background: rgba(245, 185, 113, 0.08);
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: 600;
     text-decoration: none;
     transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
   }
 
-  .iloop-case-link span {
+  .feature-primary {
+    border-color: rgba(245, 185, 113, 0.46) !important;
+    color: var(--accent) !important;
+  }
+
+  .feature-actions span {
     color: var(--accent);
     transition: transform 180ms ease;
   }
 
-  .iloop-case-link:hover {
+  .feature-actions a:hover {
     border-color: rgba(245, 185, 113, 0.7);
-    background: rgba(245, 185, 113, 0.13);
+    background: rgba(245, 185, 113, 0.06);
     transform: translateY(-2px);
   }
 
-  .iloop-case-link:hover span {
+  .feature-actions a:hover span {
     transform: translateX(3px);
   }
 
   .iloop-links {
     display: flex;
     margin-top: 34px;
-    padding-top: 20px;
     flex-wrap: wrap;
     gap: 12px 22px;
-    border-top: 1px solid var(--line);
   }
 
   .iloop-links a {
     color: var(--ink-dim);
-    font-size: 13px;
+    font-size: 14px;
     text-decoration: none;
     transition: color 180ms ease;
+  }
+
+  .iloop-links span {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
   }
 
   .iloop-links a:hover {
     color: var(--ink);
   }
 
-  .iloop-links a:last-child {
-    color: var(--accent);
-  }
-
-  .cards {
+  .home-list {
     display: grid;
-    gap: 14px;
-  }
-
-  .card,
-  .project {
-    color: inherit;
-    text-decoration: none;
-    transition: 220ms ease;
-  }
-
-  .card {
-    padding: 22px 24px;
-    border-radius: 16px;
-  }
-
-  .card:hover,
-  .project:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.16);
-    background: var(--glass-hi);
-  }
-
-  .meta {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 9px;
-    color: var(--ink-faint);
-    font: 12px var(--mono);
-  }
-
-  .meta span:first-child {
-    color: var(--accent);
-  }
-
-  .card h3 {
-    margin: 0 0 7px;
-    font-size: 18px;
-    line-height: 1.4;
-  }
-
-  .card p,
-  .about p {
-    margin: 0;
-    color: var(--ink-dim);
-  }
-
-  .featured-system {
     max-width: 1120px;
-    min-height: 0;
-    border-block: 1px solid var(--line);
+  }
+
+  .home-row {
+    display: grid;
+    padding: 22px 0;
+    grid-template-columns: 142px minmax(0, 1fr);
+    gap: 26px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
     color: inherit;
     text-decoration: none;
     transition: opacity 180ms ease;
   }
 
-  .featured-system:hover {
-    opacity: 0.82;
+  .home-row:hover {
+    opacity: 0.74;
   }
 
-  .featured-system-copy {
-    max-width: 760px;
-    padding: 54px 20px 58px 0;
-  }
-
-  .featured-system-copy > span {
-    color: var(--accent);
-    font: 10px var(--mono);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .featured-system h3 {
-    margin: 12px 0 10px;
-    font-family: var(--serif);
-    font-size: 56px;
-    font-weight: 400;
-  }
-
-  .featured-system p {
-    margin: 0;
-    color: var(--ink-dim);
-    font-size: 14px;
-    line-height: 1.65;
-  }
-
-  .featured-system strong {
-    display: inline-block;
-    margin-top: 28px;
-    color: var(--ink);
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .home-skills {
+  .home-row-meta {
     display: grid;
-    max-width: 1120px;
-    border-top: 1px solid var(--line);
-  }
-
-  .home-skill {
-    display: grid;
-    padding: 24px 0;
-    grid-template-columns: 60px minmax(0, 1fr);
-    gap: 18px;
-    border-bottom: 1px solid var(--line);
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .home-skill > span {
-    padding-top: 4px;
+    align-content: start;
+    gap: 5px;
+    padding-top: 3px;
     color: var(--ink-faint);
-    font: 10px var(--mono);
+    font: 11px var(--mono);
   }
 
-  .home-skill h3 {
-    margin: 0 0 7px;
+  .home-row-meta span:first-of-type {
+    color: var(--accent);
+  }
+
+  .home-row-copy {
+    display: grid;
+    grid-template-columns: minmax(210px, 310px) minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+  }
+
+  .home-row h3 {
+    margin: 0;
     font-family: var(--serif);
     font-size: 25px;
+    line-height: 1.35;
     font-weight: 400;
   }
 
-  .home-skill p {
-    margin: 0;
+  .home-row p {
+    margin: 2px 0 0;
     color: var(--ink-dim);
-    font-size: 14px;
+    font-size: 16px;
+    line-height: 1.6;
   }
 
   .home-skill:hover h3 {
     color: var(--accent);
   }
 
-  .note-flow {
-    display: grid;
-    gap: 0;
-  }
-
-  .note-line {
-    display: grid;
-    padding: 18px 0;
-    grid-template-columns: 1fr;
-    border-bottom: 1px solid var(--line);
-    text-decoration: none;
-    transition: opacity 180ms ease;
-  }
-
-  .note-line.has-date {
-    grid-template-columns: 100px 1fr;
-  }
-
-  .note-line:hover {
-    opacity: 0.72;
-  }
-
-  .note-line:last-child {
-    border-bottom: none;
-  }
-
-  .note-line time {
-    color: var(--ink-faint);
-    font: 11px var(--mono);
-    padding-top: 3px;
-  }
-
-  .note-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .note-text strong {
-    color: var(--ink);
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  .note-text span {
+  .about p {
+    margin: 0;
     color: var(--ink-dim);
-    font-size: 14px;
+    font-size: 17px;
     line-height: 1.65;
   }
 
-  @media (max-width: 580px) {
-    .note-line {
-      grid-template-columns: 1fr;
-      gap: 4px;
-    }
+  .now-section :global(.activity-feed) {
+    max-width: 1120px;
   }
 
   .about > a {
     display: inline-block;
     margin-top: 22px;
     color: var(--accent);
-    font-size: 14px;
+    font-size: 15px;
     text-decoration: none;
   }
 
-  @media (max-width: 1120px) {
+  @media (max-width: 1000px) {
     .iloop-showcase {
       grid-template-columns: minmax(0, 1fr);
       gap: 36px;
@@ -704,9 +655,9 @@ const noteTeasers = notes.map((note) => ({
 
   @media (max-width: 720px) {
     .hero {
-      min-height: 78vh;
+      min-height: calc(100svh - 52px);
       justify-content: flex-start;
-      padding-top: 13vh;
+      padding: 11vh 0 76px;
     }
 
     .hero h1 {
@@ -715,28 +666,39 @@ const noteTeasers = notes.map((note) => ({
 
     .hero > p {
       max-width: 100%;
-      font-size: 16px;
+      font-size: 17px;
     }
 
-    .featured-system-copy {
-      padding-block: 38px;
+    .section-head {
+      padding-right: 86px;
     }
 
     .iloop-showcase {
-      padding: 34px 18px 20px;
+      min-height: 0;
+      padding-block: 44px;
       grid-template-columns: minmax(0, 1fr);
       gap: 34px;
-      border-inline: 0;
-      border-radius: 0;
     }
 
     .iloop-copy h3 {
       font-size: 52px;
     }
 
-    .iloop-capabilities {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px 18px;
+    .home-row {
+      grid-template-columns: 1fr;
+      gap: 9px;
+    }
+
+    .home-row-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+    }
+
+    .home-row-copy {
+      grid-template-columns: 1fr;
+      gap: 6px;
     }
   }
 
@@ -749,6 +711,12 @@ const noteTeasers = notes.map((note) => ({
     .hero .kicker::before {
       width: 24px;
       margin-right: 8px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-scroll-cue b {
+      animation: none;
     }
   }
 </style>

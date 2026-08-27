@@ -398,7 +398,8 @@ const stages = [
           atNode = true;
         } else {
           state.manualAngle = null;
-          const cycleTime = (time - state.cycleOrigin) % CYCLE_MS;
+          const rawCycleTime = time - state.cycleOrigin;
+          const cycleTime = ((rawCycleTime % CYCLE_MS) + CYCLE_MS) % CYCLE_MS;
           const segmentIndex = Math.floor(cycleTime / SEGMENT_MS) % stages.length;
           const segmentTime = cycleTime - segmentIndex * SEGMENT_MS;
 

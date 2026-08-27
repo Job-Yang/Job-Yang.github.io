@@ -1,0 +1,24 @@
+---
+import CourseShell from '../../../components/learning/CourseShell.astro';
+import LearningExperiment from '../../../components/learning/LearningExperiment.astro';
+import course from '../../../data/learning/ai-foundations.json';
+
+export function getStaticPaths() {
+  return course.lessons
+    .filter((lesson) => lesson.id !== 'journey')
+    .map((lesson) => ({
+      params: { lesson: lesson.id },
+      props: { lessonId: lesson.id }
+    }));
+}
+
+interface Props {
+  lessonId: string;
+}
+
+const { lessonId } = Astro.props;
+---
+
+<CourseShell lessonId={lessonId}>
+  <LearningExperiment lessonId={lessonId} mode="course" />
+</CourseShell>

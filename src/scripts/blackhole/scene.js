@@ -382,7 +382,9 @@ if (canvas) {
     const autoApproach = autoPhase;
     const scrollFall = scrollProgress ** 2 * (3 - 2 * scrollProgress);
     const flight = Math.min(Math.max(autoApproach, scrollFall), 1);
-    const fade = THREE.MathUtils.smoothstep(flight, 0.68, 1);
+    // Keep the ship readable through the bright accretion disk. It only
+    // disappears during the final approach into the black core.
+    const fade = THREE.MathUtils.smoothstep(flight, 0.88, 1);
     const narrow = camera.aspect < 1;
     const targetNdcX = narrow ? 0.38 : 0.4;
     const targetNdcY = narrow ? 0.12 : 0.14;

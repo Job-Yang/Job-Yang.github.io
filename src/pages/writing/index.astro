@@ -48,6 +48,7 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
                 <span>{post.data.category}</span>
                 {post.data.readingMinutes && <span>{post.data.readingMinutes} min</span>}
                 {post.data.pinned && <span class="pin-label">置顶</span>}
+                {post.data.interactiveCourse && <span class="course-label">互动教程</span>}
               </div>
             </a>
           </article>
@@ -208,6 +209,10 @@ const categories = [...new Set(posts.map((post) => post.data.category))];
   }
 
   article a:hover h2 {
+    color: var(--accent);
+  }
+
+  .course-label {
     color: var(--accent);
   }
 

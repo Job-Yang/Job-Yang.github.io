@@ -1,0 +1,156 @@
+---
+interface Props {
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+---
+
+<section class:list={['learning-spotlight', { compact }]} aria-labelledby={`learning-spotlight-${compact ? 'compact' : 'full'}`}>
+  <div class="spotlight-copy">
+    <span class="eyebrow">INTERACTIVE LEARNING</span>
+    <h2 class="display" id={`learning-spotlight-${compact ? 'compact' : 'full'}`}>把 AI 原理亲手跑一遍。</h2>
+    <p>十二个实验，从一次 API 调用到 Attention、端侧部署和客户端控制。每节改一个变量，看结果，再过一道理解检查。</p>
+    <div class="spotlight-actions">
+      <a href="/learn/ai-foundations/">开始互动学习 <span aria-hidden="true">→</span></a>
+      <a href="/writing/写给客户端工程师的-ai-底层原理/">先读完整文章</a>
+    </div>
+  </div>
+  <ol aria-label="课程知识路径">
+    <li><span>00</span><div><strong>调用全景</strong><small>字符串 → token</small></div></li>
+    <li><span>03</span><div><strong>Attention</strong><small>Q/K/V → 权重</small></div></li>
+    <li><span>07</span><div><strong>端侧部署</strong><small>权重 + KV + 余量</small></div></li>
+    <li><span>10</span><div><strong>调用侧</strong><small>采样 · 工具 · 流式</small></div></li>
+    <li><span>11</span><div><strong>工程师速查</strong><small>公式带着假设走</small></div></li>
+  </ol>
+</section>
+
+<style>
+  .learning-spotlight {
+    display: grid;
+    padding-block: 56px;
+    grid-template-columns: minmax(300px, 0.72fr) minmax(520px, 1.28fr);
+    align-items: center;
+    gap: clamp(36px, 6vw, 86px);
+  }
+
+  .spotlight-copy h2 {
+    max-width: 520px;
+    margin: 13px 0 15px;
+    font-size: clamp(36px, 4.5vw, 56px);
+    line-height: 1.06;
+  }
+
+  .spotlight-copy p {
+    max-width: 590px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  .spotlight-actions {
+    display: flex;
+    margin-top: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+  }
+
+  .spotlight-actions a {
+    color: var(--ink);
+    font-size: 15px;
+    text-decoration: none;
+  }
+
+  .spotlight-actions a:first-child {
+    min-height: 42px;
+    padding: 9px 14px;
+    border: 1px solid rgba(245, 185, 113, 0.46);
+    border-radius: 5px;
+    color: var(--accent);
+  }
+
+  .spotlight-actions a:hover {
+    color: var(--accent);
+  }
+
+  .learning-spotlight ol {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    grid-template-columns: 1fr;
+    border-block: 1px solid rgba(255, 255, 255, 0.055);
+    list-style: none;
+  }
+
+  .learning-spotlight li {
+    display: grid;
+    min-width: 0;
+    min-height: 76px;
+    padding: 16px 4px;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  .learning-spotlight li + li {
+    border-left: 0;
+  }
+
+  .learning-spotlight li:last-child {
+    border-bottom: 0;
+  }
+
+  .learning-spotlight li span,
+  .learning-spotlight li small {
+    display: block;
+    font: 11px/1.4 var(--mono);
+  }
+
+  .learning-spotlight li span {
+    color: var(--ink-faint);
+  }
+
+  .learning-spotlight li small {
+    color: var(--ink-dim);
+  }
+
+  .learning-spotlight li strong {
+    display: block;
+    margin: 0 0 5px;
+    color: var(--ink);
+    font-size: 17px;
+  }
+
+  .learning-spotlight.compact {
+    padding-block: 52px;
+  }
+
+  .learning-spotlight.compact .spotlight-copy h2 {
+    font-size: clamp(32px, 4vw, 46px);
+  }
+
+  .learning-spotlight.compact li {
+    min-height: 72px;
+  }
+
+  @media (max-width: 960px) {
+    .learning-spotlight {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .learning-spotlight {
+      padding-block: 48px;
+    }
+
+    .learning-spotlight li {
+      min-height: 68px;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 12px;
+    }
+  }
+</style>

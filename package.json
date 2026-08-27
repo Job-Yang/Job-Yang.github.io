@@ -11,7 +11,11 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "audit:public": "node scripts/audit-public-content.mjs"
+    "audit:public": "node scripts/audit-public-content.mjs",
+    "sync:activity": "node scripts/sync-activity-feed.mjs",
+    "validate:learning": "node scripts/validate-learning-content.mjs",
+    "test:learning": "node --test tests/learning/*.test.mjs",
+    "build:learning-embeds": "node scripts/build-learning-embeds.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.12",

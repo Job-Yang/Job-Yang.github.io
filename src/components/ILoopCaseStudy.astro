@@ -10,7 +10,10 @@ import {
 <section class="case-study" id="live-trim-case" data-iloop-case>
   <header class="case-intro">
     <div class="eyebrow section-label">01 · 一个真实案例</div>
-    <h2 class="display">AI Agent 遇到复杂问题，<br /><span>是怎么一步步解决的？</span></h2>
+    <h2 class="display">
+      <span>AI Agent 遇到复杂问题，</span>
+      <span>是怎么一步步解决的？</span>
+    </h2>
     <p>
       这是一次真实但脱敏的<strong>直播 SDK 包体裁剪</strong>：一个迭代多年、跨团队维护的
       <strong>近百兆 SDK</strong>，要在<strong>十天级周期</strong>内从<strong>百万行级代码</strong>
@@ -569,6 +572,7 @@ import {
   }
 
   .case-intro h2 span {
+    display: block;
     white-space: nowrap;
   }
 
@@ -1241,11 +1245,11 @@ import {
     }
 
     .case-intro h2 {
-      font-size: 34px;
+      font-size: clamp(24px, 7vw, 30px);
     }
 
     .case-intro h2 span {
-      white-space: normal;
+      white-space: nowrap;
     }
 
     .case-intro > p,

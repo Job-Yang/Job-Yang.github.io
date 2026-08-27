@@ -1,6 +1,6 @@
 ---
 interface Props {
-  active?: 'writing' | 'notes' | 'projects' | 'about' | 'search';
+  active?: 'writing' | 'notes' | 'projects' | 'field' | 'about' | 'search';
 }
 
 const { active } = Astro.props;
@@ -15,9 +15,9 @@ const isHome = Astro.url.pathname === '/';
       <a class:list={{ active: active === 'writing' }} aria-current={active === 'writing' ? 'page' : undefined} href="/writing/">写作</a>
       <a class:list={{ active: active === 'notes' }} aria-current={active === 'notes' ? 'page' : undefined} href="/notes/">手记</a>
       <a class:list={{ active: active === 'projects' }} aria-current={active === 'projects' ? 'page' : undefined} href="/projects/">沉淀</a>
-      <a class:list={{ active: active === 'about' }} aria-current={active === 'about' ? 'page' : undefined} href="/about/">关于</a>
-      <a class:list={{ active: active === 'search' }} aria-current={active === 'search' ? 'page' : undefined} href="/search/">搜索</a>
-      <a href="/rss.xml">RSS</a>
+      <a class:list={{ active: active === 'field' }} aria-current={active === 'field' ? 'page' : undefined} href="/field/">现场</a>
+      <a class:list={{ active: active === 'about', 'mobile-optional': true }} aria-current={active === 'about' ? 'page' : undefined} href="/about/">关于</a>
+      <a class:list={{ active: active === 'search', 'mobile-optional': true }} aria-current={active === 'search' ? 'page' : undefined} href="/search/">搜索</a>
     </div>
   </div>
 </nav>
@@ -120,19 +120,14 @@ const isHome = Astro.url.pathname === '/';
       font-size: 14px;
     }
 
-    .links a:nth-last-child(-n + 2) {
+    .links a.mobile-optional {
       display: none;
     }
   }
 
   @media (max-width: 360px) {
-    .links a:nth-child(3),
-    .links a:nth-child(5) {
-      display: none;
-    }
-
     .links a {
-      padding-inline: 9px;
+      padding-inline: 7px;
     }
   }
 </style>

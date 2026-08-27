@@ -18,6 +18,7 @@ const posts = defineCollection({
     draft: z.boolean().default(false),
     readingMinutes: z.number().int().positive().optional(),
     source: z.enum(['public-rewrite', 'legacy']).default('public-rewrite'),
+    interactiveCourse: z.string().optional(),
   }),
 });
 

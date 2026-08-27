@@ -1,0 +1,460 @@
+---
+import course from '../../data/learning/ai-foundations.json';
+import { renderArticleSection } from '../../lib/learning/article-sections.mjs';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageBackdrop from '../PageBackdrop.astro';
+import ArticleLesson from './ArticleLesson.astro';
+
+interface Props {
+  lessonId: string;
+}
+
+const { lessonId } = Astro.props;
+const lesson = course.lessons.find((item) => item.id === lessonId);
+
+if (!lesson) {
+  throw new Error(`Unknown course lesson: ${lessonId}`);
+}
+
+const lessonIndex = course.lessons.findIndex((item) => item.id === lessonId);
+const articleSection = await renderArticleSection(lesson.sourceAnchor);
+const previous = lessonIndex > 0 ? course.lessons[lessonIndex - 1] : undefined;
+const next = lessonIndex < course.lessons.length - 1 ? course.lessons[lessonIndex + 1] : undefined;
+const hrefFor = (id: string) => id === 'journey'
+  ? '/learn/ai-foundations/'
+  : `/learn/ai-foundations/${id}/`;
+---
+
+<BaseLayout
+  title={`${lesson.shortTitle} · ${course.title}`}
+  description={lesson.mission.successSignal}
+  active="field"
+>
+  <PageBackdrop
+    slot="background"
+    src="/images/cosmic/article-spacetime.webp"
+    position="center top"
+    mobilePosition="54% top"
+    opacity={0.22}
+    mobileOpacity={0.14}
+  />
+
+  <div class="course-page">
+    <aside class="course-rail" aria-label="课程章节">
+      <a class="course-brand" href="/learn/ai-foundations/">
+        <span>INTERACTIVE COURSE</span>
+        <strong>AI 底层原理</strong>
+      </a>
+      <div class="course-progress">
+        <div><span>掌握进度</span><strong data-course-progress-value>0/{course.lessons.length}</strong></div>
+        <i data-course-progress-bar></i>
+      </div>
+      <nav>
+        {course.lessons.map((item) => (
+          <a href={hrefFor(item.id)} aria-current={item.id === lesson.id ? 'page' : undefined}>
+            <span>{item.number}</span>
+            <strong>{item.shortTitle}</strong>
+            <small data-lesson-state={item.id}>未开始</small>
+          </a>
+        ))}
+      </nav>
+      <div class="course-data-actions">
+        <button type="button" data-export-progress>导出进度</button>
+        <button type="button" data-clear-progress>清除进度</button>
+      </div>
+    </aside>
+
+    <main class="course-main" id="course-content">
+      <header class="lesson-head">
+        <span class="learning-kicker">第 {lesson.order} 节 / 共 {course.lessons.length} 节</span>
+        <h1 class="display">{articleSection.title}</h1>
+      </header>
+      <ArticleLesson section={articleSection} />
+      <slot />
+      <nav class="lesson-pager" aria-label="课程前后章节">
+        {previous ? (
+          <a href={hrefFor(previous.id)}>
+            <span>上一节</span>
+            <strong>← {previous.shortTitle}</strong>
+          </a>
+        ) : <span></span>}
+        {next ? (
+          <a href={hrefFor(next.id)}>
+            <span>下一节</span>
+            <strong>{next.shortTitle} →</strong>
+          </a>
+        ) : (
+          <a href="/writing/写给客户端工程师的-ai-底层原理/">
+            <span>完成课程</span>
+            <strong>回到完整文章 →</strong>
+          </a>
+        )}
+      </nav>
+    </main>
+
+    <aside class="lesson-reference" aria-label="本章理解线索">
+      <section>
+        <span class="learning-kicker">本章原文</span>
+        <p>{articleSection.title}</p>
+      </section>
+      <section>
+        <span class="learning-kicker">互动观察</span>
+        <ul>{lesson.observations.map((item) => <li>{item}</li>)}</ul>
+      </section>
+      <a class="source-link" href={`/writing/${course.sourcePostId}/`}>
+        <span>文字版</span>
+        <strong>打开同一篇文章 ↗</strong>
+      </a>
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .course-page {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    width: min(calc(100% - 40px), 1580px);
+    min-height: calc(100vh - 54px);
+    margin: 0 auto;
+    grid-template-columns: 238px minmax(0, 1fr) 258px;
+    align-items: start;
+    border-inline: 1px solid var(--line);
+  }
+
+  .course-rail,
+  .lesson-reference {
+    position: sticky;
+    top: 53px;
+    max-height: calc(100vh - 53px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  .course-rail {
+    border-right: 1px solid var(--line);
+    background: rgba(3, 3, 3, 0.88);
+  }
+
+  .course-brand {
+    display: grid;
+    min-height: 88px;
+    padding: 19px 16px;
+    align-content: center;
+    gap: 6px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .course-brand span,
+  .course-progress span {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  .course-brand strong {
+    font-family: var(--serif);
+    font-size: 21px;
+  }
+
+  .course-progress {
+    padding: 14px 16px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .course-progress > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .course-progress strong {
+    color: var(--accent);
+    font: 13px var(--mono);
+  }
+
+  .course-progress i {
+    position: relative;
+    display: block;
+    height: 3px;
+    margin-top: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .course-progress i::after {
+    display: block;
+    width: var(--learning-progress, 0%);
+    height: 100%;
+    background: var(--accent);
+    content: "";
+    transition: width 220ms ease;
+  }
+
+  .course-rail nav {
+    display: grid;
+  }
+
+  .course-rail nav a {
+    display: grid;
+    min-height: 62px;
+    padding: 11px 14px;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .course-rail nav a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--ink);
+  }
+
+  .course-rail nav a[aria-current="page"] {
+    box-shadow: inset 4px 0 var(--accent);
+    background: rgba(245, 185, 113, 0.13);
+    color: var(--ink);
+  }
+
+  .course-rail nav a > span {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .course-rail nav a > strong {
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .course-rail nav a > small {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .course-rail nav a > small[data-state="completed"] {
+    color: var(--learn-green);
+  }
+
+  .course-rail nav a > small[data-state="manipulated"] {
+    color: var(--accent);
+  }
+
+  .course-data-actions {
+    display: grid;
+    padding: 14px 12px 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .course-data-actions button {
+    min-height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: #15171b;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font: 11px var(--mono);
+  }
+
+  .course-data-actions button:hover,
+  .course-data-actions button:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .course-main {
+    min-width: 0;
+    padding: 44px clamp(28px, 3.2vw, 58px) 76px;
+  }
+
+  .lesson-head {
+    min-height: 154px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .lesson-head h1 {
+    max-width: 760px;
+    margin: 12px 0 10px;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.08;
+    letter-spacing: 0;
+  }
+
+  .lesson-pager {
+    display: grid;
+    min-height: 98px;
+    margin-top: 48px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-block: 1px solid var(--line);
+  }
+
+  .lesson-pager a {
+    display: grid;
+    padding: 17px 4px;
+    align-content: center;
+    gap: 7px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .lesson-pager a:last-child {
+    text-align: right;
+  }
+
+  .lesson-pager span {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .lesson-pager strong {
+    font-size: 15px;
+  }
+
+  .lesson-pager a:hover strong {
+    color: var(--accent);
+  }
+
+  .lesson-reference {
+    border-left: 1px solid var(--line);
+    background: rgba(3, 3, 3, 0.88);
+  }
+
+  .lesson-reference section,
+  .source-link {
+    display: block;
+    padding: 22px 17px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .lesson-reference p {
+    margin: 9px 0 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .lesson-reference ul {
+    display: grid;
+    margin: 10px 0 0;
+    padding: 0;
+    gap: 7px;
+    list-style: none;
+  }
+
+  .lesson-reference li {
+    color: var(--ink-dim);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .lesson-reference li::before {
+    margin-right: 7px;
+    color: var(--learn-blue);
+    content: "·";
+  }
+
+  .source-link {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .source-link span {
+    display: block;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .source-link strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .source-link:hover strong {
+    color: var(--accent);
+  }
+
+  @media (max-width: 1280px) {
+    .course-page {
+      grid-template-columns: 220px minmax(0, 1fr);
+    }
+
+    .lesson-reference {
+      position: static;
+      display: grid;
+      max-height: none;
+      grid-column: 2;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+
+    .source-link {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 920px) {
+    .course-page {
+      display: block;
+      width: min(calc(100% - 24px), 720px);
+      border-inline: 0;
+    }
+
+    .course-rail {
+      position: static;
+      max-height: none;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .course-brand,
+    .course-rail nav {
+      display: none;
+    }
+
+    .course-progress {
+      border-bottom: 0;
+    }
+
+    .course-main {
+      padding: 34px 0 58px;
+    }
+
+    .lesson-head {
+      min-height: 0;
+    }
+
+    .lesson-head h1 {
+      font-size: 32px;
+    }
+
+    .lesson-reference {
+      display: block;
+      grid-column: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .lesson-pager {
+      min-height: 86px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .course-progress i::after {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,588 @@
+---
+import ActivityFeed from '../../components/ActivityFeed.astro';
+import ForgeExperience from '../../components/ForgeExperience.astro';
+import ILoopCaseStudy from '../../components/ILoopCaseStudy.astro';
+import PageBackdrop from '../../components/PageBackdrop.astro';
+import activityFeed from '../../data/activity-feed.json';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const autoLoop = activityFeed.threads.find((thread) => thread.id === 'autoloop');
+const autoLoopMetrics = autoLoop && 'metrics' in autoLoop ? autoLoop.metrics : undefined;
+const autoLoopPublished = autoLoopMetrics?.['本轮发布'] === '已发布';
+const speedLab = activityFeed.threads.find((thread) => thread.id === 'speed-lab');
+const speedMetrics = speedLab && 'metrics' in speedLab ? speedLab.metrics : undefined;
+
+function formatTimestamp(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(value));
+}
+---
+
+<BaseLayout
+  title="现场"
+  description="查看 Job Yang 正在推进的 Agent 工程、真实证据与可交互案例。"
+  active="field"
+>
+  <PageBackdrop
+    slot="background"
+    src="/images/cosmic/home-deep-field.webp"
+    position="center top"
+    mobilePosition="58% top"
+    opacity={0.38}
+    mobileOpacity={0.26}
+  />
+  <ForgeExperience returnLabel="返回现场" worldLabel="老羊的铁匠铺" />
+
+  <div class="field-page" data-forge-background>
+    <header class="field-hero wide">
+      <div>
+        <span class="eyebrow">FIELD / LIVE ENGINEERING</span>
+        <h1 class="display">现场</h1>
+        <p>这里不讲方法，直接看 Agent 正在做什么。</p>
+      </div>
+      <dl class="field-stats">
+        <div><dt>ACTIVE</dt><dd>{activityFeed.threadCount}</dd></div>
+        <div><dt>PUBLIC SOURCE</dt><dd>{activityFeed.sourceSummary.public_repository ?? 0}</dd></div>
+        <div><dt>SAFE PROJECTION</dt><dd>{activityFeed.sourceSummary.private_projection ?? 0}</dd></div>
+      </dl>
+    </header>
+
+    <section class="workbench wide">
+      <ActivityFeed mode="full" heading="此刻在推进" />
+      <p class="projection-note">
+        私有任务、验收记录和文档只导出字段白名单；页面不读取原始文件。
+      </p>
+    </section>
+
+    <section class="experience-index wide" aria-labelledby="experience-title">
+      <header>
+        <span class="eyebrow">OPEN CONSOLES</span>
+        <h2 class="display" id="experience-title">可以直接上手</h2>
+      </header>
+      <div class="experience-rows">
+        <a href="#live-trim-case">
+          <span>01</span>
+          <div>
+            <strong>直播裁剪任务回放</strong>
+            <p>从模糊目标到多轮编译、UI 取证、回退与续跑，完整看一次 Agent 闭环。</p>
+          </div>
+          <b>进入回放 ↓</b>
+        </a>
+        <a href="#autoloop">
+          <span>02</span>
+          <div>
+            <strong>AutoLoop 公开证据</strong>
+            <p>不看 Supervisor 自报成功，直接核对隐私扫描、本地验证、提交和发布状态。</p>
+          </div>
+          <b>查看证据 ↓</b>
+        </a>
+        <button
+          type="button"
+          data-forge-open
+          aria-controls="forge-experience"
+          aria-expanded="false"
+        >
+          <span>03</span>
+          <div>
+            <strong>3D 铁匠铺</strong>
+            <p>进入一个真实运行的交互世界，看 AutoLoop 每日迭代的公开作品。</p>
+          </div>
+          <b>进入世界 →</b>
+        </button>
+        <a href="/learn/ai-foundations/">
+          <span>04</span>
+          <div>
+            <strong>AI 底层原理互动教程</strong>
+            <p>十二个可操作实验，从一次 API 调用走到 Attention、端侧部署与客户端控制。</p>
+          </div>
+          <b>开始学习 →</b>
+        </a>
+      </div>
+    </section>
+
+    <section class="mission-shell">
+      <ILoopCaseStudy />
+    </section>
+
+    {autoLoop && (
+      <section class="evidence-section wide" id="autoloop">
+        <header class="evidence-heading">
+          <div>
+            <span class="eyebrow">PUBLIC EVIDENCE / AUTOLOOP</span>
+            <h2 class="display">每天跑一轮，结果如实留在这里。</h2>
+          </div>
+          <a
+            href="https://github.com/Job-Yang/npc_voice_panel_3d/tree/master/.autoloop/runs/public-evidence"
+            target="_blank"
+            rel="noreferrer"
+          >
+            打开公开证据 ↗
+          </a>
+        </header>
+        <div class="evidence-track">
+          <div class="passed">
+            <span>01</span><strong>本地验证</strong><p>通过</p>
+          </div>
+          <div class="passed">
+            <span>02</span><strong>隐私扫描</strong><p>通过，0 条发现</p>
+          </div>
+          <div class:list={[{ passed: autoLoopPublished, pending: !autoLoopPublished }]}>
+            <span>03</span><strong>本轮发布</strong><p>{autoLoopPublished ? '已发布' : '未发布'}</p>
+          </div>
+          <div class:list={[{ passed: autoLoopPublished, pending: !autoLoopPublished }]}>
+            <span>04</span><strong>线上回读</strong><p>{autoLoopPublished ? '通过' : '本轮未触发'}</p>
+          </div>
+        </div>
+        <div class="evidence-summary">
+          <p><strong>当前结论</strong>{autoLoop.latestEvidence}</p>
+          <p><strong>下一道 Gate</strong>{autoLoop.nextGate}</p>
+          <time datetime={autoLoop.updatedAt}>证据更新于 {formatTimestamp(autoLoop.updatedAt)}</time>
+        </div>
+      </section>
+    )}
+
+    {speedLab && (
+      <section class="lab-section wide" id="speed-lab">
+        <div>
+          <span class="eyebrow">EXPERIMENT / SPEED LAB</span>
+          <h2 class="display">先把已经证实的提速摆出来。</h2>
+          <p>{speedLab.summary}</p>
+        </div>
+        <div class="lab-metrics">
+          {speedMetrics && Object.entries(speedMetrics).map(([label, value]) => (
+            <div><strong>{String(value)}</strong><span>{label}</span></div>
+          ))}
+        </div>
+        <p class="lab-boundary">
+          数据边界：这些数字只来自并行审查。编译和 UI 异步验证还没有真实样本，不能外推。
+        </p>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .field-page {
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  .field-hero {
+    display: flex;
+    min-height: 360px;
+    padding-block: 92px 58px;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 48px;
+  }
+
+  .field-hero h1 {
+    margin: 13px 0 12px;
+    color: var(--ink);
+    font-size: clamp(62px, 8vw, 104px);
+    line-height: 0.96;
+    letter-spacing: 0;
+  }
+
+  .field-hero p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 19px;
+  }
+
+  .field-stats {
+    display: grid;
+    width: min(100%, 430px);
+    margin: 0;
+    padding: 18px 0;
+    grid-template-columns: repeat(3, 1fr);
+    border-block: 1px solid var(--line);
+  }
+
+  .field-stats div {
+    display: grid;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .field-stats div + div {
+    border-left: 1px solid var(--line);
+  }
+
+  .field-stats dt {
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  .field-stats dd {
+    margin: 0;
+    color: var(--ink);
+    font: 24px var(--mono);
+  }
+
+  .workbench {
+    padding-bottom: 72px;
+  }
+
+  .projection-note {
+    margin: 13px 0 0;
+    color: var(--ink-faint);
+    font: 10px/1.6 var(--mono);
+    text-align: right;
+  }
+
+  .experience-index {
+    padding-block: 74px 82px;
+    border-top: 1px solid var(--line);
+  }
+
+  .experience-index > header {
+    display: grid;
+    margin-bottom: 34px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .experience-index h2 {
+    font-size: clamp(36px, 4.4vw, 54px);
+    line-height: 1.1;
+  }
+
+  .experience-rows {
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .experience-rows > a,
+  .experience-rows > button {
+    display: grid;
+    width: 100%;
+    min-height: 116px;
+    padding: 22px 4px;
+    grid-template-columns: 54px minmax(0, 1fr) 140px;
+    align-items: center;
+    gap: 18px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    transition: background 180ms ease;
+  }
+
+  .experience-rows > a:hover,
+  .experience-rows > button:hover {
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .experience-rows > a:focus-visible,
+  .experience-rows > button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .experience-rows > :is(a, button) > span {
+    color: var(--accent);
+    font: 11px var(--mono);
+  }
+
+  .experience-rows strong {
+    font-size: 20px;
+  }
+
+  .experience-rows p {
+    margin: 7px 0 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .experience-rows b {
+    justify-self: end;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 560;
+  }
+
+  .mission-shell {
+    position: relative;
+    padding-top: 42px;
+    border-top: 1px solid var(--line);
+    background:
+      linear-gradient(180deg, rgba(3, 3, 3, 0.46), #030303 16%, #030303 100%);
+  }
+
+  .evidence-section {
+    padding-block: 94px;
+    scroll-margin-top: 72px;
+    border-top: 1px solid var(--line);
+  }
+
+  .evidence-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  .evidence-heading h2 {
+    max-width: 820px;
+    margin: 14px 0 0;
+    font-size: clamp(36px, 4.4vw, 54px);
+    line-height: 1.14;
+  }
+
+  .evidence-heading a {
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(245, 185, 113, 0.4);
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .evidence-track {
+    display: grid;
+    margin-top: 54px;
+    grid-template-columns: repeat(4, 1fr);
+    border-block: 1px solid var(--line);
+  }
+
+  .evidence-track div {
+    position: relative;
+    min-height: 146px;
+    padding: 24px 20px;
+  }
+
+  .evidence-track div + div {
+    border-left: 1px solid var(--line);
+  }
+
+  .evidence-track span {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .evidence-track strong {
+    display: block;
+    margin-top: 28px;
+    font-size: 16px;
+  }
+
+  .evidence-track p {
+    margin: 6px 0 0;
+    color: var(--ink-dim);
+    font-size: 13px;
+  }
+
+  .evidence-track .passed strong {
+    color: #65c982;
+  }
+
+  .evidence-track .blocked strong {
+    color: #e06552;
+  }
+
+  .evidence-summary {
+    display: grid;
+    padding-top: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    gap: 28px;
+  }
+
+  .evidence-summary p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .evidence-summary strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--ink);
+    font: 10px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .evidence-summary time {
+    color: var(--ink-faint);
+    font: 10px/1.6 var(--mono);
+    text-align: right;
+  }
+
+  .lab-section {
+    display: grid;
+    padding-block: 94px 120px;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    gap: 56px;
+    scroll-margin-top: 72px;
+    border-top: 1px solid var(--line);
+  }
+
+  .lab-section h2 {
+    max-width: 720px;
+    margin: 14px 0 18px;
+    font-size: clamp(36px, 4vw, 50px);
+    line-height: 1.14;
+  }
+
+  .lab-section > div:first-child p {
+    max-width: 680px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+  }
+
+  .lab-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-self: end;
+    border-block: 1px solid var(--line);
+  }
+
+  .lab-metrics div {
+    min-height: 132px;
+    padding: 24px;
+  }
+
+  .lab-metrics div + div {
+    border-left: 1px solid var(--line);
+  }
+
+  .lab-metrics strong {
+    display: block;
+    color: var(--accent);
+    font: 34px var(--mono);
+  }
+
+  .lab-metrics span {
+    color: var(--ink-dim);
+    font-size: 12px;
+  }
+
+  .lab-boundary {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 18px 0 0;
+    border-top: 1px solid var(--line);
+    color: var(--ink-faint);
+    font: 11px/1.7 var(--mono);
+  }
+
+  @media (max-width: 900px) {
+    .field-hero {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .field-stats {
+      width: 100%;
+    }
+
+    .evidence-track {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .evidence-track div:nth-child(3) {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .evidence-track div:nth-child(4) {
+      border-top: 1px solid var(--line);
+    }
+
+    .lab-section {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .field-hero {
+      min-height: 0;
+      padding-block: 68px 44px;
+      gap: 36px;
+    }
+
+    .field-hero h1 {
+      font-size: 64px;
+    }
+
+    .field-hero p {
+      font-size: 16px;
+    }
+
+    .field-stats dt {
+      min-height: 26px;
+    }
+
+    .workbench {
+      padding-bottom: 58px;
+    }
+
+    .projection-note {
+      text-align: left;
+    }
+
+    .experience-index {
+      padding-block: 58px 64px;
+    }
+
+    .experience-rows > a,
+    .experience-rows > button {
+      grid-template-columns: 36px minmax(0, 1fr);
+    }
+
+    .experience-rows b {
+      grid-column: 2;
+      justify-self: start;
+    }
+
+    .evidence-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .evidence-track {
+      grid-template-columns: 1fr;
+    }
+
+    .evidence-track div + div,
+    .evidence-track div:nth-child(3) {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .evidence-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .evidence-summary time {
+      text-align: left;
+    }
+
+    .lab-section {
+      padding-block: 72px 92px;
+      gap: 40px;
+    }
+
+    .lab-metrics div {
+      min-height: 112px;
+      padding: 18px 14px;
+    }
+
+    .lab-metrics strong {
+      font-size: 27px;
+    }
+  }
+</style>

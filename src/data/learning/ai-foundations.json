@@ -1,0 +1,549 @@
+{
+  "id": "ai-foundations",
+  "version": "1.3.0",
+  "title": "AI 底层原理互动教程",
+  "description": "沿着文章原文逐章学习，再用互动实验验证大模型如何训练、推理并落到客户端。",
+  "sourcePostId": "写给客户端工程师的-ai-底层原理",
+  "claims": [
+    {
+      "id": "tokenizer-varies",
+      "statement": "Token 数量取决于模型使用的 tokenizer，不能用固定字符比例替代实测。",
+      "kind": "fact",
+      "assumptions": [],
+      "sourceUrl": "https://developers.openai.com/cookbook/examples/how_to_count_tokens_with_tiktoken/",
+      "reviewedAt": "2026-08-26"
+    },
+    {
+      "id": "llama31-70b-kv",
+      "statement": "Llama 3.1 70B 使用 80 层、64 个 Query 头和 8 个 KV 头；head dimension 为 128。",
+      "kind": "fact",
+      "assumptions": [
+        "模型版本为 Llama 3.1 70B"
+      ],
+      "sourceUrl": "https://huggingface.co/meta-llama/Meta-Llama-3.1-70B-Instruct/blob/main/config.json",
+      "reviewedAt": "2026-08-26"
+    },
+    {
+      "id": "kv-cache-formula",
+      "statement": "批大小为 1 时，KV Cache 字节数可按 2 × 层数 × KV 头数 × head dimension × 每元素字节数 × token 数估算。",
+      "kind": "formula",
+      "assumptions": [
+        "不计分页、对齐和推理引擎额外开销",
+        "K 与 V 使用相同精度"
+      ],
+      "sourceUrl": "https://huggingface.co/meta-llama/Meta-Llama-3.1-70B-Instruct/blob/main/config.json",
+      "reviewedAt": "2026-08-26"
+    },
+    {
+      "id": "mamba-scaling",
+      "statement": "Mamba 处理序列的计算与训练内存随序列长度线性增长；自回归推理不需要保存全部历史元素，每步使用固定大小状态。",
+      "kind": "fact",
+      "assumptions": [
+        "讨论原始 Mamba 架构的渐进复杂度"
+      ],
+      "sourceUrl": "https://arxiv.org/abs/2312.00752",
+      "reviewedAt": "2026-08-26"
+    },
+    {
+      "id": "reasoning-budget",
+      "statement": "推理模型的表现可随 test-time compute 增加而改善，但具体内部搜索和评分机制不能从公开信息统一推断。",
+      "kind": "boundary",
+      "assumptions": [
+        "实验中的候选路径与评估器是教学模型"
+      ],
+      "sourceUrl": "https://openai.com/index/learning-to-reason-with-llms/",
+      "reviewedAt": "2026-08-26"
+    },
+    {
+      "id": "vit-patches",
+      "statement": "标准 ViT 教学模型中，patch 数等于图像宽高分别除以 patch 尺寸后的乘积；真实多模态模型可能继续重采样或压缩视觉 token。",
+      "kind": "teaching-model",
+      "assumptions": [
+        "方形图像",
+        "宽高能被 patch 尺寸整除"
+      ],
+      "sourceUrl": "https://arxiv.org/abs/2010.11929",
+      "reviewedAt": "2026-08-26"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "journey",
+      "order": 1,
+      "number": "00",
+      "shortTitle": "调用全景",
+      "mission": {
+        "instruction": "先把输入长度拉到 8192，再把输出长度拉到 512。",
+        "target": "分别观察 TTFT 和总耗时由哪一段工作推高。",
+        "successSignal": "你应该能区分“首字慢”和“吐字慢”属于两类瓶颈。"
+      },
+      "experimentId": "journey",
+      "sourceAnchor": "序章：一次 API 调用里发生了什么",
+      "articlePlacement": "expanded",
+      "feishuPlacement": true,
+      "controls": [
+        "输入 token 数",
+        "输出 token 数",
+        "当前阶段"
+      ],
+      "observations": [
+        "TTFT",
+        "总生成时间",
+        "七步流水线状态"
+      ],
+      "claimIds": [
+        "tokenizer-varies"
+      ],
+      "checkpoint": {
+        "question": "下面哪条顺序最接近一次文本请求的模型内部主链路？",
+        "options": [
+          "Tokenizer → Embedding/位置 → Prefill → Sampling → Decode → De-tokenize",
+          "Embedding → 网络请求 → Tokenizer → 一次性生成整段",
+          "Decode → Prefill → Sampling → Tokenizer",
+          "Tokenizer → De-tokenize → Transformer → Sampling"
+        ],
+        "answer": 0,
+        "success": "对。文字先变成带位置的向量，模型读完输入后才开始逐 token 生成并还原成字符串。",
+        "failure": "回看完整示范：先把输入变成模型能计算的表示，再 Prefill 读输入，之后才 Sampling 和 Decode。"
+      }
+    },
+    {
+      "id": "training",
+      "order": 2,
+      "number": "01",
+      "shortTitle": "分词与训练",
+      "mission": {
+        "instruction": "先改变分词合并级别，再切到“训练”连续执行几步。",
+        "target": "观察 token 边界如何变化，以及正常与过大学习率下 Loss 的走势。",
+        "successSignal": "你应该能说清 Tokenizer、Loss、梯度和学习率各自负责什么。"
+      },
+      "experimentId": "training",
+      "sourceAnchor": "先读这一节：模型是怎么“学会”的",
+      "articlePlacement": "expanded",
+      "controls": [
+        "分词粒度",
+        "学习率",
+        "训练步数"
+      ],
+      "observations": [
+        "token 边界",
+        "目标概率",
+        "Loss 曲线"
+      ],
+      "claimIds": [
+        "tokenizer-varies"
+      ],
+      "checkpoint": {
+        "question": "遇到词表里没有的罕见拼写时，子词切分为什么更稳？",
+        "options": [
+          "能拆成已知片段",
+          "总会只占一个 token",
+          "不需要词表",
+          "会自动查询网络"
+        ],
+        "answer": 0,
+        "success": "对。子词词表能用已有片段覆盖未见过的完整单词。",
+        "failure": "注意观察生僻词如何被拆开：关键是覆盖能力，不是固定 token 数。"
+      }
+    },
+    {
+      "id": "embedding",
+      "order": 3,
+      "number": "02",
+      "shortTitle": "Embedding",
+      "mission": {
+        "instruction": "比较两个词的距离，再切换到“上下文表示”观察同一个“苹果”。",
+        "target": "分清静态词向量与经过上下文计算后的表示。",
+        "successSignal": "你应该能解释为什么相似度可比较，但单个维度通常不能直接命名。"
+      },
+      "experimentId": "embedding",
+      "sourceAnchor": "第一章：向量（Embedding）是什么",
+      "articlePlacement": "expanded",
+      "controls": [
+        "表示阶段",
+        "词对选择",
+        "向量运算"
+      ],
+      "observations": [
+        "余弦相似度",
+        "语义簇",
+        "上下文表示变化"
+      ],
+      "claimIds": [],
+      "checkpoint": {
+        "question": "为什么不能直接断言“第 137 维代表情绪”？",
+        "options": [
+          "坐标轴由训练共同形成，单维通常不可解释",
+          "137 超出向量范围",
+          "情绪只能用文本表示",
+          "向量不能比较"
+        ],
+        "answer": 0,
+        "success": "对。可解释的是相对距离和方向，不是随意给单个维度命名。",
+        "failure": "试着切换上下文。位置关系有意义，不代表每根坐标轴都有人工标签。"
+      }
+    },
+    {
+      "id": "attention",
+      "order": 4,
+      "number": "03",
+      "shortTitle": "Self-Attention",
+      "mission": {
+        "instruction": "点选“它”作为 Query，再开关 Causal Mask 与 Q/K 分离。",
+        "target": "观察可见范围、权重方向和最强关注对象怎样变化。",
+        "successSignal": "你应该能用 Q、K、V 解释一次注意力计算，而不是只记住公式。"
+      },
+      "experimentId": "attention",
+      "sourceAnchor": "第二章：Self-Attention（自注意力机制）",
+      "articlePlacement": "expanded",
+      "feishuPlacement": true,
+      "controls": [
+        "Query token",
+        "Causal Mask",
+        "Q/K 是否分离"
+      ],
+      "observations": [
+        "点积分数",
+        "Softmax 权重",
+        "加权输出"
+      ],
+      "claimIds": [],
+      "checkpoint": {
+        "question": "A 关注 B 与 B 关注 A 的权重必须相同吗？",
+        "options": [
+          "不必，Q/K 分离允许有方向的关系",
+          "必须，点积总是对称",
+          "只有中文不同",
+          "只由 V 决定"
+        ],
+        "answer": 0,
+        "success": "对。不同的 Q/K 投影让查询方向可以不对称。",
+        "failure": "关闭“Q/K 分离”再观察矩阵：强制同一表示会把关系变得对称。"
+      }
+    },
+    {
+      "id": "attention-systems",
+      "order": 5,
+      "number": "04",
+      "shortTitle": "多头 · RoPE · GQA",
+      "mission": {
+        "instruction": "依次切换多头、RoPE、GQA；在 GQA 中把上下文拉长。",
+        "target": "分别找出三个机制解决的能力或成本问题。",
+        "successSignal": "你应该能解释为什么多头、位置编码和 GQA 不能混为一种优化。"
+      },
+      "experimentId": "attention-systems",
+      "sourceAnchor": "第三章：多头注意力、位置编码、GQA",
+      "articlePlacement": "expanded",
+      "feishuPlacement": true,
+      "controls": [
+        "场景",
+        "位置差",
+        "Query/KV 头数",
+        "上下文长度"
+      ],
+      "observations": [
+        "注意力视角",
+        "旋转角差",
+        "KV Cache"
+      ],
+      "claimIds": [
+        "llama31-70b-kv",
+        "kv-cache-formula"
+      ],
+      "checkpoint": {
+        "question": "32 个 Query 头和 8 个 KV 头意味着什么？",
+        "options": [
+          "每 4 个 Query 头共享一组 K/V",
+          "每个 Query 头有 8 组 K/V",
+          "只有 8 层 Attention",
+          "KV Cache 增加 4 倍"
+        ],
+        "answer": 0,
+        "success": "对。32 ÷ 8 = 4，四个 Query 头共享一组 K/V。",
+        "failure": "把 Query 头按 KV 头分组，再算每组包含几个 Query 头。"
+      }
+    },
+    {
+      "id": "multimodal",
+      "order": 6,
+      "number": "05",
+      "shortTitle": "多模态",
+      "mission": {
+        "instruction": "保持 16px patch，把分辨率从 512 调到 1024，再增加帧数。",
+        "target": "观察视觉 token 与注意力配对规模如何增长。",
+        "successSignal": "你应该能估算图像或视频为何迅速吃掉上下文预算。"
+      },
+      "experimentId": "multimodal",
+      "sourceAnchor": "第四章：多模态（ViT/CLIP）",
+      "articlePlacement": "expanded",
+      "feishuPlacement": true,
+      "controls": [
+        "图像分辨率",
+        "patch 尺寸",
+        "帧数",
+        "融合方式"
+      ],
+      "observations": [
+        "patch 网格",
+        "教学 token 数",
+        "注意力规模"
+      ],
+      "claimIds": [
+        "vit-patches"
+      ],
+      "checkpoint": {
+        "question": "patch 尺寸不变时，1024×1024 改成 512×512，patch 数怎样变化？",
+        "options": [
+          "约为四分之一",
+          "约为二分之一",
+          "完全不变",
+          "变成四倍"
+        ],
+        "answer": 0,
+        "success": "对。宽和高都减半，网格总数变为 1/2 × 1/2。",
+        "failure": "分别计算横向和纵向有多少个 patch，再把两者相乘。"
+      }
+    },
+    {
+      "id": "reasoning",
+      "order": 7,
+      "number": "06",
+      "shortTitle": "深度思考",
+      "mission": {
+        "instruction": "把任务切到“代码验证”，增加候选路径，再降低评估可靠度。",
+        "target": "观察覆盖、计算成本和最终成功率为什么不是同一件事。",
+        "successSignal": "你应该能判断什么任务值得增加推理预算。"
+      },
+      "experimentId": "reasoning",
+      "sourceAnchor": "第五章：深度思考模型（o1/R1）",
+      "articlePlacement": "expanded",
+      "controls": [
+        "任务类型",
+        "候选路径",
+        "评估器可靠度"
+      ],
+      "observations": [
+        "预算",
+        "延迟",
+        "选中正确路径的教学概率"
+      ],
+      "claimIds": [
+        "reasoning-budget"
+      ],
+      "checkpoint": {
+        "question": "哪类任务最值得增加可验证的推理预算？",
+        "options": [
+          "有测试可运行的并发 Bug",
+          "一句广告文案",
+          "简单翻译",
+          "天气查询"
+        ],
+        "answer": 0,
+        "success": "对。可执行测试提供了明确反馈，额外推理更容易转化为质量。",
+        "failure": "先找哪一项有明确、可重复的对错信号。"
+      }
+    },
+    {
+      "id": "on-device",
+      "order": 8,
+      "number": "07",
+      "shortTitle": "端侧部署",
+      "mission": {
+        "instruction": "先用 16GB 设备运行 7B INT4，再增加上下文或切到 70B。",
+        "target": "观察权重、KV Cache、运行时三笔账如何共同决定能否运行。",
+        "successSignal": "你应该能拒绝“文件能下载，所以一定能跑”的判断。"
+      },
+      "experimentId": "on-device",
+      "sourceAnchor": "第六章：端侧部署——把大模型塞进手机",
+      "articlePlacement": "expanded",
+      "feishuPlacement": true,
+      "controls": [
+        "设备内存",
+        "参数量",
+        "权重精度",
+        "上下文",
+        "KV 头数"
+      ],
+      "observations": [
+        "权重",
+        "KV Cache",
+        "运行时余量",
+        "适配结论"
+      ],
+      "claimIds": [
+        "llama31-70b-kv",
+        "kv-cache-formula"
+      ],
+      "checkpoint": {
+        "question": "16GB 设备能放下 7B INT4 权重，就一定能跑长上下文吗？",
+        "options": [
+          "不一定，还要计算 KV Cache 和运行时余量",
+          "一定，权重是唯一内存",
+          "只取决于网络",
+          "只取决于输出字体"
+        ],
+        "answer": 0,
+        "success": "对。模型权重只是内存账单的一部分。",
+        "failure": "观察内存条中权重之外仍会随上下文增长的部分。"
+      }
+    },
+    {
+      "id": "mamba",
+      "order": 9,
+      "number": "08",
+      "shortTitle": "Mamba",
+      "mission": {
+        "instruction": "把序列长度拉到最大，再调整状态保留强度和 Attention 比例。",
+        "target": "比较固定状态内存与精确回忆之间的取舍。",
+        "successSignal": "你应该能区分“推理状态 O(1)”和“整段计算 O(N)”。"
+      },
+      "experimentId": "mamba",
+      "sourceAnchor": "第七章：Mamba——内存恒定的替代方案",
+      "articlePlacement": "expanded",
+      "controls": [
+        "序列长度",
+        "保留强度",
+        "混合 Attention 比例"
+      ],
+      "observations": [
+        "Transformer 历史缓存",
+        "Mamba 固定状态",
+        "精确回忆"
+      ],
+      "claimIds": [
+        "mamba-scaling"
+      ],
+      "checkpoint": {
+        "question": "哪种任务更需要保留少量 Attention 层？",
+        "options": [
+          "长文中精确找回早期名字",
+          "连续音频流的局部状态",
+          "固定长度传感器流",
+          "只看当前 token"
+        ],
+        "answer": 0,
+        "success": "对。精确检索早期细节是固定压缩状态更容易损失的能力。",
+        "failure": "比较两条轨道：哪一条保留了每个历史位置？"
+      }
+    },
+    {
+      "id": "transformer",
+      "order": 10,
+      "number": "09",
+      "shortTitle": "Transformer 架构",
+      "mission": {
+        "instruction": "依次切换 BERT、GPT、T5，并移动当前 token。",
+        "target": "观察结构组成、可见范围和适合任务如何一起变化。",
+        "successSignal": "你应该能根据任务选择结构，而不是把三者排成简单的新旧顺序。"
+      },
+      "experimentId": "transformer",
+      "sourceAnchor": "第八章：Attention Is All You Need 论文真正说了什么",
+      "articlePlacement": "expanded",
+      "controls": [
+        "架构预设",
+        "Causal Mask",
+        "Cross-Attention"
+      ],
+      "observations": [
+        "可见范围",
+        "结构组成",
+        "适合任务"
+      ],
+      "claimIds": [],
+      "checkpoint": {
+        "question": "需要把一段中文转换成英文，哪种结构最贴近原始论文？",
+        "options": [
+          "Encoder + Decoder + Cross-Attention",
+          "只有 Encoder",
+          "只有 Decoder 且无 Mask",
+          "没有 Attention 的 FFN"
+        ],
+        "answer": 0,
+        "success": "对。Encoder 读源文本，Decoder 通过 Cross-Attention 生成目标文本。",
+        "failure": "回看翻译步骤：生成端需要持续查询源文本表示。"
+      }
+    },
+    {
+      "id": "client-api",
+      "order": 11,
+      "number": "10",
+      "shortTitle": "调用侧",
+      "mission": {
+        "instruction": "依次体验采样、工具调用、事实来源、约束与流式输出。",
+        "target": "把“模型行为偏好”和“客户端硬保证”分开。",
+        "successSignal": "你应该能为实时事实、结构化输出、权限和等待体验选择正确手段。"
+      },
+      "experimentId": "client-api",
+      "sourceAnchor": "第九章：客户端调用侧的四件事",
+      "articlePlacement": "expanded",
+      "feishuPlacement": true,
+      "controls": [
+        "实验场景",
+        "Temperature",
+        "Top-k",
+        "Top-p",
+        "约束方式"
+      ],
+      "observations": [
+        "候选集",
+        "调用状态",
+        "证据来源",
+        "流式状态"
+      ],
+      "claimIds": [],
+      "checkpoint": {
+        "question": "必须拿到实时余额时，最可靠的客户端手段是什么？",
+        "options": [
+          "调用真实余额工具",
+          "提高 Temperature",
+          "只写 System Prompt",
+          "要求模型回忆"
+        ],
+        "answer": 0,
+        "success": "对。实时事实需要接入真实数据源，不能依赖参数记忆。",
+        "failure": "区分“改变输出风格”和“取得真实事实”这两类目标。"
+      }
+    },
+    {
+      "id": "reference",
+      "order": 12,
+      "number": "11",
+      "shortTitle": "工程师速查",
+      "mission": {
+        "instruction": "搜索一个术语，再修改参数量、精度与上下文。",
+        "target": "观察结论怎样随假设变化，并确认结果旁边始终保留计算口径。",
+        "successSignal": "你应该能把速查表当成入口，而不是把单个数字当成定律。"
+      },
+      "experimentId": "reference",
+      "sourceAnchor": "附录：工程师速查",
+      "articlePlacement": "none",
+      "controls": [
+        "术语搜索",
+        "参数量",
+        "精度",
+        "上下文"
+      ],
+      "observations": [
+        "术语匹配",
+        "权重估算",
+        "KV Cache 估算"
+      ],
+      "claimIds": [
+        "tokenizer-varies",
+        "kv-cache-formula"
+      ],
+      "checkpoint": {
+        "question": "看到一个没有上下文长度和 KV 头数的显存数字，应该怎么用？",
+        "options": [
+          "只当权重或特定条件下的参考",
+          "当成任何场景的固定答案",
+          "乘以 Temperature",
+          "只看模型名称"
+        ],
+        "answer": 0,
+        "success": "对。显存数字必须和模型结构、精度、上下文及运行时条件一起解释。",
+        "failure": "检查计算器要求填写的条件，固定表格缺了哪些输入？"
+      }
+    }
+  ]
+}

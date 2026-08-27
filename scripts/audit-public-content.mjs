@@ -1,12 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const roots = ['src/content', 'src/pages', 'src/components', 'src/layouts'];
+const roots = ['src/content', 'src/pages', 'src/components', 'src/layouts', 'src/data'];
 const blockedPatterns = [
   ['疑似内部链接', /https?:\/\/(?:[^/.\s]+\.)*(?:internal|intranet|corp|private)(?:\.[^/\s]+)+(?:\/[^\s)\]>"']*)?/i],
   ['脱敏占位符', /ph_(?:REAL_NAME|EMAIL|PHONE|TOKEN|ID)_\d+_ph/i],
   ['疑似访问令牌', /\b(?:Bearer\s+[A-Za-z0-9._-]{16,}|sk-[A-Za-z0-9_-]{16,})\b/],
   ['私有文件路径', /\/(?:Users|home)\/[^/\s]+\//],
+  ['飞书内部资源链接', /(?:https?:\/\/[^/\s]*(?:larkoffice\.com|feishu\.cn)|feishu:\/\/)/i],
+  ['未转换的飞书画板', /<whiteboard\b/i],
 ];
 
 // 组织专属规则只存本机 .git 目录，避免审计器本身泄露内部标识。
@@ -29,7 +31,7 @@ function collect(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) collect(fullPath);
-    else if (/\.(?:astro|md|mdx|js|ts)$/.test(entry.name)) files.push(fullPath);
+    else if (/\.(?:astro|json|md|mdx|js|ts)$/.test(entry.name)) files.push(fullPath);
   }
 }
 
@@ -40,6 +42,11 @@ for (const file of files) {
   const content = fs.readFileSync(file, 'utf8');
   for (const [label, pattern] of blockedPatterns) {
     if (pattern.test(content)) findings.push(`${file}: ${label}`);
+  }
+  if (!file.startsWith(`src${path.sep}content${path.sep}`)) continue;
+  for (const match of content.matchAll(/!\[[^\]]*\]\((\/(?:assets|images)\/[^)\s]+)\)/g)) {
+    const asset = path.join('public', decodeURIComponent(match[1]));
+    if (!fs.existsSync(asset)) findings.push(`${file}: 缺失图片 ${match[1]}`);
   }
 }
 

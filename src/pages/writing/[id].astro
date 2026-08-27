@@ -30,6 +30,7 @@ const firstImage = (post.body ?? '').match(/!\[[^\]]*\]\((\/[^)\s]+)\)/)?.[1];
   publishedAt={post.data.publishedAt}
   readingMinutes={readingMinutes}
   image={firstImage}
+  courseHref={post.data.interactiveCourse}
 >
   <Content />
 </ArticleLayout>

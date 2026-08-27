@@ -1,0 +1,70 @@
+---
+import course from '../../data/learning/ai-foundations.json';
+import '../../styles/learning.css';
+
+interface Props {
+  lessonId: string;
+  mode?: 'course' | 'article';
+}
+
+const { lessonId, mode = 'course' } = Astro.props;
+const lesson = course.lessons.find((item) => item.id === lessonId);
+
+if (!lesson) {
+  throw new Error(`Unknown learning lesson: ${lessonId}`);
+}
+---
+
+<div
+  id={mode === 'course' ? 'lesson-practice' : undefined}
+  class="learning-experiment"
+  data-learning-experiment={lesson.id}
+  data-mode={mode}
+>
+  <div class="learning-fallback">
+    <span>{lesson.number} · 互动实验</span>
+    <strong>{lesson.shortTitle}</strong>
+    <p>{lesson.mission.target}</p>
+    <noscript>启用 JavaScript 后可以操作变量并完成理解检查。</noscript>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/learning/runtime.mjs';
+</script>
+
+<style>
+  .learning-fallback {
+    display: grid;
+    min-height: 320px;
+    padding: 28px;
+    align-content: center;
+    gap: 10px;
+    border: 1px solid var(--learn-rule);
+    border-radius: 8px;
+    background: var(--learn-panel);
+  }
+
+  .learning-experiment {
+    scroll-margin-top: 72px;
+  }
+
+  .learning-fallback span {
+    color: var(--learn-gold);
+    font: 12px var(--mono);
+  }
+
+  .learning-fallback strong {
+    font-family: var(--serif);
+    font-size: 29px;
+  }
+
+  .learning-fallback p,
+  .learning-fallback noscript {
+    max-width: 620px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+</style>

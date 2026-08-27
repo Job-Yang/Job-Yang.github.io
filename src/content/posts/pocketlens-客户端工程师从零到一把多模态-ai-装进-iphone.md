@@ -116,7 +116,14 @@ source: public-rewrite
 
 ## 5. 三层架构
 
-<whiteboard token="ASWiws480hBIXkb7tOhcpQYlnMc"></whiteboard>
+```mermaid
+flowchart LR
+    G["眼镜 / 相机<br>感知、唤醒、隐私门禁"] --> P["iPhone<br>本地 VLM、短 OCR、场景记忆"]
+    P --> R{"端云路由"}
+    R -->|"短问答 / 离线 / 隐私优先"| L["本地回答<br>低延迟、不上传原始帧"]
+    R -->|"复杂推理 / 实时知识"| C["云端模型<br>长上下文与工具调用"]
+    C --> P
+```
 
 ## 6. 实际 AI 眼镜该放多大的模型
 
@@ -659,7 +666,18 @@ struct FakeReasoner: MultimodalReasoner {
 
 ## 24. 步骤 10：自动端云路由
 
-<whiteboard token="CKLBwW0izhQzGFbf40gcWfzLndg"></whiteboard>
+```mermaid
+flowchart TD
+    A["请求进入 Auto 模式"] --> B{"飞行模式、隐私要求<br>或用户强制 Local？"}
+    B -->|是| L["本地 VLM"]
+    B -->|否| C{"需要最新信息、长回答<br>或复杂比较？"}
+    C -->|是| R["云端 Reasoner"]
+    C -->|否| L
+    L --> D{"本地回答成功？"}
+    D -->|是| O["展示回答与路由原因"]
+    D -->|"失败 / 超时 / 无法判断"| R
+    R --> O
+```
 
 ### 首版 RoutePolicy
 

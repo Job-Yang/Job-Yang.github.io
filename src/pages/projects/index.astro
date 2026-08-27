@@ -54,6 +54,16 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
                 <div class="project-tags">
                   {project.data.tags.map((tag) => <span>{tag}</span>)}
                 </div>
+                {project.id === 'iloop' && (
+                  <a class="system-live-entry" href="/projects/iloop/#live-trim-case">
+                    <span aria-hidden="true">▶</span>
+                    <span>
+                      <strong>进入 Agent 任务回放</strong>
+                      <small>可交互 · 看失败、回退和证据如何推进</small>
+                    </span>
+                    <b aria-hidden="true">→</b>
+                  </a>
+                )}
                 <a class="system-link" href={`/projects/${project.id}/`}>了解设计与进展 →</a>
               </div>
               {project.id === 'iloop' && (
@@ -136,12 +146,12 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   }
 
   .projects-intro {
-    padding-block: 86px 94px;
+    padding-block: 58px 62px;
   }
 
   .projects-intro h1 {
-    margin: 16px 0 18px;
-    font-size: clamp(54px, 7vw, 82px);
+    margin: 12px 0 14px;
+    font-size: clamp(52px, 6vw, 72px);
     line-height: 1;
   }
 
@@ -149,18 +159,18 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
     max-width: 680px;
     margin: 0;
     color: var(--ink-dim);
-    font-size: 18px;
-    line-height: 1.8;
+    font-size: 16px;
+    line-height: 1.68;
   }
 
   .portfolio-band {
-    padding-block: 76px 92px;
+    padding-block: 50px 64px;
     border-top: 1px solid var(--line);
   }
 
   .band-head {
     display: flex;
-    margin-bottom: 46px;
+    margin-bottom: 28px;
     align-items: flex-start;
     justify-content: space-between;
     gap: 48px;
@@ -205,7 +215,7 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
 
   .system-copy {
     max-width: 760px;
-    padding: 62px 36px 68px 0;
+    padding: 34px 36px 42px 0;
   }
 
   .status {
@@ -214,8 +224,8 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   }
 
   .system-copy h2 {
-    margin: 18px 0;
-    font-size: clamp(60px, 8vw, 104px);
+    margin: 14px 0;
+    font-size: clamp(58px, 7vw, 86px);
     line-height: 0.92;
   }
 
@@ -227,13 +237,13 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   .system-copy > p {
     margin: 0;
     color: var(--ink-dim);
-    font-size: 18px;
-    line-height: 1.8;
+    font-size: 16px;
+    line-height: 1.68;
   }
 
   .project-tags {
     display: flex;
-    margin-top: 26px;
+    margin-top: 18px;
     flex-wrap: wrap;
     gap: 8px 18px;
     color: var(--ink-faint);
@@ -248,7 +258,7 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
 
   .system-link {
     display: inline-block;
-    margin-top: 42px;
+    margin-top: 18px;
     color: var(--ink);
     font-size: 13px;
     font-weight: 500;
@@ -259,9 +269,63 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
     color: var(--accent);
   }
 
+  .system-live-entry {
+    display: grid;
+    width: min(100%, 460px);
+    min-height: 76px;
+    margin-top: 26px;
+    padding: 14px 16px;
+    grid-template-columns: 26px minmax(0, 1fr) 24px;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid rgba(245, 185, 113, 0.38);
+    border-radius: 7px;
+    background: rgba(245, 185, 113, 0.07);
+    color: var(--ink);
+    text-decoration: none;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .system-live-entry:hover {
+    border-color: rgba(245, 185, 113, 0.72);
+    background: rgba(245, 185, 113, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .system-live-entry:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .system-live-entry > span:first-child,
+  .system-live-entry b {
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .system-live-entry > span:nth-child(2) {
+    display: grid;
+    gap: 4px;
+  }
+
+  .system-live-entry strong {
+    font-size: 15px;
+  }
+
+  .system-live-entry small {
+    color: var(--ink-dim);
+    font: 10px/1.5 var(--mono);
+    letter-spacing: 0;
+  }
+
+  .system-live-entry b {
+    justify-self: end;
+    font-size: 20px;
+  }
+
   .system-feature-iloop {
     display: grid;
-    grid-template-columns: minmax(0, 0.66fr) minmax(760px, 1.34fr);
+    grid-template-columns: minmax(0, 0.72fr) minmax(620px, 1.28fr);
     align-items: center;
     gap: clamp(24px, 4vw, 72px);
   }
@@ -276,7 +340,7 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   }
 
   :global(.system-galaxy .galaxy) {
-    min-height: 440px;
+    min-height: 380px;
   }
 
   .skill-list {
@@ -285,7 +349,7 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
 
   .skill-row {
     display: grid;
-    padding-block: 34px;
+    padding-block: 25px;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 40px;
@@ -301,8 +365,8 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   }
 
   .skill-main h2 {
-    margin: 9px 0 8px;
-    font-size: clamp(30px, 4vw, 48px);
+    margin: 7px 0 6px;
+    font-size: clamp(28px, 3.4vw, 42px);
     line-height: 1.1;
   }
 
@@ -311,7 +375,7 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
     margin: 0;
     color: var(--ink-dim);
     font-size: 15px;
-    line-height: 1.75;
+    line-height: 1.62;
   }
 
   .skill-actions {
@@ -358,7 +422,7 @@ const skillRepository = 'https://github.com/Job-Yang/jobbyang-ai-skills';
   }
 
   .projects-future {
-    padding-block: 90px 120px;
+    padding-block: 68px 92px;
     border-top: 1px solid var(--line);
   }
 

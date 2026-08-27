@@ -1,0 +1,279 @@
+---
+interface Props {
+  section: {
+    html: string;
+  };
+}
+
+const { section } = Astro.props;
+---
+
+<article class="article-lesson" aria-label="本章文章内容">
+  <nav class="lesson-path" aria-label="本章学习顺序">
+    <a href="#lesson-reading"><span>01</span><strong>阅读本章</strong></a>
+    <a href="#lesson-practice"><span>02</span><strong>动手验证</strong></a>
+  </nav>
+
+  <section
+    class="lesson-source-prose"
+    id="lesson-reading"
+    set:html={section.html}
+  />
+
+  <a class="practice-jump" href="#lesson-practice">
+    <span>
+      <small>读完继续</small>
+      <strong>用互动实验验证上面的内容</strong>
+    </span>
+    <b aria-hidden="true">开始练习 ↓</b>
+  </a>
+</article>
+
+<style>
+  .article-lesson {
+    display: grid;
+    gap: 52px;
+    padding-top: 34px;
+  }
+
+  .lesson-path {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-block: 1px solid var(--line);
+  }
+
+  .lesson-path a {
+    display: flex;
+    min-height: 58px;
+    padding: 12px 14px;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .lesson-path a + a {
+    border-left: 1px solid var(--line);
+  }
+
+  .lesson-path span {
+    color: var(--accent);
+    font: 11px var(--mono);
+  }
+
+  .lesson-path strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .lesson-path a:hover,
+  .lesson-path a:focus-visible {
+    background: rgba(245, 185, 113, 0.08);
+    color: var(--ink);
+  }
+
+  .lesson-source-prose {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+    color: #c5c3bf;
+    font-size: 17.5px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+    scroll-margin-top: 72px;
+  }
+
+  .lesson-source-prose :global(h3) {
+    margin: 52px 0 20px;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 25px;
+    font-synthesis: none;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.4;
+    scroll-margin-top: 90px;
+  }
+
+  .lesson-source-prose :global(h3:first-child) {
+    margin-top: 0;
+  }
+
+  .lesson-source-prose :global(p) {
+    margin: 0 0 28px;
+  }
+
+  .lesson-source-prose :global(strong) {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .lesson-source-prose :global(a) {
+    color: var(--accent);
+    text-underline-offset: 3px;
+  }
+
+  .lesson-source-prose :global(ul),
+  .lesson-source-prose :global(ol) {
+    margin: 0 0 30px;
+    padding-left: 1.4em;
+  }
+
+  .lesson-source-prose :global(li) {
+    margin-bottom: 10px;
+  }
+
+  .lesson-source-prose :global(blockquote) {
+    margin: 36px 0;
+    padding: 2px 0 2px 24px;
+    border-left: 2px solid var(--accent);
+    color: var(--ink-dim);
+  }
+
+  .lesson-source-prose :global(code) {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--ink);
+    font: 0.88em var(--mono);
+  }
+
+  .lesson-source-prose :global(pre) {
+    max-width: 100%;
+    margin: 34px 0;
+    padding: 22px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #0a0a0a;
+  }
+
+  .lesson-source-prose :global(pre code) {
+    padding: 0;
+    background: none;
+  }
+
+  .lesson-source-prose :global(img) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 34px 0;
+    border-radius: 8px;
+  }
+
+  .lesson-source-prose :global(table) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 34px 0;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+
+  .lesson-source-prose :global(thead) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .lesson-source-prose :global(th),
+  .lesson-source-prose :global(td) {
+    padding: 11px 16px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .lesson-source-prose :global(th) {
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .lesson-source-prose :global(td) {
+    color: var(--ink-dim);
+    line-height: 1.7;
+  }
+
+  .lesson-source-prose :global(hr) {
+    margin: 52px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .practice-jump {
+    display: flex;
+    min-height: 94px;
+    padding: 20px 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border: 1px solid rgba(245, 185, 113, 0.48);
+    border-radius: 8px;
+    background: rgba(245, 185, 113, 0.09);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .practice-jump span {
+    display: grid;
+    gap: 6px;
+  }
+
+  .practice-jump small {
+    color: var(--learn-gold);
+    font: 11px var(--mono);
+  }
+
+  .practice-jump strong {
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  .practice-jump b {
+    flex: 0 0 auto;
+    padding: 13px 17px;
+    border-radius: 6px;
+    background: var(--learn-gold-strong);
+    color: var(--learn-gold-ink);
+    font-size: 14px;
+  }
+
+  .practice-jump:hover,
+  .practice-jump:focus-visible {
+    background: rgba(245, 185, 113, 0.14);
+  }
+
+  @media (max-width: 620px) {
+    .article-lesson {
+      gap: 42px;
+      padding-top: 28px;
+    }
+
+    .lesson-path a {
+      min-height: 54px;
+      padding: 10px;
+    }
+
+    .lesson-source-prose {
+      font-size: 16.5px;
+    }
+
+    .lesson-source-prose :global(h3) {
+      margin-top: 42px;
+      font-size: 23px;
+    }
+
+    .lesson-source-prose :global(pre) {
+      padding: 18px;
+    }
+
+    .practice-jump {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .practice-jump b {
+      text-align: center;
+    }
+  }
+</style>

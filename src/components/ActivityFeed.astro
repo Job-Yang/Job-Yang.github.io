@@ -1,0 +1,629 @@
+---
+import feed from '../data/activity-feed.json';
+
+interface Props {
+  mode?: 'compact' | 'full';
+  limit?: number;
+  heading?: string;
+}
+
+type ActivityStatus = 'queued' | 'building' | 'verifying' | 'shipped' | 'blocked' | 'stale';
+
+const {
+  mode = 'full',
+  limit = feed.threads.length,
+  heading = mode === 'compact' ? '正在发生' : '正在施工',
+} = Astro.props;
+const threads = feed.threads.slice(0, limit);
+const statusMeta: Record<ActivityStatus, { label: string; action: string }> = {
+  queued: { label: '排队', action: '等待开始' },
+  building: { label: '开发中', action: '正在推进' },
+  verifying: { label: '验证中', action: '正在验收' },
+  shipped: { label: '已发布', action: '线上可用' },
+  blocked: { label: '阻塞', action: '等待解锁' },
+  stale: { label: '暂停', action: '暂无更新' },
+};
+
+function formatTimestamp(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(value));
+}
+---
+
+<section class:list={['activity-feed', `activity-${mode}`]} aria-labelledby={`activity-${mode}-title`}>
+  <header class="activity-head">
+    <div class="activity-heading">
+      <span class="eyebrow">NOW · LIVE WORK</span>
+      <h2 id={`activity-${mode}-title`}>{heading}</h2>
+      {mode === 'compact' && (
+        <div class="feed-meta">
+          <strong>{threads.length} 条主线</strong>
+          <span>更新于 {formatTimestamp(feed.generatedAt)}</span>
+        </div>
+      )}
+    </div>
+    {mode === 'full' && (
+      <div class="feed-meta">
+        <strong>{threads.length} 条主线</strong>
+        <span>更新于 {formatTimestamp(feed.generatedAt)}</span>
+      </div>
+    )}
+    {mode === 'compact' && (
+      <a class="pill activity-action" href="/field/">进入现场 →</a>
+    )}
+  </header>
+
+  <div class="activity-rows">
+    {threads.map((thread) => {
+      const status = thread.status as ActivityStatus;
+      const meta = statusMeta[status];
+      const content = (
+        <>
+          <div class="state-cell">
+            <div class="state-line">
+              <i class={`status-dot status-${status}`} aria-hidden="true"></i>
+              <span>{'statusLabel' in thread ? thread.statusLabel : meta.label}</span>
+            </div>
+            {mode === 'compact' && (
+              <time datetime={thread.updatedAt}>{formatTimestamp(thread.updatedAt)}</time>
+            )}
+          </div>
+          <div class="thread-cell">
+            <header class="thread-head">
+              <div class="thread-title">
+                <h3>{thread.title}</h3>
+                <span>{meta.action}</span>
+              </div>
+              {mode === 'full' && (
+                <time datetime={thread.updatedAt}>{formatTimestamp(thread.updatedAt)}</time>
+              )}
+            </header>
+            <p class="thread-summary">{thread.summary}</p>
+            {mode === 'full' && (
+              <div class="activity-flow">
+                <div>
+                  <span>刚完成</span>
+                  <p>{thread.latestEvidence}</p>
+                </div>
+                <b aria-hidden="true">→</b>
+                <div>
+                  <span>接下来</span>
+                  <p>{thread.nextGate}</p>
+                </div>
+              </div>
+            )}
+            <div class="thread-foot">
+              {'metrics' in thread && thread.metrics && (
+                <dl class="thread-metrics">
+                  {Object.entries(thread.metrics)
+                    .filter(([, value]) => typeof value === 'string')
+                    .map(([label, value]) => (
+                      <div><dt>{label}</dt><dd>{String(value)}</dd></div>
+                    ))}
+                </dl>
+              )}
+              <span class="source-label">{thread.sourceLabel}</span>
+            </div>
+          </div>
+        </>
+      );
+
+      return thread.href ? (
+        <a class="activity-row" href={thread.href} data-status={status}>{content}</a>
+      ) : (
+        <article class="activity-row" data-status={status}>{content}</article>
+      );
+    })}
+  </div>
+
+  {mode === 'compact' && (
+    <footer class="activity-footer">
+      <span>公开投影 · 原始私有数据不会进入网站</span>
+    </footer>
+  )}
+</section>
+
+<style>
+  .activity-feed {
+    --state-color: #d9d8d4;
+    position: relative;
+    color: var(--ink);
+  }
+
+  .activity-head,
+  .activity-footer,
+  .state-line,
+  .thread-title,
+  .feed-meta {
+    display: flex;
+    align-items: center;
+  }
+
+  .activity-head {
+    min-height: 78px;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .activity-head h2 {
+    margin: 5px 0 0;
+    font-size: 27px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .activity-heading {
+    min-width: 0;
+  }
+
+  .feed-meta {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px 14px;
+    color: var(--ink-dim);
+    font: 12px var(--mono);
+  }
+
+  .feed-meta strong {
+    color: var(--ink);
+    font-weight: 550;
+  }
+
+  .activity-rows {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .activity-row {
+    --state-color: #d9d8d4;
+    position: relative;
+    display: grid;
+    min-height: 156px;
+    padding: 24px 4px;
+    grid-template-columns: 116px minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+    color: inherit;
+    text-decoration: none;
+    transition: background 180ms ease;
+  }
+
+  .activity-row:hover {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.028), transparent);
+  }
+
+  .activity-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .activity-row[data-status="building"],
+  .activity-row[data-status="verifying"] {
+    --state-color: #f5b971;
+  }
+
+  .activity-row[data-status="shipped"] {
+    --state-color: #65c982;
+  }
+
+  .activity-row[data-status="blocked"] {
+    --state-color: #e06552;
+  }
+
+  .state-cell {
+    position: relative;
+    display: grid;
+    padding-top: 4px;
+    align-items: start;
+    gap: 7px;
+    color: var(--state-color);
+    font: 12px var(--mono);
+  }
+
+  .state-line {
+    gap: 9px;
+  }
+
+  .state-cell time {
+    padding-left: 17px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .activity-full .state-cell::after {
+    position: absolute;
+    top: 24px;
+    bottom: -136px;
+    left: 3px;
+    width: 1px;
+    background: linear-gradient(var(--state-color), rgba(255, 255, 255, 0.04));
+    content: "";
+    opacity: 0.28;
+  }
+
+  .activity-full .activity-row:last-child .state-cell::after {
+    display: none;
+  }
+
+  .status-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 50%;
+    background: var(--state-color);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--state-color) 58%, transparent);
+  }
+
+  .status-dot::after {
+    position: absolute;
+    inset: -5px;
+    border: 1px solid color-mix(in srgb, var(--state-color) 26%, transparent);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .activity-row[data-status="building"] .status-dot::after,
+  .activity-row[data-status="verifying"] .status-dot::after {
+    animation: activity-pulse 2.4s ease-out infinite;
+  }
+
+  .thread-cell {
+    min-width: 0;
+  }
+
+  .thread-head,
+  .thread-title {
+    display: flex;
+    align-items: center;
+  }
+
+  .thread-head {
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .thread-title {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .thread-title h3 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  .thread-title span,
+  .activity-flow span,
+  .source-label {
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .thread-head time {
+    flex: 0 0 auto;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .thread-summary,
+  .activity-flow p {
+    margin: 8px 0 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .thread-summary {
+    max-width: 840px;
+  }
+
+  .activity-flow {
+    display: grid;
+    max-width: 980px;
+    margin-top: 20px;
+    grid-template-columns: minmax(0, 1fr) 26px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+  }
+
+  .activity-flow > div {
+    min-width: 0;
+  }
+
+  .activity-flow p {
+    margin-top: 5px;
+    color: #d8d6d2;
+  }
+
+  .activity-flow b {
+    padding-top: 23px;
+    color: var(--state-color);
+    font: 400 15px var(--mono);
+    opacity: 0.7;
+    text-align: center;
+  }
+
+  .thread-foot {
+    display: flex;
+    min-height: 28px;
+    margin-top: 16px;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .source-label {
+    margin-left: auto;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .thread-metrics {
+    display: flex;
+    margin: 0;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .thread-metrics div {
+    display: inline-flex;
+    min-height: 26px;
+    padding: 4px 8px;
+    align-items: baseline;
+    gap: 6px;
+    border: 1px solid rgba(245, 185, 113, 0.18);
+    border-radius: 4px;
+    background: rgba(245, 185, 113, 0.06);
+  }
+
+  .thread-metrics dt {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .thread-metrics dd {
+    margin: 0;
+    color: var(--accent);
+    font: 12px var(--mono);
+  }
+
+  @keyframes activity-pulse {
+    0% {
+      opacity: 0.8;
+      transform: scale(0.7);
+    }
+    72%,
+    100% {
+      opacity: 0;
+      transform: scale(1.8);
+    }
+  }
+
+  .activity-footer {
+    min-height: 44px;
+    justify-content: flex-start;
+    gap: 20px;
+    color: var(--ink-faint);
+    font: 11px var(--mono);
+  }
+
+  .activity-action {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding-inline: 17px;
+    font-size: 15px;
+  }
+
+  .activity-compact {
+    padding: 0;
+  }
+
+  .activity-compact .activity-head {
+    min-height: 72px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .activity-compact .activity-head h2 {
+    font-size: 21px;
+  }
+
+  .activity-compact .activity-heading {
+    display: grid;
+    grid-template-columns: minmax(130px, auto) minmax(0, 1fr);
+    align-items: end;
+    column-gap: 24px;
+  }
+
+  .activity-compact .activity-heading > .eyebrow {
+    grid-column: 1 / -1;
+  }
+
+  .activity-compact .feed-meta {
+    justify-content: flex-start;
+    padding-bottom: 1px;
+  }
+
+  .activity-compact .activity-row {
+    min-height: 0;
+    padding-block: 19px;
+    grid-template-columns: 132px minmax(0, 1fr);
+    align-items: center;
+    gap: 26px;
+  }
+
+  .activity-compact .activity-row:last-child {
+    border-bottom: 0;
+  }
+
+  .activity-compact .thread-cell {
+    display: grid;
+    grid-template-columns: minmax(190px, 280px) minmax(0, 1fr);
+    align-items: center;
+    gap: 28px;
+  }
+
+  .activity-compact .thread-summary {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .activity-compact .thread-title > span,
+  .activity-compact .thread-metrics,
+  .activity-compact .activity-flow,
+  .activity-compact .source-label {
+    display: none;
+  }
+
+  .activity-compact .thread-head {
+    display: contents;
+  }
+
+  .activity-compact .thread-title h3 {
+    font-family: var(--serif);
+    font-size: 25px;
+    font-weight: 400;
+  }
+
+  .activity-compact .thread-foot {
+    display: none;
+  }
+
+  @media (max-width: 1080px) {
+    .activity-full .activity-row {
+      grid-template-columns: 96px minmax(0, 1fr);
+    }
+
+    .activity-compact .thread-cell {
+      grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .activity-head {
+      min-height: 86px;
+      align-items: flex-start;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .feed-meta {
+      justify-content: flex-start;
+    }
+
+    .activity-compact .activity-heading {
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 6px;
+    }
+
+    .activity-compact .activity-head {
+      position: relative;
+      min-height: 94px;
+      padding-right: 126px;
+      justify-content: center;
+    }
+
+    .activity-compact .activity-action {
+      position: absolute;
+      top: 20px;
+      right: 0;
+    }
+
+    .activity-row,
+    .activity-full .activity-row,
+    .activity-compact .activity-row {
+      padding: 19px 0;
+      grid-template-columns: 1fr;
+      gap: 12px 16px;
+    }
+
+    .state-cell {
+      grid-column: 1;
+    }
+
+    .activity-compact .state-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .activity-compact .state-cell time {
+      padding-left: 0;
+    }
+
+    .activity-full .state-cell::after {
+      display: none;
+    }
+
+    .thread-cell,
+    .activity-compact .thread-cell {
+      display: block;
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .activity-compact .thread-summary {
+      margin-top: 7px;
+      overflow: visible;
+      white-space: normal;
+    }
+
+    .thread-head {
+      align-items: flex-start;
+    }
+
+    .activity-compact .thread-head {
+      display: flex;
+    }
+
+    .activity-flow {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .activity-flow b {
+      display: none;
+    }
+
+    .thread-foot {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .source-label {
+      margin-left: 0;
+    }
+
+    .activity-footer {
+      padding-block: 14px 0;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .activity-compact {
+      padding: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .activity-row .status-dot::after {
+      animation: none;
+    }
+  }
+</style>
