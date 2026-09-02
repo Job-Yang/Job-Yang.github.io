@@ -70,6 +70,13 @@ const isHome = Astro.url.pathname === '/';
     <meta property="og:url" content={canonical} />
     {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
     <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    <script
+      is:inline
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="665cdb72-f690-4dc0-8415-90a1b52e89a5"
+      data-domains="jobyang.cn"
+    ></script>
     <title>{fullTitle}</title>
   </head>
   <body>
