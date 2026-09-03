@@ -10,7 +10,7 @@ tags:
   - Agent Skill
   - 技术观点
   - 写作
-order: 4
+order: 5
 featured: true
 draft: false
 visual: generic

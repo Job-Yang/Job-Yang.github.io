@@ -1,0 +1,547 @@
+---
+const frames = [
+  { time: '00:00.0', sheet: 78, label: '画面静止' },
+  { time: '00:07.2', sheet: 72, label: '手势开始' },
+  { time: '00:07.4', sheet: 51, label: '面板上滑' },
+  { time: '00:07.6', sheet: 34, label: '接近吸附位' },
+  { time: '00:07.8', sheet: 42, label: '位置发生回弹' },
+  { time: '00:08.0', sheet: 42, label: '异常状态保留' },
+];
+---
+
+<div class="vr-instrument" data-vr-instrument>
+  <div class="instrument-head">
+    <span>Motion analysis</span>
+    <span class="instrument-state"><i></i> 正在分析示例录屏</span>
+  </div>
+
+  <div class="frame-strip" aria-label="示例录屏关键帧">
+    {frames.map((frame, index) => (
+      <button
+        class:list={['instrument-frame', { active: index === 0 }]}
+        type="button"
+        data-frame={index}
+        aria-label={`${frame.time} ${frame.label}`}
+        aria-pressed={index === 0 ? 'true' : 'false'}
+      >
+        <span class="sample-screen" style={`--sheet-y: ${frame.sheet}%`}>
+          <span class="sample-status"><i></i><i></i></span>
+          <span class="sample-title">探索</span>
+          <span class="sample-banner"></span>
+          <span class="sample-row"><i></i><b></b></span>
+          <span class="sample-row short"><i></i><b></b></span>
+          <span class="sample-sheet">
+            <i></i>
+            <b>附近推荐</b>
+            <span></span>
+            <span></span>
+          </span>
+        </span>
+        <time>{frame.time}</time>
+      </button>
+    ))}
+  </div>
+
+  <div class="motion-plot" aria-label="画面运动分曲线">
+    <svg viewBox="0 0 720 88" preserveAspectRatio="none" aria-hidden="true">
+      <path
+        class="motion-area"
+        d="M0 76 L78 75 L132 72 L174 61 L206 27 L238 51 L274 18 L312 45 L358 70 L420 75 L466 69 L510 34 L552 23 L594 55 L642 71 L720 75 L720 88 L0 88 Z"
+      />
+      <path
+        class="motion-line"
+        d="M0 76 L78 75 L132 72 L174 61 L206 27 L238 51 L274 18 L312 45 L358 70 L420 75 L466 69 L510 34 L552 23 L594 55 L642 71 L720 75"
+      />
+      <line class="threshold-line" x1="0" y1="58" x2="720" y2="58" />
+    </svg>
+    <span class="threshold-label">自动阈值 0.82</span>
+    <i class="scan-cursor" data-scan-cursor></i>
+  </div>
+
+  <div class="region-track" aria-hidden="true">
+    <span></span><span class="active"></span><span></span><span class="active"></span><span></span>
+  </div>
+
+  <div class="instrument-foot">
+    <div class="instrument-reading" aria-live="polite">
+      <time data-current-time>00:00.0</time>
+      <strong data-current-label>画面静止，暂不抽帧</strong>
+    </div>
+    <button class="play-toggle" type="button" data-play-toggle aria-pressed="false">暂停演示</button>
+  </div>
+</div>
+
+<script>
+  const initVideoReaderInstrument = () => {
+    document.querySelectorAll<HTMLElement>('[data-vr-instrument]').forEach((root) => {
+      if (root.dataset.ready === 'true') return;
+      root.dataset.ready = 'true';
+
+      const frames = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-frame]'));
+      const currentTime = root.querySelector<HTMLElement>('[data-current-time]');
+      const currentLabel = root.querySelector<HTMLElement>('[data-current-label]');
+      const cursor = root.querySelector<HTMLElement>('[data-scan-cursor]');
+      const toggle = root.querySelector<HTMLButtonElement>('[data-play-toggle]');
+      const labels = [
+        '画面静止，暂不抽帧',
+        '检测到变化，进入活动区间',
+        '面板持续上滑，保留关键帧',
+        '接近目标位置，继续观察',
+        '出现回弹，标记可疑时刻',
+        '状态未恢复，交给模型判断',
+      ];
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let index = 0;
+      let timer = 0;
+      let paused = reduceMotion;
+
+      const render = (nextIndex: number) => {
+        index = nextIndex;
+        frames.forEach((frame, frameIndex) => {
+          const active = frameIndex === index;
+          frame.classList.toggle('active', active);
+          frame.setAttribute('aria-pressed', String(active));
+        });
+        if (currentTime) currentTime.textContent = frames[index]?.querySelector('time')?.textContent ?? '';
+        if (currentLabel) currentLabel.textContent = labels[index] ?? '';
+        if (cursor) cursor.style.setProperty('--cursor-x', `${(index / Math.max(1, frames.length - 1)) * 100}%`);
+      };
+
+      const stop = () => {
+        window.clearInterval(timer);
+        timer = 0;
+      };
+
+      const start = () => {
+        stop();
+        if (paused) return;
+        timer = window.setInterval(() => render((index + 1) % frames.length), 1250);
+      };
+
+      frames.forEach((frame, frameIndex) => {
+        frame.addEventListener('click', () => {
+          render(frameIndex);
+          start();
+        });
+      });
+
+      toggle?.addEventListener('click', () => {
+        paused = !paused;
+        root.classList.toggle('paused', paused);
+        toggle.textContent = paused ? '继续演示' : '暂停演示';
+        toggle.setAttribute('aria-pressed', String(paused));
+        start();
+      });
+
+      if (reduceMotion && toggle) toggle.textContent = '逐帧查看';
+      render(0);
+      start();
+      document.addEventListener('astro:before-swap', stop, { once: true });
+    });
+  };
+
+  initVideoReaderInstrument();
+  document.addEventListener('astro:page-load', initVideoReaderInstrument);
+</script>
+
+<style>
+  .vr-instrument {
+    position: relative;
+    display: grid;
+    min-height: 450px;
+    padding: 26px;
+    align-content: center;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 38%),
+      #050505;
+  }
+
+  .vr-instrument::after {
+    position: absolute;
+    top: 54px;
+    bottom: 70px;
+    left: -24%;
+    z-index: 0;
+    width: 24%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(245, 185, 113, 0.12), transparent);
+    content: "";
+    animation: scan-sweep 7.5s linear infinite;
+  }
+
+  .vr-instrument.paused::after {
+    animation-play-state: paused;
+  }
+
+  .vr-instrument > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .instrument-head,
+  .instrument-foot,
+  .instrument-reading {
+    display: flex;
+    align-items: center;
+  }
+
+  .instrument-head {
+    justify-content: space-between;
+    gap: 20px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+    text-transform: uppercase;
+  }
+
+  .instrument-state {
+    color: var(--ink-dim);
+    text-transform: none;
+  }
+
+  .instrument-state i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(245, 185, 113, 0.55);
+    animation: reader-pulse 1.6s ease-in-out infinite;
+  }
+
+  .frame-strip {
+    display: grid;
+    margin-top: 30px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .instrument-frame {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+  }
+
+  .sample-screen {
+    position: relative;
+    display: block;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(circle at 76% 20%, rgba(245, 185, 113, 0.14), transparent 28%),
+      #0a0b0c;
+    transition: border-color 180ms ease, opacity 180ms ease, transform 180ms ease;
+  }
+
+  .instrument-frame:not(.active) .sample-screen {
+    opacity: 0.66;
+  }
+
+  .instrument-frame.active .sample-screen {
+    border-color: rgba(245, 185, 113, 0.82);
+    box-shadow: 0 0 22px rgba(245, 185, 113, 0.08);
+    transform: translateY(-3px);
+  }
+
+  .sample-status {
+    position: absolute;
+    top: 5%;
+    right: 7%;
+    display: flex;
+    gap: 2px;
+  }
+
+  .sample-status i {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(238, 240, 246, 0.42);
+  }
+
+  .sample-title {
+    position: absolute;
+    top: 12%;
+    left: 9%;
+    color: rgba(238, 240, 246, 0.64);
+    font-size: 7px;
+  }
+
+  .sample-banner {
+    position: absolute;
+    top: 22%;
+    left: 9%;
+    width: 82%;
+    height: 21%;
+    border-radius: 3px;
+    background:
+      linear-gradient(90deg, rgba(238, 240, 246, 0.1), transparent 70%),
+      rgba(153, 193, 207, 0.08);
+  }
+
+  .sample-banner::before {
+    position: absolute;
+    top: 16%;
+    right: 14%;
+    width: 12%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: rgba(245, 185, 113, 0.48);
+    content: "";
+  }
+
+  .sample-banner::after {
+    position: absolute;
+    inset: 40% 0 0;
+    background: rgba(114, 135, 136, 0.2);
+    clip-path: polygon(0 80%, 22% 31%, 39% 61%, 61% 18%, 78% 54%, 100% 24%, 100% 100%, 0 100%);
+    content: "";
+  }
+
+  .sample-row {
+    position: absolute;
+    top: 51%;
+    left: 9%;
+    display: flex;
+    width: 78%;
+    align-items: center;
+    gap: 7%;
+  }
+
+  .sample-row.short {
+    top: 63%;
+    width: 62%;
+  }
+
+  .sample-row i {
+    width: 15%;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: rgba(245, 185, 113, 0.12);
+  }
+
+  .sample-row b {
+    width: 70%;
+    height: 3px;
+    background: rgba(238, 240, 246, 0.13);
+  }
+
+  .sample-sheet {
+    position: absolute;
+    top: var(--sheet-y);
+    right: 0;
+    bottom: -26%;
+    left: 0;
+    display: grid;
+    padding: 9% 9%;
+    align-content: start;
+    gap: 7%;
+    border-top: 1px solid rgba(238, 240, 246, 0.2);
+    border-radius: 7px 7px 0 0;
+    background: rgba(30, 32, 34, 0.98);
+    transition: top 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .sample-sheet > i {
+    width: 24%;
+    height: 2px;
+    margin: -2% auto 3%;
+    border-radius: 2px;
+    background: rgba(238, 240, 246, 0.32);
+  }
+
+  .sample-sheet b {
+    color: rgba(238, 240, 246, 0.58);
+    font-size: 6px;
+    font-weight: 500;
+  }
+
+  .sample-sheet span {
+    width: 88%;
+    height: 3px;
+    background: rgba(238, 240, 246, 0.11);
+  }
+
+  .instrument-frame time {
+    display: block;
+    margin-top: 8px;
+    font: 8px var(--mono);
+  }
+
+  .instrument-frame.active time {
+    color: var(--accent);
+  }
+
+  .motion-plot {
+    position: relative;
+    height: 74px;
+    margin-top: 24px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.012);
+  }
+
+  .motion-plot svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .motion-area {
+    fill: rgba(245, 185, 113, 0.08);
+  }
+
+  .motion-line {
+    fill: none;
+    stroke: rgba(245, 185, 113, 0.72);
+    stroke-width: 1.4;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .threshold-line {
+    stroke: rgba(238, 240, 246, 0.2);
+    stroke-dasharray: 4 5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .threshold-label {
+    position: absolute;
+    top: 28%;
+    right: 5px;
+    color: var(--ink-faint);
+    font: 8px var(--mono);
+  }
+
+  .scan-cursor {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--cursor-x, 0%);
+    width: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(245, 185, 113, 0.36);
+    transition: left 260ms ease;
+  }
+
+  .region-track {
+    display: grid;
+    height: 5px;
+    margin-top: 6px;
+    grid-template-columns: 1.2fr 1.35fr 1fr 1.25fr 1.2fr;
+    gap: 4px;
+  }
+
+  .region-track span {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .region-track .active {
+    background: rgba(245, 185, 113, 0.26);
+  }
+
+  .instrument-foot {
+    min-height: 48px;
+    margin-top: 18px;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .instrument-reading {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .instrument-reading time {
+    flex: none;
+    color: var(--accent);
+    font: 10px var(--mono);
+  }
+
+  .instrument-reading strong {
+    overflow: hidden;
+    color: var(--ink-dim);
+    font-size: 13px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .play-toggle {
+    flex: none;
+    min-height: 32px;
+    padding-inline: 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  .play-toggle:hover {
+    border-color: rgba(245, 185, 113, 0.45);
+    color: var(--accent);
+  }
+
+  @keyframes reader-pulse {
+    50% {
+      opacity: 0.4;
+      transform: scale(0.72);
+    }
+  }
+
+  @keyframes scan-sweep {
+    to {
+      left: 100%;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .vr-instrument {
+      min-height: 390px;
+      padding: 18px;
+    }
+
+    .instrument-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .frame-strip {
+      margin-top: 22px;
+      gap: 5px;
+    }
+
+    .instrument-frame time {
+      font-size: 7px;
+    }
+
+    .motion-plot {
+      height: 62px;
+      margin-top: 18px;
+    }
+
+    .instrument-reading strong {
+      font-size: 12px;
+    }
+
+    .play-toggle {
+      padding-inline: 9px;
+      font-size: 15px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vr-instrument::after,
+    .instrument-state i {
+      animation: none;
+    }
+  }
+</style>

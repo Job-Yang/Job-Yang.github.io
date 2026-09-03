@@ -10,7 +10,7 @@ tags:
   - Agent Skill
   - 未来推演
   - 写作
-order: 7
+order: 8
 featured: true
 draft: false
 visual: generic

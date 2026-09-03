@@ -1,0 +1,564 @@
+---
+const queue = [
+  { name: 'hero-3x.png', type: '普通图' },
+  { name: 'icon.png', type: '小图' },
+  { name: 'overlay.png', type: '透明图' },
+  { name: 'spinner.png', type: 'APNG' },
+];
+---
+
+<div class="png-instrument" data-png-instrument>
+  <div class="instrument-head">
+    <span>Local compression chamber</span>
+    <span class="local-state"><i></i> 本地处理 · 图片不上传</span>
+  </div>
+
+  <div class="compression-stage">
+    <div class="image-specimen source">
+      <span>原图</span>
+      <div class="pixel-scene true-color">
+        <i></i><b></b><em></em>
+      </div>
+      <strong>24 / 32 bit</strong>
+      <small>真彩色 PNG</small>
+    </div>
+
+    <div class="processor">
+      <div class="processor-step active" data-processor-step="0">
+        <span>01</span><strong>pngquant</strong><small>颜色量化</small>
+      </div>
+      <i></i>
+      <div class="processor-step" data-processor-step="1">
+        <span>02</span><strong>oxipng</strong><small>无损收尾</small>
+      </div>
+      <i></i>
+      <div class="processor-step" data-processor-step="2">
+        <span>03</span><strong>quality gate</strong><small>质量门禁</small>
+      </div>
+    </div>
+
+    <div class="image-specimen result">
+      <span>候选图</span>
+      <div class="pixel-scene palette">
+        <i></i><b></b><em></em>
+      </div>
+      <strong>8 bit palette</strong>
+      <small data-output-state>等待质量门禁</small>
+    </div>
+  </div>
+
+  <div class="gate-strip">
+    <span data-gate="decode"><i></i>可解码</span>
+    <span data-gate="size"><i></i>宽高不变</span>
+    <span data-gate="alpha"><i></i>alpha 保留</span>
+    <span data-gate="quality"><i></i>质量指标</span>
+    <span data-gate="smaller"><i></i>体积更小</span>
+  </div>
+
+  <div class="file-queue">
+    {queue.map((item, index) => (
+      <button
+        class:list={['queue-item', { active: index === 0 }]}
+        type="button"
+        data-queue-index={index}
+        aria-pressed={index === 0 ? 'true' : 'false'}
+      >
+        <span>{String(index + 1).padStart(2, '0')}</span>
+        <strong>{item.name}</strong>
+        <small>{item.type}</small>
+        <b data-queue-status>{index === 0 ? 'PROCESSING' : 'QUEUE'}</b>
+      </button>
+    ))}
+  </div>
+
+  <div class="instrument-foot">
+    <div>
+      <span>当前策略</span>
+      <strong data-strategy>quality 65-85 · speed 1 · dithering 1.0</strong>
+    </div>
+    <button type="button" data-instrument-toggle aria-pressed="false">暂停</button>
+  </div>
+</div>
+
+<script>
+  const initPngInstrument = () => {
+    document.querySelectorAll<HTMLElement>('[data-png-instrument]').forEach((root) => {
+      if (root.dataset.ready === 'true') return;
+      root.dataset.ready = 'true';
+
+      const items = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-queue-index]'));
+      const processorSteps = Array.from(root.querySelectorAll<HTMLElement>('[data-processor-step]'));
+      const gates = Array.from(root.querySelectorAll<HTMLElement>('[data-gate]'));
+      const outputState = root.querySelector<HTMLElement>('[data-output-state]');
+      const strategy = root.querySelector<HTMLElement>('[data-strategy]');
+      const toggle = root.querySelector<HTMLButtonElement>('[data-instrument-toggle]');
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const strategies = [
+        'quality 65-85 · speed 1 · dithering 1.0',
+        '小图保护 · quality 70-90',
+        '白底 / 黑底对比 · alpha MAE ≤ 3',
+        '检测 acTL · 保留动画原图',
+      ];
+      const results = ['门禁通过，覆盖原图', '门禁通过，覆盖原图', '透明通道通过', '检测到 APNG，跳过'];
+      let itemIndex = 0;
+      let stageIndex = 0;
+      let timer = 0;
+      let paused = reduceMotion;
+
+      const render = () => {
+        items.forEach((item, index) => {
+          const active = index === itemIndex;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-pressed', String(active));
+          const status = item.querySelector<HTMLElement>('[data-queue-status]');
+          if (!status) return;
+          if (index < itemIndex) status.textContent = index === 3 ? 'SKIPPED' : 'DONE';
+          else if (active) status.textContent = stageIndex >= 3 ? (index === 3 ? 'SKIPPED' : 'PASS') : 'PROCESSING';
+          else status.textContent = 'QUEUE';
+        });
+        processorSteps.forEach((step, index) => step.classList.toggle('active', index === Math.min(stageIndex, 2)));
+        gates.forEach((gate, index) => {
+          const checked = stageIndex >= 3 && (itemIndex !== 3 || index === 0);
+          gate.classList.toggle('passed', checked);
+          gate.classList.toggle('skipped', stageIndex >= 3 && itemIndex === 3 && index > 0);
+        });
+        if (strategy) strategy.textContent = strategies[itemIndex] ?? '';
+        if (outputState) {
+          outputState.textContent = stageIndex >= 3
+            ? results[itemIndex] ?? ''
+            : ['量化颜色中', '重排滤波与 DEFLATE', '校验解码、alpha 与质量'][stageIndex] ?? '';
+        }
+      };
+
+      const advance = () => {
+        stageIndex += 1;
+        if (stageIndex > 3) {
+          stageIndex = 0;
+          itemIndex = (itemIndex + 1) % items.length;
+        }
+        render();
+      };
+
+      const stop = () => {
+        window.clearInterval(timer);
+        timer = 0;
+      };
+
+      const start = () => {
+        stop();
+        if (paused) return;
+        timer = window.setInterval(advance, 1100);
+      };
+
+      items.forEach((item, index) => {
+        item.addEventListener('click', () => {
+          itemIndex = index;
+          stageIndex = 0;
+          render();
+          start();
+        });
+      });
+
+      toggle?.addEventListener('click', () => {
+        paused = !paused;
+        toggle.textContent = paused ? '继续' : '暂停';
+        toggle.setAttribute('aria-pressed', String(paused));
+        start();
+      });
+
+      if (reduceMotion && toggle) toggle.textContent = '逐项查看';
+      render();
+      start();
+      document.addEventListener('astro:before-swap', stop, { once: true });
+    });
+  };
+
+  initPngInstrument();
+  document.addEventListener('astro:page-load', initPngInstrument);
+</script>
+
+<style>
+  .png-instrument {
+    display: grid;
+    min-height: 470px;
+    padding: 25px;
+    align-content: center;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #050505;
+  }
+
+  .instrument-head,
+  .instrument-foot,
+  .instrument-foot > div {
+    display: flex;
+    align-items: center;
+  }
+
+  .instrument-head {
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+    text-transform: uppercase;
+  }
+
+  .local-state {
+    color: var(--ink-dim);
+    text-transform: none;
+  }
+
+  .local-state i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(245, 185, 113, 0.5);
+  }
+
+  .compression-stage {
+    display: grid;
+    margin-top: 26px;
+    grid-template-columns: minmax(110px, 0.7fr) minmax(250px, 1.3fr) minmax(110px, 0.7fr);
+    align-items: center;
+    gap: 20px;
+  }
+
+  .image-specimen {
+    display: grid;
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .image-specimen > span {
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+  }
+
+  .image-specimen > strong {
+    color: var(--ink-dim);
+    font: 10px var(--mono);
+    font-weight: 400;
+  }
+
+  .image-specimen > small {
+    overflow: hidden;
+    color: var(--ink-faint);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pixel-scene {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #101315;
+  }
+
+  .pixel-scene::before {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(143, 190, 205, 0.16), transparent 58%),
+      #0c1114;
+    content: "";
+  }
+
+  .pixel-scene i {
+    position: absolute;
+    top: 13%;
+    right: 13%;
+    width: 14%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 18px rgba(245, 185, 113, 0.45);
+  }
+
+  .pixel-scene b,
+  .pixel-scene em {
+    position: absolute;
+    right: -5%;
+    bottom: -3%;
+    left: -5%;
+    height: 62%;
+    background: rgba(116, 145, 148, 0.34);
+    clip-path: polygon(0 82%, 20% 30%, 38% 61%, 58% 14%, 78% 55%, 100% 24%, 100% 100%, 0 100%);
+  }
+
+  .pixel-scene em {
+    bottom: -14%;
+    height: 60%;
+    background: rgba(245, 185, 113, 0.11);
+    clip-path: polygon(0 74%, 24% 41%, 43% 67%, 63% 24%, 82% 61%, 100% 42%, 100% 100%, 0 100%);
+  }
+
+  .pixel-scene.palette {
+    image-rendering: pixelated;
+  }
+
+  .pixel-scene.palette::after {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(3, 3, 3, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(3, 3, 3, 0.12) 1px, transparent 1px);
+    background-size: 9px 9px;
+    content: "";
+  }
+
+  .processor {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: 1fr 22px 1fr 22px 1fr;
+    align-items: center;
+  }
+
+  .processor > i {
+    height: 1px;
+    background: rgba(245, 185, 113, 0.24);
+  }
+
+  .processor-step {
+    display: grid;
+    min-height: 84px;
+    padding: 13px 10px;
+    align-content: center;
+    gap: 5px;
+    border-block: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--ink-faint);
+    transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+  }
+
+  .processor-step.active {
+    border-color: rgba(245, 185, 113, 0.55);
+    background: rgba(245, 185, 113, 0.05);
+    color: var(--accent);
+  }
+
+  .processor-step span,
+  .processor-step small {
+    font: 8px var(--mono);
+  }
+
+  .processor-step strong {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .processor-step small {
+    color: var(--ink-faint);
+  }
+
+  .gate-strip {
+    display: grid;
+    margin-top: 24px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border-block: 1px solid var(--line);
+  }
+
+  .gate-strip span {
+    min-height: 40px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-right: 1px solid var(--line);
+    color: var(--ink-faint);
+    font: 8px var(--mono);
+    text-align: center;
+  }
+
+  .gate-strip span:last-child {
+    border-right: 0;
+  }
+
+  .gate-strip i {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+  }
+
+  .gate-strip span.passed {
+    color: var(--ink-dim);
+  }
+
+  .gate-strip span.passed i {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  .gate-strip span.skipped {
+    opacity: 0.38;
+  }
+
+  .file-queue {
+    display: grid;
+    margin-top: 18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .queue-item {
+    display: grid;
+    min-width: 0;
+    min-height: 62px;
+    padding: 10px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 3px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .queue-item.active {
+    border-color: rgba(245, 185, 113, 0.55);
+    background: rgba(245, 185, 113, 0.035);
+  }
+
+  .queue-item > span,
+  .queue-item > b {
+    font: 8px var(--mono);
+  }
+
+  .queue-item > strong {
+    overflow: hidden;
+    color: var(--ink-dim);
+    font-size: 11px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .queue-item > small {
+    grid-column: 2;
+    color: var(--ink-faint);
+    font-size: 9px;
+  }
+
+  .queue-item > b {
+    grid-column: 2;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .instrument-foot {
+    min-height: 42px;
+    margin-top: 14px;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .instrument-foot > div {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .instrument-foot span {
+    flex: none;
+    color: var(--ink-faint);
+    font: 8px var(--mono);
+  }
+
+  .instrument-foot strong {
+    overflow: hidden;
+    color: var(--ink-dim);
+    font: 9px var(--mono);
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .instrument-foot button {
+    min-height: 32px;
+    padding-inline: 12px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  @media (max-width: 700px) {
+    .png-instrument {
+      min-height: 430px;
+      padding: 18px;
+    }
+
+    .instrument-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .compression-stage {
+      margin-top: 20px;
+      grid-template-columns: minmax(78px, 0.62fr) minmax(150px, 1.38fr) minmax(78px, 0.62fr);
+      gap: 9px;
+    }
+
+    .processor {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .processor > i {
+      width: 1px;
+      height: 5px;
+      margin-inline: auto;
+    }
+
+    .processor-step {
+      min-height: 45px;
+      padding: 6px 8px;
+    }
+
+    .processor-step small {
+      display: none;
+    }
+
+    .gate-strip {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .gate-strip span:nth-child(3) {
+      border-right: 0;
+    }
+
+    .gate-strip span:nth-child(n + 4) {
+      border-top: 1px solid var(--line);
+    }
+
+    .file-queue {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .image-specimen > strong,
+    .image-specimen > small {
+      font-size: 8px;
+    }
+
+    .instrument-foot strong {
+      max-width: 210px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .processor-step,
+    .capture-sheet {
+      transition: none;
+    }
+  }
+</style>

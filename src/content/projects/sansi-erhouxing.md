@@ -10,7 +10,7 @@ tags:
   - Agent Skill
   - 文档编辑
   - Review
-order: 6
+order: 7
 featured: true
 draft: false
 visual: generic

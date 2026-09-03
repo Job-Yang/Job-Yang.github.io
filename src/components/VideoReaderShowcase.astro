@@ -1,0 +1,2303 @@
+---
+const gridFrames = [
+  { time: '00:00', sheet: 78 },
+  { time: '00:02', sheet: 78 },
+  { time: '00:04', sheet: 70 },
+  { time: '00:06', sheet: 48 },
+  { time: '00:08', sheet: 34 },
+  { time: '00:10', sheet: 42 },
+  { time: '00:12', sheet: 42 },
+  { time: '00:14', sheet: 78 },
+  { time: '00:16', sheet: 78 },
+];
+
+const zoomFrames = [
+  { time: '07.20', sheet: 54 },
+  { time: '07.36', sheet: 45 },
+  { time: '07.52', sheet: 35 },
+  { time: '07.68', sheet: 31 },
+  { time: '07.84', sheet: 38, anomaly: true },
+  { time: '08.00', sheet: 42, anomaly: true },
+];
+
+const awareFrames = [
+  { time: '07.20', sheet: 54 },
+  { time: '07.36', sheet: 45 },
+  { time: '07.52', sheet: 35 },
+  { time: '07.84', sheet: 38 },
+  { time: '08.00', sheet: 42 },
+];
+
+const fingerprint = Array.from({ length: 256 }, (_, index) => {
+  const row = Math.floor(index / 16);
+  const column = index % 16;
+  return ((row * 17 + column * 29 + row * column * 3) % 100) / 100;
+});
+---
+
+<div class="video-reader-showcase" data-video-reader-showcase>
+  <section id="story" class="reader-section reader-intro wide">
+    <div class="section-label">01 · 录屏为什么还不能直接交给 AI</div>
+    <div class="reader-heading">
+      <h2 class="display">问题发生在动作里，<br />截图只留下几个结果。</h2>
+      <p>
+        QA 或线上反馈经常只有一段录屏。人先复述一次，很容易把手势方向、停顿位置和回弹时刻说偏；
+        只截几张图，又会把连续过程压成几个静态结果。
+      </p>
+    </div>
+
+    <div class="pain-flow" aria-label="从录屏反馈到预处理的因果链">
+      <article>
+        <span>收到反馈</span>
+        <strong>一段录屏，加一句“这里不对”</strong>
+        <p>问题时间未知，异常可能只出现几百毫秒。</p>
+      </article>
+      <i aria-hidden="true"></i>
+      <article>
+        <span>人工转述</span>
+        <strong>先看懂，再用文字讲给 AI</strong>
+        <p>从哪滑到哪、何时停手、是否回弹，很容易在转述里失真。</p>
+      </article>
+      <i aria-hidden="true"></i>
+      <article>
+        <span>直接抽帧</span>
+        <strong>几十张相似画面一起塞给模型</strong>
+        <p>视觉 token 很快占满上下文，重复帧还会把异常时刻淹没。</p>
+      </article>
+      <i aria-hidden="true"></i>
+      <article class="solution">
+        <span>前置处理</span>
+        <strong>代码先把证据范围缩小</strong>
+        <p>能算的先算，只把关键画面、时间线和声音交给 AI。</p>
+      </article>
+    </div>
+
+    <div class="sampling-intro">
+      <span>调研结果</span>
+      <p>
+        从 Gemini 等多模态模型的视频接入方式可以看到，连续视频最终仍要按时间切成视觉片段。
+        我们让 Agent 直接接收录屏，人不再充当中间翻译；工具只在前面删掉重复信息并圈出可疑区间。
+      </p>
+    </div>
+
+    <div class="sampling-comparison">
+      <div class="sampling-column uniform">
+        <div class="comparison-copy">
+          <span>均匀抽帧</span>
+          <strong>每隔几秒拿一张</strong>
+          <p>拿到的多半是重复画面，短暂出现的回弹刚好落在两帧之间。</p>
+        </div>
+        <div class="comparison-frames" aria-label="均匀抽帧示例">
+          {[78, 78, 70, 42, 78].map((sheet, index) => (
+            <div class="capture-shell muted-frame">
+              <div class="capture-screen" style={`--sheet-y: ${sheet}%`}>
+                <span class="capture-nav">探索</span>
+                <span class="capture-hero"></span>
+                <span class="capture-list"><i></i><b></b></span>
+                <span class="capture-sheet"><i></i><b>附近推荐</b><span></span><span></span></span>
+              </div>
+              <time>00:{String(index * 3).padStart(2, '0')}</time>
+            </div>
+          ))}
+        </div>
+        <div class="comparison-result">
+          <span>结果</span>
+          <strong>5 张图，错过 07.84 秒的异常</strong>
+        </div>
+      </div>
+
+      <div class="sampling-column aware">
+        <div class="comparison-copy">
+          <span>运动感知抽帧</span>
+          <strong>先找变化，再挑画面</strong>
+          <p>静止段不占模型上下文，活动段保留起点、中间和终点。</p>
+        </div>
+        <div class="comparison-frames" aria-label="运动感知抽帧示例">
+          {awareFrames.map((frame, index) => (
+            <div class:list={['capture-shell', { selected: index > 1 }]}>
+              <div class="capture-screen" style={`--sheet-y: ${frame.sheet}%`}>
+                <span class="capture-nav">探索</span>
+                <span class="capture-hero"></span>
+                <span class="capture-list"><i></i><b></b></span>
+                <span class="capture-sheet"><i></i><b>附近推荐</b><span></span><span></span></span>
+              </div>
+              <time>{frame.time}</time>
+            </div>
+          ))}
+        </div>
+        <div class="comparison-result">
+          <span>结果</span>
+          <strong>只交付 5 张图，保留完整回弹过程</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="division-line">
+      <div><span>纯代码</span><strong>计算帧差、划活动区间、选关键帧</strong></div>
+      <i></i>
+      <div><span>大模型</span><strong>理解画面、对照预期、判断问题</strong></div>
+    </div>
+  </section>
+
+  <section id="reader-lab" class="reader-lab-section">
+    <div class="wide">
+      <div class="section-label">02 · 工作台</div>
+      <div class="reader-heading">
+        <h2 class="display">先看全局，<br />再把可疑的几秒放大。</h2>
+        <p>
+          下面是一段虚构的 App 录屏。面板上滑后应该停在半屏，
+          实际却发生了回弹。进入工作台后会自动播放四步分析，也可以随时点选某一步自己查看。
+        </p>
+      </div>
+
+      <div class="reader-lab">
+        <div class="lab-tour">
+          <div class="tour-copy" aria-live="polite">
+            <span class="tour-status"><i></i><b data-tour-status>准备自动演示 · 1/4</b></span>
+            <strong data-tour-title>先用九宫格看完整段节奏</strong>
+          </div>
+          <div class="tour-progress" aria-label="四步分析进度">
+            <span data-tour-progress="0"><i></i></span>
+            <span data-tour-progress="1"><i></i></span>
+            <span data-tour-progress="2"><i></i></span>
+            <span data-tour-progress="3"><i></i></span>
+          </div>
+          <button class="tour-toggle" type="button" data-tour-toggle aria-pressed="false">
+            <span aria-hidden="true" data-tour-icon>▶</span>
+            <b data-tour-action>播放四步分析</b>
+          </button>
+        </div>
+
+        <div class="reader-mode-tabs" role="tablist" aria-label="视频分析模式">
+          <button class="active" type="button" role="tab" data-reader-mode="grid" aria-selected="true">
+            <span>01</span><strong>Grid</strong><small>全片概览</small>
+          </button>
+          <button type="button" role="tab" data-reader-mode="scan" aria-selected="false">
+            <span>02</span><strong>Scan</strong><small>运动粗扫</small>
+          </button>
+          <button type="button" role="tab" data-reader-mode="zoom" aria-selected="false">
+            <span>03</span><strong>Zoom</strong><small>局部下钻</small>
+          </button>
+          <button type="button" role="tab" data-reader-mode="transcribe" aria-selected="false">
+            <span>04</span><strong>Transcribe</strong><small>声画对齐</small>
+          </button>
+        </div>
+
+        <div class="lab-summary">
+          <span>示例录屏 · 16 秒</span>
+          <strong data-lab-summary>整段视频 → 1 张九宫格概览</strong>
+        </div>
+
+        <div class="lab-panel" data-reader-panel="grid">
+          <div class="panel-copy">
+            <span>Grid</span>
+            <h3>一张图看完整段节奏</h3>
+            <p>
+              九宫格不负责找问题。它先回答“这段视频大致经过了哪些状态”，
+              让 Agent 知道后面该看哪一段。
+            </p>
+            <dl>
+              <div><dt>输入</dt><dd>整段视频或指定区间</dd></div>
+              <div><dt>输出</dt><dd>一张带时间索引的概览图</dd></div>
+              <div><dt>适合</dt><dd>长视频、问题时间完全未知</dd></div>
+            </dl>
+          </div>
+          <div class="grid-preview" aria-label="九宫格视频概览">
+            {gridFrames.map((frame, index) => (
+              <div class:list={['grid-cell', { suspect: index === 4 || index === 5 }]}>
+                <div class="capture-screen" style={`--sheet-y: ${frame.sheet}%`}>
+                  <span class="capture-nav">探索</span>
+                  <span class="capture-hero"></span>
+                  <span class="capture-list"><i></i><b></b></span>
+                  <span class="capture-sheet"><i></i><b>附近推荐</b><span></span><span></span></span>
+                </div>
+                <time>{frame.time}</time>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="lab-panel scan-panel" data-reader-panel="scan" hidden>
+          <div class="panel-copy">
+            <span>Scan</span>
+            <h3>代码先画出运动时间线</h3>
+            <p>
+              相邻帧变化超过自动阈值，才进入活动区间。下面拖动时间轴，
+              可以看到静止画面怎样被跳过。
+            </p>
+            <dl>
+              <div><dt>输入</dt><dd>全片高频分析采样</dd></div>
+              <div><dt>输出</dt><dd>活动区间和少量关键帧</dd></div>
+              <div><dt>成本</dt><dd>选帧过程不调用大模型</dd></div>
+            </dl>
+          </div>
+
+          <div class="scan-workbench">
+            <div class="scan-stage">
+              <div class="scan-current-frame">
+                <div class="capture-screen large" data-scan-screen style="--sheet-y: 78%">
+                  <span class="capture-nav">探索</span>
+                  <span class="capture-hero"></span>
+                  <span class="capture-list"><i></i><b></b></span>
+                  <span class="capture-list second"><i></i><b></b></span>
+                  <span class="capture-sheet"><i></i><b>附近推荐</b><span></span><span></span></span>
+                </div>
+              </div>
+              <div class="scan-reading" aria-live="polite">
+                <time data-scan-time>00:00.0</time>
+                <strong data-scan-state>静止段，不输出</strong>
+              </div>
+            </div>
+
+            <div class="scan-data">
+              <div class="curve-labels"><span>运动分</span><span>阈值随视频自动估算</span></div>
+              <div class="scan-curve">
+                <svg viewBox="0 0 720 132" preserveAspectRatio="none" aria-hidden="true">
+                  <path
+                    class="curve-area"
+                    d="M0 116 L80 115 L142 111 L184 96 L222 41 L258 73 L294 26 L332 67 L380 106 L430 114 L478 101 L520 49 L558 33 L600 78 L650 109 L720 115 L720 132 L0 132 Z"
+                  />
+                  <path
+                    class="curve-line"
+                    d="M0 116 L80 115 L142 111 L184 96 L222 41 L258 73 L294 26 L332 67 L380 106 L430 114 L478 101 L520 49 L558 33 L600 78 L650 109 L720 115"
+                  />
+                  <line class="curve-threshold" x1="0" y1="87" x2="720" y2="87" />
+                </svg>
+                <i data-scan-line></i>
+              </div>
+              <div class="scan-segments">
+                <span>静止</span><span class="active">活动 07.2–08.0</span><span>静止</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="1"
+                value="0"
+                aria-label="拖动查看扫描时间点"
+                data-scan-range
+              />
+              <div class="scan-controls">
+                <button type="button" data-scan-play>播放抽帧过程</button>
+                <span>分析 10 fps · 输出 2 fps</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-panel" data-reader-panel="zoom" hidden>
+          <div class="panel-copy">
+            <span>Zoom</span>
+            <h3>把 0.8 秒拆成连续证据</h3>
+            <p>
+              Scan 只负责圈出“这里可疑”。Zoom 把区间收窄并提高输出密度，
+              直到能看清面板何时越过吸附位、又在何时回弹。
+            </p>
+            <dl>
+              <div><dt>输入</dt><dd>Scan 找到的 07.2–08.0 秒</dd></div>
+              <div><dt>输出</dt><dd>连续状态变化与准确时间</dd></div>
+              <div><dt>适合</dt><dd>手势、转场、状态切换细节</dd></div>
+            </dl>
+          </div>
+          <div class="zoom-strip" aria-label="局部下钻帧序列">
+            {zoomFrames.map((frame) => (
+              <div class:list={['zoom-frame', { anomaly: frame.anomaly }]}>
+                <div class="capture-screen" style={`--sheet-y: ${frame.sheet}%`}>
+                  <span class="capture-nav">探索</span>
+                  <span class="capture-hero"></span>
+                  <span class="capture-list"><i></i><b></b></span>
+                  <span class="capture-sheet"><i></i><b>附近推荐</b><span></span><span></span></span>
+                </div>
+                <time>{frame.time}s</time>
+                {frame.anomaly && <span>回弹</span>}
+              </div>
+            ))}
+            <div class="zoom-conclusion">
+              <span>定位结果</span>
+              <strong>07.84 秒</strong>
+              <p>面板到达半屏后反向移动，最终停在错误位置。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-panel" data-reader-panel="transcribe" hidden>
+          <div class="panel-copy">
+            <span>Transcribe</span>
+            <h3>画面说不出的，用声音补上</h3>
+            <p>
+              转写是可选能力。它把旁白、客诉口述或报错音频放回同一条时间线，
+              没有音轨或缺少依赖时直接跳过，不影响看画面。
+            </p>
+            <dl>
+              <div><dt>输入</dt><dd>视频里的可用音轨</dd></div>
+              <div><dt>输出</dt><dd>带时间戳的文本片段</dd></div>
+              <div><dt>适合</dt><dd>“我点这里后没有反应”这类口述</dd></div>
+            </dl>
+          </div>
+          <div class="transcript-stage">
+            <div class="waveform" aria-hidden="true">
+              {Array.from({ length: 54 }, (_, index) => (
+                <i style={`--wave: ${18 + ((index * 19) % 64)}%`}></i>
+              ))}
+            </div>
+            <div class="transcript-lines">
+              <div><time>00:07.20</time><p>“我开始往上滑。”</p><span>画面：面板开始移动</span></div>
+              <div class="active"><time>00:07.84</time><p>“这里应该停住。”</p><span>画面：面板越过吸附位后回弹</span></div>
+              <div><time>00:08.00</time><p>“现在位置不对。”</p><span>画面：异常状态仍然保留</span></div>
+            </div>
+            <div class="judge-result">
+              <span>交给模型的证据</span>
+              <strong>关键帧 + 运动时间线 + 可选转写 + 用户预期</strong>
+              <p>有了参照系，模型才能判断行为是否正确；没有预期时，只客观描述画面。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reader-section process-section wide">
+    <div class="section-label">03 · 一帧怎样被判成“动”</div>
+    <div class="reader-heading">
+      <h2 class="display">整条筛选链只做数学，<br />不消耗模型 token。</h2>
+      <p>
+        每一步都主动丢掉不需要的精度。最后留下的不是“最好看的截图”，
+        而是足以还原动作过程的最小证据。
+      </p>
+    </div>
+
+    <div class="process-rail" data-process-rail>
+      <article class="process-step active" data-process-step>
+        <span>01 · 降噪</span>
+        <div class="process-visual grayscale">
+          <div class="capture-screen">
+            <span class="capture-nav">探索</span>
+            <span class="capture-hero"></span>
+            <span class="capture-sheet"><i></i><b>附近推荐</b><span></span></span>
+          </div>
+        </div>
+        <h3>灰度 + 模糊</h3>
+        <p>颜色先去掉，高频噪点和视频压缩块再被抹平。</p>
+      </article>
+
+      <article class="process-step" data-process-step>
+        <span>02 · 压缩</span>
+        <div class="process-visual fingerprint" aria-label="16 乘 16 运动指纹">
+          {fingerprint.map((value) => <i style={`--cell: ${0.1 + value * 0.72}`}></i>)}
+        </div>
+        <h3>16×16 运动指纹</h3>
+        <p>整帧压成 256 个亮度块，轻微抖动被区域平均吸收。</p>
+      </article>
+
+      <article class="process-step" data-process-step>
+        <span>03 · 比较</span>
+        <div class="process-visual score-visual">
+          <i style="--score: 12%"></i><i style="--score: 19%"></i><i style="--score: 72%"></i>
+          <i style="--score: 48%"></i><i style="--score: 86%"></i><i style="--score: 22%"></i>
+        </div>
+        <h3>MAD 运动分</h3>
+        <p>相邻指纹逐块求绝对差，平均值就是这一刻的运动强度。</p>
+      </article>
+
+      <article class="process-step" data-process-step>
+        <span>04 · 分界</span>
+        <div class="process-visual threshold-visual">
+          <i></i><i></i><i></i><b></b><span>0.82</span>
+        </div>
+        <h3>自适应阈值</h3>
+        <p>用中位数抵抗切场尖峰，再设下限挡住静态噪声。</p>
+      </article>
+
+      <article class="process-step" data-process-step>
+        <span>05 · 整理</span>
+        <div class="process-visual merge-visual">
+          <span></span><b></b><span></span><b class="short"></b><span></span>
+        </div>
+        <h3>合并短暂停顿</h3>
+        <p>手势中间停几十毫秒，不值得把一次动作切成几段。</p>
+      </article>
+
+      <article class="process-step" data-process-step>
+        <span>06 · 输出</span>
+        <div class="process-visual output-visual">
+          <i></i><i class="active"></i><i class="active"></i><i></i>
+        </div>
+        <h3>只交付关键帧</h3>
+        <p>静止段一帧不抽，活动段至少保留首、中、尾。</p>
+      </article>
+    </div>
+
+    <div class="sampling-lanes">
+      <div>
+        <span>分析采样</span>
+        <strong>10 fps</strong>
+        <p>只在 CPU 里算运动边界，不保存原帧。</p>
+        <i class="dense-lane"></i>
+      </div>
+      <div>
+        <span>模型输入</span>
+        <strong>约 2 fps</strong>
+        <p>只在活动段落盘，控制图片数量与上下文。</p>
+        <i class="sparse-lane"></i>
+      </div>
+    </div>
+  </section>
+
+  <section class="reader-decisions">
+    <div class="wide">
+      <div class="section-label">04 · 为什么这样设计</div>
+      <div class="reader-heading">
+        <h2 class="display">让工具负责取证，<br />让模型负责理解。</h2>
+        <p>
+          选帧、压缩和时间映射都可以稳定地交给代码。
+          模型只处理代码做不了的部分：画面语义、用户意图和行为判断。
+        </p>
+      </div>
+      <div class="decision-list">
+        <article><span>时间戳</span><h3>写进结构化结果，不盖在画面上</h3><p>文字时间最准确，也不会遮挡 UI 或让视觉模型误读。</p></article>
+        <article><span>图片尺寸</span><h3>默认缩到模型真正用得上的大小</h3><p>超高清像素最终仍会被模型缩小，提前压缩能节省带宽和上下文。</p></article>
+        <article><span>长视频</span><h3>顺序扫描，内存不随时长增长</h3><p>分析时只保留当前和上一枚指纹，再靠活动区间控制输出规模。</p></article>
+        <article><span>程序接口</span><h3>JSON 和运行日志分开输出</h3><p>stdout 保持可解析，进度与诊断写到 stderr，不污染下游结果。</p></article>
+        <article><span>可选能力</span><h3>语音转写失败，不影响画面分析</h3><p>重依赖只在真正需要时加载；没有音轨就直接跳过。</p></article>
+        <article><span>判断边界</span><h3>不知道预期，就只描述发生了什么</h3><p>Skill 提供证据，不凭空猜测业务行为应该是什么。</p></article>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const initVideoReaderShowcase = () => {
+    document.querySelectorAll<HTMLElement>('[data-video-reader-showcase]').forEach((root) => {
+      if (root.dataset.ready === 'true') return;
+      root.dataset.ready = 'true';
+
+      const modeButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-reader-mode]'));
+      const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-reader-panel]'));
+      const summary = root.querySelector<HTMLElement>('[data-lab-summary]');
+      const lab = root.querySelector<HTMLElement>('.reader-lab');
+      const tourStatus = root.querySelector<HTMLElement>('[data-tour-status]');
+      const tourTitle = root.querySelector<HTMLElement>('[data-tour-title]');
+      const tourToggle = root.querySelector<HTMLButtonElement>('[data-tour-toggle]');
+      const tourAction = root.querySelector<HTMLElement>('[data-tour-action]');
+      const tourIcon = root.querySelector<HTMLElement>('[data-tour-icon]');
+      const tourProgress = Array.from(root.querySelectorAll<HTMLElement>('[data-tour-progress]'));
+      const tourModes = ['grid', 'scan', 'zoom', 'transcribe'];
+      const summaries: Record<string, string> = {
+        grid: '整段视频 → 1 张九宫格概览',
+        scan: '160 个分析采样点 → 6 张关键帧',
+        zoom: '0.8 秒可疑区间 → 6 张连续状态',
+        transcribe: '3 段语音 → 与画面时间线对齐',
+      };
+      const tourTitles: Record<string, string> = {
+        grid: '先用九宫格看完整段节奏',
+        scan: '再用帧差找出真正发生变化的区间',
+        zoom: '把可疑的 0.8 秒拆成连续证据',
+        transcribe: '最后把口述和画面放回同一条时间线',
+      };
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let tourIndex = 0;
+      let tourTimer = 0;
+      let tourStarted = false;
+      let tourPlaying = false;
+      let tourCompleted = false;
+      let labVisible = false;
+      let resumeWhenVisible = false;
+      let tourObserver: IntersectionObserver | undefined;
+
+      const renderTourState = () => {
+        const mode = tourModes[tourIndex] ?? tourModes[0];
+        lab?.classList.toggle('tour-playing', tourPlaying);
+        lab?.classList.toggle('tour-completed', tourCompleted);
+        modeButtons.forEach((button, index) => {
+          button.classList.toggle('completed', index < tourIndex);
+        });
+        tourProgress.forEach((segment, index) => {
+          segment.classList.toggle('completed', index < tourIndex || tourCompleted);
+          segment.classList.toggle('active', index === tourIndex && !tourCompleted);
+          segment.classList.toggle('playing', index === tourIndex && tourPlaying);
+        });
+
+        if (tourTitle) tourTitle.textContent = tourTitles[mode] ?? '';
+        if (tourCompleted) {
+          if (tourStatus) tourStatus.textContent = '四步分析完成 · 4/4';
+          if (tourAction) tourAction.textContent = '重新播放';
+          if (tourIcon) tourIcon.textContent = '↻';
+          tourToggle?.setAttribute('aria-pressed', 'false');
+        } else if (tourPlaying) {
+          if (tourStatus) tourStatus.textContent = `自动演示中 · ${tourIndex + 1}/4`;
+          if (tourAction) tourAction.textContent = '暂停自动演示';
+          if (tourIcon) tourIcon.textContent = 'Ⅱ';
+          tourToggle?.setAttribute('aria-pressed', 'true');
+        } else {
+          if (tourStatus) {
+            tourStatus.textContent = tourStarted
+              ? `已暂停 · ${tourIndex + 1}/4`
+              : `准备自动演示 · ${tourIndex + 1}/4`;
+          }
+          if (tourAction) tourAction.textContent = tourStarted ? '继续自动演示' : '播放四步分析';
+          if (tourIcon) tourIcon.textContent = '▶';
+          tourToggle?.setAttribute('aria-pressed', 'false');
+        }
+      };
+
+      const setMode = (mode: string, options: { resetScan?: boolean } = {}) => {
+        const nextIndex = Math.max(0, tourModes.indexOf(mode));
+        tourIndex = nextIndex;
+        modeButtons.forEach((button) => {
+          const active = button.dataset.readerMode === mode;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-selected', String(active));
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.readerPanel !== mode;
+        });
+        if (summary) summary.textContent = summaries[mode] ?? '';
+        if (options.resetScan && mode === 'scan') setScanFrame(0);
+        renderTourState();
+      };
+
+      const scanRange = root.querySelector<HTMLInputElement>('[data-scan-range]');
+      const scanScreen = root.querySelector<HTMLElement>('[data-scan-screen]');
+      const scanTime = root.querySelector<HTMLElement>('[data-scan-time]');
+      const scanState = root.querySelector<HTMLElement>('[data-scan-state]');
+      const scanLine = root.querySelector<HTMLElement>('[data-scan-line]');
+      const scanPlay = root.querySelector<HTMLButtonElement>('[data-scan-play]');
+      const frames = [
+        { time: '00:00.0', sheet: 78, state: '静止段，不输出' },
+        { time: '00:07.2', sheet: 72, state: '动作开始' },
+        { time: '00:07.4', sheet: 51, state: '活动段，保留' },
+        { time: '00:07.6', sheet: 34, state: '接近吸附位' },
+        { time: '00:07.8', sheet: 42, state: '检测到回弹' },
+        { time: '00:08.0', sheet: 42, state: '可疑状态持续' },
+      ];
+      let scanTimer = 0;
+      let processTimer = 0;
+      let processObserver: IntersectionObserver | undefined;
+
+      const setScanFrame = (index: number) => {
+        const frame = frames[index] ?? frames[0];
+        if (scanRange) scanRange.value = String(index);
+        if (scanScreen) scanScreen.style.setProperty('--sheet-y', `${frame.sheet}%`);
+        if (scanTime) scanTime.textContent = frame.time;
+        if (scanState) scanState.textContent = frame.state;
+        if (scanLine) scanLine.style.setProperty('--scan-x', `${(index / (frames.length - 1)) * 100}%`);
+      };
+
+      const playScan = () => {
+        window.clearInterval(scanTimer);
+        let index = 0;
+        setScanFrame(index);
+        if (scanPlay) {
+          scanPlay.disabled = true;
+          scanPlay.textContent = '正在播放';
+        }
+        scanTimer = window.setInterval(() => {
+          index += 1;
+          setScanFrame(index);
+          if (index >= frames.length - 1) {
+            window.clearInterval(scanTimer);
+            if (scanPlay) {
+              scanPlay.disabled = false;
+              scanPlay.textContent = '重新播放';
+            }
+          }
+        }, 720);
+      };
+
+      const clearTourTimer = () => {
+        window.clearTimeout(tourTimer);
+        tourTimer = 0;
+      };
+
+      const pauseTour = (manual = false) => {
+        if (manual) resumeWhenVisible = false;
+        clearTourTimer();
+        window.clearInterval(scanTimer);
+        if (scanPlay?.disabled) {
+          scanPlay.disabled = false;
+          scanPlay.textContent = '播放抽帧过程';
+        }
+        tourPlaying = false;
+        renderTourState();
+      };
+
+      const scheduleNextMode = () => {
+        clearTourTimer();
+        if (!tourPlaying || !labVisible) return;
+        tourTimer = window.setTimeout(() => {
+          if (tourIndex >= tourModes.length - 1) {
+            tourPlaying = false;
+            tourCompleted = true;
+            renderTourState();
+            return;
+          }
+          tourIndex += 1;
+          const mode = tourModes[tourIndex];
+          setMode(mode, { resetScan: true });
+          if (mode === 'scan') playScan();
+          scheduleNextMode();
+        }, 5200);
+      };
+
+      const startTour = (restart = false) => {
+        if (restart || tourCompleted) {
+          tourIndex = 0;
+          tourCompleted = false;
+          setMode(tourModes[0], { resetScan: true });
+        }
+        tourStarted = true;
+        tourPlaying = true;
+        resumeWhenVisible = false;
+        renderTourState();
+        if (tourModes[tourIndex] === 'scan') playScan();
+        scheduleNextMode();
+      };
+
+      modeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          pauseTour(true);
+          tourStarted = true;
+          tourCompleted = false;
+          setMode(button.dataset.readerMode ?? 'grid', { resetScan: true });
+        });
+      });
+
+      tourToggle?.addEventListener('click', () => {
+        if (tourPlaying) {
+          pauseTour(true);
+        } else {
+          startTour(tourCompleted);
+        }
+      });
+
+      scanRange?.addEventListener('input', () => {
+        pauseTour(true);
+        setScanFrame(Number(scanRange.value));
+      });
+      scanPlay?.addEventListener('click', () => {
+        pauseTour(true);
+        playScan();
+      });
+
+      if (lab) {
+        tourObserver = new IntersectionObserver((entries) => {
+          labVisible = entries.some((entry) => entry.isIntersecting);
+          if (!labVisible) {
+            if (tourPlaying) {
+              resumeWhenVisible = true;
+              clearTourTimer();
+              tourPlaying = false;
+              renderTourState();
+            }
+            return;
+          }
+          if (!tourStarted && !reduceMotion) {
+            startTour(true);
+          } else if (resumeWhenVisible && !tourCompleted) {
+            resumeWhenVisible = false;
+            tourPlaying = true;
+            renderTourState();
+            scheduleNextMode();
+          }
+        }, { threshold: 0.34 });
+        tourObserver.observe(lab);
+      }
+
+      const rail = root.querySelector<HTMLElement>('[data-process-rail]');
+      const processSteps = Array.from(root.querySelectorAll<HTMLElement>('[data-process-step]'));
+      if (rail && processSteps.length && !reduceMotion) {
+        processObserver = new IntersectionObserver((entries) => {
+          const visible = entries.some((entry) => entry.isIntersecting);
+          window.clearInterval(processTimer);
+          if (!visible) return;
+          let index = 0;
+          processTimer = window.setInterval(() => {
+            index = (index + 1) % processSteps.length;
+            processSteps.forEach((step, stepIndex) => step.classList.toggle('active', stepIndex === index));
+          }, 1200);
+        }, { threshold: 0.28 });
+        processObserver.observe(rail);
+      }
+
+      setMode('grid');
+      setScanFrame(0);
+      renderTourState();
+      document.addEventListener('astro:before-swap', () => {
+        window.clearInterval(scanTimer);
+        window.clearInterval(processTimer);
+        clearTourTimer();
+        processObserver?.disconnect();
+        tourObserver?.disconnect();
+      }, { once: true });
+    });
+  };
+
+  initVideoReaderShowcase();
+  document.addEventListener('astro:page-load', initVideoReaderShowcase);
+</script>
+
+<style>
+  .video-reader-showcase {
+    color: var(--ink);
+  }
+
+  .reader-section,
+  .reader-lab-section > .wide,
+  .reader-decisions > .wide {
+    padding-block: 104px;
+  }
+
+  .reader-lab-section,
+  .reader-decisions {
+    border-block: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.012);
+  }
+
+  .reader-heading {
+    display: grid;
+    margin-top: 32px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.62fr);
+    align-items: end;
+    gap: 64px;
+  }
+
+  .reader-heading h2 {
+    margin: 0;
+    font-size: 52px;
+    line-height: 1.18;
+  }
+
+  .reader-heading p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.9;
+  }
+
+  .pain-flow {
+    display: grid;
+    margin-top: 64px;
+    grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr) 36px minmax(0, 1fr) 36px minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .pain-flow article {
+    min-height: 192px;
+    padding: 25px 24px;
+    border-block: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.01);
+  }
+
+  .pain-flow article:first-child {
+    border-left: 1px solid var(--line);
+  }
+
+  .pain-flow article.solution {
+    border-right: 1px solid rgba(245, 185, 113, 0.3);
+    border-color: rgba(245, 185, 113, 0.3);
+    background: rgba(245, 185, 113, 0.035);
+  }
+
+  .pain-flow article > span,
+  .sampling-intro > span {
+    color: var(--accent);
+    font: 10px var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  .pain-flow article > strong {
+    display: block;
+    margin-top: 20px;
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .pain-flow article > p {
+    margin: 12px 0 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .pain-flow > i {
+    position: relative;
+    align-self: center;
+    height: 1px;
+    background: rgba(245, 185, 113, 0.28);
+  }
+
+  .pain-flow > i::after {
+    position: absolute;
+    top: -3px;
+    right: 1px;
+    width: 7px;
+    height: 7px;
+    border-top: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    content: "";
+    transform: rotate(45deg);
+  }
+
+  .sampling-intro {
+    display: grid;
+    margin-top: 42px;
+    padding: 22px 0;
+    grid-template-columns: 118px minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+    border-block: 1px solid var(--line);
+  }
+
+  .sampling-intro p {
+    max-width: 960px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.9;
+  }
+
+  .sampling-comparison {
+    display: grid;
+    margin-top: 42px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+  }
+
+  .sampling-column {
+    min-width: 0;
+    padding: 34px;
+    background: #050505;
+  }
+
+  .comparison-copy > span,
+  .panel-copy > span,
+  .decision-list > article > span {
+    color: var(--accent);
+    font: 10px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .comparison-copy strong {
+    display: block;
+    margin-top: 18px;
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 400;
+  }
+
+  .comparison-copy p {
+    max-width: 520px;
+    margin: 10px 0 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .comparison-frames {
+    display: grid;
+    min-width: 0;
+    margin-top: 34px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .capture-shell {
+    min-width: 0;
+  }
+
+  .capture-shell time,
+  .grid-cell time,
+  .zoom-frame time {
+    display: block;
+    margin-top: 7px;
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+    text-align: center;
+  }
+
+  .capture-shell.selected time,
+  .zoom-frame.anomaly time {
+    color: var(--accent);
+  }
+
+  .capture-screen {
+    position: relative;
+    display: block;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 3px;
+    background:
+      radial-gradient(circle at 76% 20%, rgba(245, 185, 113, 0.13), transparent 28%),
+      #0a0b0c;
+  }
+
+  .muted-frame .capture-screen {
+    opacity: 0.54;
+  }
+
+  .capture-shell.selected .capture-screen,
+  .zoom-frame.anomaly .capture-screen {
+    border-color: rgba(245, 185, 113, 0.75);
+    box-shadow: 0 0 18px rgba(245, 185, 113, 0.07);
+  }
+
+  .capture-nav {
+    position: absolute;
+    top: 10%;
+    left: 9%;
+    color: rgba(238, 240, 246, 0.62);
+    font-size: 7px;
+  }
+
+  .capture-hero {
+    position: absolute;
+    top: 21%;
+    left: 9%;
+    width: 82%;
+    height: 22%;
+    border-radius: 3px;
+    background:
+      linear-gradient(90deg, rgba(238, 240, 246, 0.11), transparent 74%),
+      rgba(153, 193, 207, 0.07);
+  }
+
+  .capture-hero::before {
+    position: absolute;
+    top: 16%;
+    right: 14%;
+    width: 12%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: rgba(245, 185, 113, 0.5);
+    content: "";
+  }
+
+  .capture-hero::after {
+    position: absolute;
+    inset: 40% 0 0;
+    background: rgba(114, 135, 136, 0.22);
+    clip-path: polygon(0 80%, 22% 31%, 39% 61%, 61% 18%, 78% 54%, 100% 24%, 100% 100%, 0 100%);
+    content: "";
+  }
+
+  .capture-list {
+    position: absolute;
+    top: 51%;
+    left: 9%;
+    display: flex;
+    width: 74%;
+    align-items: center;
+    gap: 8%;
+  }
+
+  .capture-list.second {
+    top: 62%;
+    width: 60%;
+  }
+
+  .capture-list i {
+    width: 16%;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: rgba(245, 185, 113, 0.11);
+  }
+
+  .capture-list b {
+    width: 68%;
+    height: 3px;
+    background: rgba(238, 240, 246, 0.13);
+  }
+
+  .capture-sheet {
+    position: absolute;
+    top: var(--sheet-y, 78%);
+    right: 0;
+    bottom: -30%;
+    left: 0;
+    display: grid;
+    padding: 9%;
+    align-content: start;
+    gap: 8%;
+    border-top: 1px solid rgba(238, 240, 246, 0.2);
+    border-radius: 7px 7px 0 0;
+    background: rgba(30, 32, 34, 0.98);
+    transition: top 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .capture-sheet > i {
+    width: 24%;
+    height: 2px;
+    margin: -2% auto 3%;
+    border-radius: 2px;
+    background: rgba(238, 240, 246, 0.32);
+  }
+
+  .capture-sheet b {
+    color: rgba(238, 240, 246, 0.58);
+    font-size: 6px;
+    font-weight: 500;
+  }
+
+  .capture-sheet span {
+    width: 88%;
+    height: 3px;
+    background: rgba(238, 240, 246, 0.11);
+  }
+
+  .comparison-result {
+    display: grid;
+    margin-top: 26px;
+    padding-top: 18px;
+    grid-template-columns: 70px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .comparison-result span {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .comparison-result strong {
+    color: var(--ink-dim);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .aware .comparison-result strong {
+    color: var(--accent);
+  }
+
+  .division-line {
+    display: grid;
+    margin-top: 44px;
+    grid-template-columns: 1fr 60px 1fr;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .division-line > div {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 18px;
+  }
+
+  .division-line span {
+    color: var(--accent);
+    font: 10px var(--mono);
+  }
+
+  .division-line strong {
+    color: var(--ink-dim);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .division-line > i {
+    position: relative;
+    height: 1px;
+    background: rgba(245, 185, 113, 0.34);
+  }
+
+  .division-line > i::after {
+    position: absolute;
+    top: -3px;
+    right: 0;
+    width: 7px;
+    height: 7px;
+    border-top: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    content: "";
+    transform: rotate(45deg);
+  }
+
+  .reader-lab {
+    margin-top: 66px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #050505;
+  }
+
+  .lab-tour {
+    display: grid;
+    min-height: 90px;
+    padding: 18px 22px;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(240px, 1fr) auto;
+    align-items: center;
+    gap: 28px;
+    border-bottom: 1px solid rgba(245, 185, 113, 0.3);
+    background: rgba(245, 185, 113, 0.035);
+  }
+
+  .tour-copy {
+    display: grid;
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .tour-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    font: 10px var(--mono);
+  }
+
+  .tour-status i {
+    width: 7px;
+    height: 7px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(245, 185, 113, 0.46);
+  }
+
+  .reader-lab.tour-playing .tour-status i {
+    animation: tour-pulse 1.2s ease-in-out infinite;
+  }
+
+  .reader-lab:not(.tour-playing) .tour-status i {
+    border: 1px solid rgba(245, 185, 113, 0.6);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .tour-status b {
+    font-weight: 400;
+  }
+
+  .tour-copy > strong {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tour-progress {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .tour-progress > span {
+    position: relative;
+    height: 5px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .tour-progress > span > i {
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    content: "";
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .tour-progress > span.completed > i {
+    transform: scaleX(1);
+  }
+
+  .tour-progress > span.active > i {
+    transform: scaleX(0.08);
+  }
+
+  .tour-progress > span.active.playing > i {
+    animation: tour-progress 5.2s linear forwards;
+  }
+
+  .tour-toggle {
+    display: inline-flex;
+    min-height: 44px;
+    padding-inline: 16px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid rgba(245, 185, 113, 0.52);
+    border-radius: 6px;
+    background: rgba(245, 185, 113, 0.06);
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .tour-toggle:hover {
+    background: rgba(245, 185, 113, 0.11);
+  }
+
+  .tour-toggle > span {
+    font: 13px var(--mono);
+  }
+
+  .tour-toggle > b {
+    font-weight: 500;
+  }
+
+  .reader-mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-bottom: 1px solid var(--line);
+  }
+
+  .reader-mode-tabs button {
+    position: relative;
+    display: grid;
+    min-height: 78px;
+    padding: 13px 18px;
+    grid-template-columns: 28px auto;
+    grid-template-rows: auto auto;
+    align-content: center;
+    border: 0;
+    border-right: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 15px;
+    text-align: left;
+  }
+
+  .reader-mode-tabs button > span {
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .reader-mode-tabs button > strong {
+    color: inherit;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .reader-mode-tabs button > small {
+    color: var(--ink-faint);
+    font-size: 12px;
+  }
+
+  .reader-mode-tabs button:last-child {
+    border-right: 0;
+  }
+
+  .reader-mode-tabs button::after {
+    position: absolute;
+    right: 18px;
+    bottom: -1px;
+    left: 18px;
+    height: 2px;
+    background: transparent;
+    content: "";
+  }
+
+  .reader-mode-tabs button:hover {
+    color: var(--ink);
+  }
+
+  .reader-mode-tabs button.active {
+    background: rgba(245, 185, 113, 0.035);
+    color: var(--accent);
+  }
+
+  .reader-mode-tabs button.active > span {
+    color: var(--accent);
+  }
+
+  .reader-mode-tabs button.completed {
+    color: var(--ink-dim);
+  }
+
+  .reader-mode-tabs button.completed > span::after {
+    margin-left: 4px;
+    color: var(--accent);
+    content: "✓";
+  }
+
+  .reader-mode-tabs button.active::after {
+    background: var(--accent);
+  }
+
+  .lab-summary {
+    display: flex;
+    min-height: 48px;
+    padding-inline: 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .lab-summary strong {
+    color: var(--ink-dim);
+    font-weight: 400;
+  }
+
+  .lab-panel {
+    display: grid;
+    min-height: 520px;
+    padding: 42px;
+    grid-template-columns: minmax(260px, 0.62fr) minmax(0, 1.38fr);
+    gap: 54px;
+  }
+
+  .lab-panel[hidden] {
+    display: none;
+  }
+
+  .lab-panel:not([hidden]) {
+    animation: lab-panel-in 260ms ease both;
+  }
+
+  .panel-copy h3 {
+    margin: 18px 0 14px;
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 400;
+    line-height: 1.32;
+  }
+
+  .panel-copy > p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.85;
+  }
+
+  .panel-copy dl {
+    margin: 34px 0 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .panel-copy dl > div {
+    display: grid;
+    min-height: 46px;
+    grid-template-columns: 62px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  .panel-copy dt {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .panel-copy dd {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .grid-preview {
+    display: grid;
+    min-width: 0;
+    align-self: center;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .grid-cell {
+    position: relative;
+    min-width: 0;
+  }
+
+  .grid-cell .capture-screen {
+    aspect-ratio: 16 / 10;
+  }
+
+  .grid-cell .capture-sheet {
+    bottom: -55%;
+  }
+
+  .grid-cell.suspect .capture-screen {
+    border-color: rgba(245, 185, 113, 0.54);
+  }
+
+  .scan-workbench {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(180px, 0.44fr) minmax(0, 1.56fr);
+    align-items: center;
+    gap: 32px;
+  }
+
+  .scan-stage {
+    min-width: 0;
+  }
+
+  .scan-current-frame {
+    width: min(100%, 220px);
+    margin-inline: auto;
+  }
+
+  .capture-screen.large {
+    border-color: rgba(245, 185, 113, 0.36);
+  }
+
+  .scan-reading {
+    display: grid;
+    margin-top: 16px;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .scan-reading time {
+    color: var(--accent);
+    font: 11px var(--mono);
+  }
+
+  .scan-reading strong {
+    color: var(--ink-dim);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .scan-data {
+    min-width: 0;
+  }
+
+  .curve-labels,
+  .scan-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .scan-curve {
+    position: relative;
+    height: 180px;
+    margin-top: 14px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    background:
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 25%),
+      rgba(255, 255, 255, 0.01);
+  }
+
+  .scan-curve svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .curve-area {
+    fill: rgba(245, 185, 113, 0.08);
+  }
+
+  .curve-line {
+    fill: none;
+    stroke: rgba(245, 185, 113, 0.76);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .curve-threshold {
+    stroke: rgba(238, 240, 246, 0.2);
+    stroke-dasharray: 5 6;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .scan-curve > i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--scan-x, 0%);
+    width: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(245, 185, 113, 0.42);
+    transition: left 220ms ease;
+  }
+
+  .scan-segments {
+    display: grid;
+    height: 28px;
+    margin-top: 8px;
+    grid-template-columns: 1fr 2.1fr 1fr;
+    gap: 5px;
+  }
+
+  .scan-segments span {
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.035);
+    color: var(--ink-faint);
+    font: 8px var(--mono);
+  }
+
+  .scan-segments .active {
+    background: rgba(245, 185, 113, 0.15);
+    color: var(--accent);
+  }
+
+  .scan-data input[type="range"] {
+    width: 100%;
+    margin: 22px 0;
+    accent-color: var(--accent);
+  }
+
+  .scan-controls button {
+    min-height: 38px;
+    padding-inline: 14px;
+    border: 1px solid rgba(245, 185, 113, 0.38);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  .scan-controls button:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  .zoom-strip {
+    display: grid;
+    min-width: 0;
+    align-self: center;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .zoom-frame {
+    position: relative;
+    min-width: 0;
+  }
+
+  .zoom-frame > span {
+    position: absolute;
+    top: 8px;
+    right: 7px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #090909;
+    font: 8px var(--mono);
+  }
+
+  .zoom-conclusion {
+    grid-column: 1 / -1;
+    display: grid;
+    margin-top: 16px;
+    padding-top: 20px;
+    grid-template-columns: 80px 110px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 18px;
+    border-top: 1px solid rgba(245, 185, 113, 0.3);
+  }
+
+  .zoom-conclusion span {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .zoom-conclusion strong {
+    color: var(--accent);
+    font: 14px var(--mono);
+  }
+
+  .zoom-conclusion p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+  }
+
+  .transcript-stage {
+    min-width: 0;
+    align-self: center;
+  }
+
+  .waveform {
+    display: flex;
+    height: 90px;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  .waveform i {
+    flex: 1;
+    height: var(--wave);
+    min-width: 2px;
+    background: rgba(245, 185, 113, 0.34);
+  }
+
+  .transcript-lines {
+    border-block: 1px solid var(--line);
+  }
+
+  .transcript-lines > div {
+    display: grid;
+    min-height: 64px;
+    padding-block: 12px;
+    grid-template-columns: 76px minmax(150px, 0.7fr) minmax(190px, 1fr);
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  .transcript-lines > div:last-child {
+    border-bottom: 0;
+  }
+
+  .transcript-lines > div.active {
+    color: var(--accent);
+  }
+
+  .transcript-lines time {
+    font: 10px var(--mono);
+  }
+
+  .transcript-lines p {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .transcript-lines span {
+    color: var(--ink-dim);
+    font-size: 16px;
+  }
+
+  .judge-result {
+    margin-top: 26px;
+    padding: 22px 0 0;
+  }
+
+  .judge-result > span {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .judge-result strong {
+    display: block;
+    margin-top: 12px;
+    color: var(--accent);
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 400;
+  }
+
+  .judge-result p {
+    margin: 9px 0 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+  }
+
+  .process-rail {
+    display: grid;
+    margin-top: 68px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+  }
+
+  .process-step {
+    min-width: 0;
+    padding: 24px 18px 0 0;
+    opacity: 0.86;
+    transition: opacity 240ms ease, transform 240ms ease;
+  }
+
+  .process-step + .process-step {
+    padding-left: 18px;
+    border-left: 1px solid var(--line);
+  }
+
+  .process-step.active {
+    opacity: 1;
+    transform: translateY(-5px);
+  }
+
+  .process-step > span {
+    color: var(--accent);
+    font: 9px var(--mono);
+  }
+
+  .process-step h3 {
+    margin: 20px 0 8px;
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 400;
+  }
+
+  .process-step p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .process-visual {
+    height: 112px;
+    margin-top: 22px;
+    overflow: hidden;
+    border-block: 1px solid rgba(255, 255, 255, 0.065);
+  }
+
+  .process-visual.grayscale {
+    display: grid;
+    place-items: center;
+    filter: grayscale(1) blur(0.4px);
+  }
+
+  .process-visual.grayscale .capture-screen {
+    width: 52px;
+  }
+
+  .fingerprint {
+    display: grid;
+    padding: 10px;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(16, 1fr);
+    gap: 1px;
+  }
+
+  .fingerprint i {
+    background: rgba(238, 240, 246, var(--cell));
+  }
+
+  .score-visual {
+    display: flex;
+    padding: 14px 10px 0;
+    align-items: end;
+    gap: 8px;
+  }
+
+  .score-visual i {
+    flex: 1;
+    height: var(--score);
+    background: rgba(245, 185, 113, 0.52);
+  }
+
+  .threshold-visual {
+    position: relative;
+  }
+
+  .threshold-visual i {
+    position: absolute;
+    bottom: 0;
+    width: 18%;
+    background: rgba(245, 185, 113, 0.35);
+  }
+
+  .threshold-visual i:nth-child(1) { left: 6%; height: 18%; }
+  .threshold-visual i:nth-child(2) { left: 29%; height: 72%; }
+  .threshold-visual i:nth-child(3) { left: 52%; height: 38%; }
+
+  .threshold-visual b {
+    position: absolute;
+    right: 0;
+    bottom: 42%;
+    left: 0;
+    height: 1px;
+    background: rgba(238, 240, 246, 0.32);
+  }
+
+  .threshold-visual span {
+    position: absolute;
+    right: 3px;
+    bottom: calc(42% + 5px);
+    color: var(--ink-faint);
+    font: 8px var(--mono);
+  }
+
+  .merge-visual {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .merge-visual span {
+    flex: 1;
+    height: 26px;
+    background: rgba(245, 185, 113, 0.28);
+  }
+
+  .merge-visual b {
+    width: 16px;
+    height: 26px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .merge-visual b.short {
+    width: 5px;
+  }
+
+  .output-visual {
+    display: grid;
+    padding-block: 18px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+  }
+
+  .output-visual i {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0b0c0d;
+    opacity: 0.28;
+  }
+
+  .output-visual i.active {
+    border-color: rgba(245, 185, 113, 0.65);
+    opacity: 1;
+  }
+
+  .sampling-lanes {
+    display: grid;
+    margin-top: 62px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 42px;
+  }
+
+  .sampling-lanes > div {
+    display: grid;
+    grid-template-columns: 110px 90px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 18px;
+  }
+
+  .sampling-lanes span {
+    color: var(--ink-faint);
+    font: 10px var(--mono);
+  }
+
+  .sampling-lanes strong {
+    color: var(--accent);
+    font: 16px var(--mono);
+  }
+
+  .sampling-lanes p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+  }
+
+  .sampling-lanes i {
+    grid-column: 1 / -1;
+    height: 10px;
+    background-repeat: repeat-x;
+  }
+
+  .dense-lane {
+    background-image: repeating-linear-gradient(90deg, rgba(245, 185, 113, 0.58) 0 3px, transparent 3px 12px);
+  }
+
+  .sparse-lane {
+    background-image: repeating-linear-gradient(90deg, rgba(245, 185, 113, 0.58) 0 10px, transparent 10px 66px);
+  }
+
+  .decision-list {
+    display: grid;
+    margin-top: 68px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+  }
+
+  .decision-list article {
+    min-height: 210px;
+    padding: 26px 28px 26px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .decision-list article:not(:nth-child(3n + 1)) {
+    padding-left: 28px;
+    border-left: 1px solid var(--line);
+  }
+
+  .decision-list h3 {
+    margin: 24px 0 9px;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.45;
+  }
+
+  .decision-list p {
+    margin: 0;
+    color: var(--ink-faint);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  @keyframes tour-progress {
+    from {
+      transform: scaleX(0.08);
+    }
+
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes tour-pulse {
+    50% {
+      opacity: 0.45;
+      transform: scale(0.72);
+    }
+  }
+
+  @keyframes lab-panel-in {
+    from {
+      opacity: 0.25;
+      transform: translateY(6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 960px) {
+    .reader-heading,
+    .lab-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .reader-heading h2 {
+      font-size: 46px;
+    }
+
+    .sampling-comparison {
+      grid-template-columns: 1fr;
+    }
+
+    .pain-flow {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+    }
+
+    .pain-flow article,
+    .pain-flow article:first-child,
+    .pain-flow article.solution {
+      border: 0;
+      background: #050505;
+    }
+
+    .pain-flow article.solution {
+      background: rgba(245, 185, 113, 0.035);
+      box-shadow: inset 0 0 0 1px rgba(245, 185, 113, 0.3);
+    }
+
+    .pain-flow > i {
+      display: none;
+    }
+
+    .lab-tour {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .tour-progress {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .lab-panel {
+      min-height: 0;
+    }
+
+    .panel-copy {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr);
+      align-items: end;
+      gap: 28px;
+    }
+
+    .panel-copy > span,
+    .panel-copy h3 {
+      grid-column: 1;
+    }
+
+    .panel-copy > p {
+      grid-column: 1;
+    }
+
+    .panel-copy dl {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      margin-top: 0;
+    }
+
+    .process-rail {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .process-step:nth-child(4) {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .decision-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .decision-list article:not(:nth-child(3n + 1)) {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .decision-list article:nth-child(even) {
+      padding-left: 28px;
+      border-left: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .reader-section,
+    .reader-lab-section > .wide,
+    .reader-decisions > .wide {
+      padding-block: 76px;
+    }
+
+    .reader-heading {
+      gap: 28px;
+    }
+
+    .reader-heading h2 {
+      font-size: 38px;
+    }
+
+    .sampling-comparison,
+    .reader-lab,
+    .process-rail,
+    .decision-list {
+      margin-top: 48px;
+    }
+
+    .sampling-column {
+      padding: 24px 18px;
+    }
+
+    .pain-flow {
+      margin-top: 44px;
+      grid-template-columns: 1fr;
+    }
+
+    .pain-flow article {
+      min-height: 0;
+      padding: 24px 18px;
+    }
+
+    .sampling-intro {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .lab-tour {
+      padding: 16px 18px;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .tour-toggle {
+      width: 100%;
+    }
+
+    .tour-progress {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .tour-copy > strong {
+      white-space: normal;
+    }
+
+    .comparison-frames {
+      gap: 5px;
+    }
+
+    .comparison-result {
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .division-line {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .division-line > div {
+      grid-template-columns: 72px minmax(0, 1fr);
+    }
+
+    .division-line > i {
+      width: 1px;
+      height: 24px;
+      margin-left: 35px;
+    }
+
+    .division-line > i::after {
+      top: auto;
+      right: -3px;
+      bottom: 0;
+      transform: rotate(135deg);
+    }
+
+    .reader-mode-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .reader-mode-tabs button {
+      min-height: 70px;
+      padding: 10px 12px;
+      grid-template-columns: 24px auto;
+      border-bottom: 1px solid var(--line);
+      white-space: normal;
+    }
+
+    .reader-mode-tabs button:nth-child(2) {
+      border-right: 0;
+    }
+
+    .reader-mode-tabs button:nth-child(n + 3) {
+      border-bottom: 0;
+    }
+
+    .lab-summary {
+      align-items: flex-start;
+      padding-block: 13px;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .lab-panel {
+      padding: 28px 18px 34px;
+      gap: 38px;
+    }
+
+    .panel-copy {
+      display: block;
+    }
+
+    .panel-copy dl {
+      margin-top: 28px;
+    }
+
+    .scan-workbench {
+      grid-template-columns: 116px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .scan-curve {
+      height: 130px;
+    }
+
+    .curve-labels span:last-child,
+    .scan-controls > span {
+      display: none;
+    }
+
+    .zoom-strip {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .zoom-conclusion {
+      grid-template-columns: 76px minmax(0, 1fr);
+    }
+
+    .zoom-conclusion p {
+      grid-column: 1 / -1;
+    }
+
+    .transcript-lines > div {
+      grid-template-columns: 68px minmax(0, 1fr);
+      gap: 6px 14px;
+    }
+
+    .transcript-lines span {
+      grid-column: 2;
+    }
+
+    .process-rail {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .process-step:nth-child(odd) {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .process-step:nth-child(even) {
+      padding-left: 14px;
+      border-left: 1px solid var(--line);
+    }
+
+    .process-step {
+      padding-right: 14px;
+      padding-bottom: 34px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .sampling-lanes,
+    .decision-list {
+      grid-template-columns: 1fr;
+    }
+
+    .sampling-lanes > div {
+      grid-template-columns: 90px 72px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .decision-list article,
+    .decision-list article:nth-child(even) {
+      min-height: 0;
+      padding: 24px 0;
+      border-left: 0;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .scan-workbench {
+      grid-template-columns: 88px minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .scan-current-frame {
+      width: 88px;
+    }
+
+    .scan-reading strong {
+      font-size: 12px;
+    }
+
+    .grid-preview {
+      gap: 6px;
+    }
+
+    .sampling-lanes > div {
+      grid-template-columns: 1fr auto;
+    }
+
+    .sampling-lanes p {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tour-progress > span.active.playing > i,
+    .reader-lab.tour-playing .tour-status i,
+    .lab-panel:not([hidden]) {
+      animation: none;
+    }
+
+    .process-step {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

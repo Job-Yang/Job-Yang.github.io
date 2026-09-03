@@ -1,0 +1,1140 @@
+---
+const safeguards = [
+  { label: '内容 hash', title: '压过的图片不再压第二次', text: '缓存记录最终文件内容。新增或改动的图片继续处理，未变化的文件直接跳过。' },
+  { label: '变大回退', title: '候选图没有更小，就保留原图', text: '小 icon 本来就很紧，强行量化可能变大。结果必须比原图小，才允许覆盖。' },
+  { label: '硬门禁', title: '解码、尺寸和 alpha 先过关', text: '候选图打不开、宽高变化、透明通道丢失或动画帧数变化，立即回退。' },
+  { label: '质量门禁', title: '白底黑底都看，避免透明图漏判', text: 'PSNR、SSIM、MAE 和 alpha MAE 同时检查，只拦明显坏图，不替代最终肉眼验收。' },
+  { label: '动图保护', title: 'APNG 不进入有损量化', text: '检测到 acTL 动画块直接跳过，避免一张动图被压成静态首帧。' },
+  { label: '并行执行', title: '几万张资源可以持续跑', text: '目录递归和多进程并行补上网页工具缺少的批处理能力。' },
+];
+---
+
+<div class="png-showcase" data-png-showcase>
+  <section id="story" class="showcase-section origin-section wide">
+    <div class="section-label">01 · 从一个在线工具的边界开始</div>
+    <div class="section-heading">
+      <h2 class="display">几张图可以上传，<br />整个工程不能靠手点。</h2>
+      <p>
+        包体积治理需要一次处理几万张 PNG，后面还会不断新增资源。
+        在线工具效果不错，但上传、额度、隐私和重复执行都会进入主链路。
+      </p>
+    </div>
+
+    <div class="constraint-line">
+      <div><span>素材规模</span><strong>一次覆盖整个资源目录</strong></div>
+      <i></i>
+      <div><span>持续增量</span><strong>今天压完，明天还有新图</strong></div>
+      <i></i>
+      <div><span>本地边界</span><strong>项目图片不需要离开机器</strong></div>
+      <i></i>
+      <div class="target"><span>真正目标</span><strong>一条能反复跑的工程流水线</strong></div>
+    </div>
+
+    <div class="build-story">
+      <div>
+        <span>起点</span>
+        <strong>TinyPNG 的效果值得研究</strong>
+        <p>先查它公开讲了什么，再找同类开源实现和可复用参数。</p>
+      </div>
+      <div>
+        <span>几个小时后</span>
+        <strong>AI 把研究结果落成了 Skill</strong>
+        <p>组合工具、补脚本、加缓存、写回退，再用测试和真实素材验证。</p>
+      </div>
+      <div>
+        <span>边界</span>
+        <strong>没有复刻 TinyPNG 的未公开算法</strong>
+        <p>它采用同类公开技术路线，并补齐了工程里真正缺失的部分。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="showcase-band">
+    <div class="wide">
+      <div class="section-label">02 · 拆开公开原理</div>
+      <div class="section-heading">
+        <h2 class="display">省大头的是颜色，<br />省小头的是编码。</h2>
+        <p>
+          TinyPNG 公开说明会合并相近颜色、转成更小的索引色，并清理元数据。
+          `pngquant` 作者也把 TinyPNG 等服务列为同类量化方案的应用。
+        </p>
+      </div>
+
+      <div class="algorithm-flow">
+        <div class="flow-source">
+          <span>INPUT</span>
+          <strong>24 / 32 bit PNG</strong>
+          <p>真彩色、透明通道、原始编码和元数据。</p>
+        </div>
+        <i></i>
+        <div class="flow-main">
+          <span>pngquant</span>
+          <strong>24 / 32 bit → 8 bit 调色板</strong>
+          <p>改进的颜色量化、感知权重、自适应抖动和 alpha / gamma 处理。</p>
+          <b>有损 · 主要收益</b>
+        </div>
+        <i></i>
+        <div class="flow-tail">
+          <span>oxipng</span>
+          <strong>filter + DEFLATE + strip</strong>
+          <p>重新选择滤波方式、重压编码并清理非必要元数据。</p>
+          <b>无损 · 继续收紧</b>
+        </div>
+        <i></i>
+        <div class="flow-output">
+          <span>OUTPUT</span>
+          <strong>候选 PNG</strong>
+          <p>先过门禁，再决定覆盖还是回退。</p>
+        </div>
+      </div>
+
+      <div class="evidence-note">
+        <span>公开证据</span>
+        <p>
+          公开对比表明，默认参数下 TinyPNG 往往更小；调整 `pngquant` 的质量参数后，
+          本地方案可以追平或反超测试集。素材、参数和验证方式共同决定结果。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="compression-lab" class="showcase-section lab-section wide">
+    <div class="section-label">03 · 同一条流水线，不同素材走不同判断</div>
+    <div class="section-heading">
+      <h2 class="display">每张图片都要单独决定，<br />覆盖还是回退。</h2>
+      <p>
+        切换下面四类素材，可以看到参数、门禁和最终动作怎样变化。
+        Skill 既要压得小，也要知道什么时候应该停手。
+      </p>
+    </div>
+
+    <div class="compression-lab">
+      <div class="mode-list" role="tablist" aria-label="PNG 素材类型">
+        <button class="active" type="button" role="tab" data-compress-mode="normal" aria-selected="true">
+          <span>01</span><strong>普通图片</strong><small>标准量化</small>
+        </button>
+        <button type="button" role="tab" data-compress-mode="small" aria-selected="false">
+          <span>02</span><strong>小图 / Icon</strong><small>提高质量下限</small>
+        </button>
+        <button type="button" role="tab" data-compress-mode="alpha" aria-selected="false">
+          <span>03</span><strong>透明 PNG</strong><small>双底色质量检查</small>
+        </button>
+        <button type="button" role="tab" data-compress-mode="apng" aria-selected="false">
+          <span>04</span><strong>APNG</strong><small>检测后直接跳过</small>
+        </button>
+      </div>
+
+      <div class="lab-content">
+        <div class="lab-copy">
+          <span data-lab-eyebrow>STANDARD PNG</span>
+          <h3 data-lab-title>量化颜色，再做无损收尾</h3>
+          <p data-lab-description>普通图使用 65-85 质量区间，主要体积由 pngquant 降下来。</p>
+          <dl>
+            <div><dt>参数</dt><dd data-lab-policy>quality 65-85 · speed 1 · dithering 1.0</dd></div>
+            <div><dt>门禁</dt><dd data-lab-gates>解码 · 尺寸 · alpha · PSNR / SSIM / MAE · 更小</dd></div>
+            <div><dt>动作</dt><dd data-lab-action>通过后原地覆盖，最终 hash 写入缓存</dd></div>
+          </dl>
+        </div>
+
+        <div class="lab-visual">
+          <div class="lab-file">
+            <div class="lab-scene">
+              <i></i><b></b><em></em>
+            </div>
+          <span data-lab-file>hero-3x.png</span>
+          </div>
+          <div class="lab-route">
+            <span data-route-step="0">pngquant</span>
+            <i></i>
+            <span data-route-step="1">oxipng</span>
+            <i></i>
+            <span data-route-step="2">quality gates</span>
+          </div>
+          <div class="lab-verdict pass" data-lab-verdict>
+            <span>PASS</span>
+            <strong data-lab-result>候选图更小且质量门禁通过</strong>
+            <p data-lab-detail>覆盖原图，缓存最终文件内容。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="showcase-band safety-section">
+    <div class="wide">
+      <div class="section-label">04 · 两个工具之外，才是工程能力</div>
+      <div class="section-heading">
+        <h2 class="display">压缩算法公开，<br />可靠地反复运行并不天然成立。</h2>
+        <p>
+          工程化首先要补齐边界：哪些目录不能碰，哪些图片不能压，
+          哪些结果不能覆盖，以及下一次怎么只处理新增和变化。
+        </p>
+      </div>
+
+      <div class="safeguard-grid">
+        {safeguards.map((item) => (
+          <article>
+            <span>{item.label}</span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="showcase-section proof-section wide">
+    <div class="section-label">05 · 一次公开可复现的现场验证</div>
+    <div class="section-heading">
+      <h2 class="display">先拿自己的公开素材跑，<br />再谈“效果怎么样”。</h2>
+      <p>
+        下面是本网站公开目录的一次 `--dry-run`。它只证明这条流水线在这批素材上的真实输出，
+        不代表所有项目都能得到同样比例。
+      </p>
+    </div>
+
+    <div class="proof-run">
+      <div class="proof-command">
+        <span>DRY RUN · PUBLIC CORPUS</span>
+        <code>./compress.sh public --dry-run -j 4</code>
+        <p>运行前后对 23 张原图做 SHA-256 对照，确认 dry-run 没有改动任何文件。</p>
+      </div>
+      <div class="proof-metrics">
+        <div><span>PNG</span><strong>23</strong><small>张公开素材</small></div>
+        <div><span>BEFORE</span><strong>30.1</strong><small>MB</small></div>
+        <div><span>AFTER</span><strong>8.1</strong><small>MB 候选结果</small></div>
+        <div class="accent"><span>SAVED</span><strong>73.0%</strong><small>本批素材</small></div>
+      </div>
+      <div class="proof-gates">
+        <span><i></i>23 张进入压缩</span>
+        <span><i></i>0 张硬门禁回退</span>
+        <span><i></i>0 张质量门禁回退</span>
+        <span><i></i>0 个失败</span>
+        <span><i></i>原图 hash 全部不变</span>
+        <span><i></i>耗时 23.0 秒</span>
+      </div>
+    </div>
+
+    <div class="proof-conclusion">
+      <span>这个案例真正说明什么</span>
+      <strong>AI 没有重新发明压缩算法。它把公开知识快速查明、组合、调参，再补成一条有缓存、有门禁、有回退的工程链路。</strong>
+    </div>
+  </section>
+</div>
+
+<script>
+  const initPngShowcase = () => {
+    document.querySelectorAll<HTMLElement>('[data-png-showcase]').forEach((root) => {
+      if (root.dataset.ready === 'true') return;
+      root.dataset.ready = 'true';
+
+      const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-compress-mode]'));
+      const eyebrow = root.querySelector<HTMLElement>('[data-lab-eyebrow]');
+      const title = root.querySelector<HTMLElement>('[data-lab-title]');
+      const description = root.querySelector<HTMLElement>('[data-lab-description]');
+      const policy = root.querySelector<HTMLElement>('[data-lab-policy]');
+      const gates = root.querySelector<HTMLElement>('[data-lab-gates]');
+      const action = root.querySelector<HTMLElement>('[data-lab-action]');
+      const file = root.querySelector<HTMLElement>('[data-lab-file]');
+      const verdict = root.querySelector<HTMLElement>('[data-lab-verdict]');
+      const result = root.querySelector<HTMLElement>('[data-lab-result]');
+      const detail = root.querySelector<HTMLElement>('[data-lab-detail]');
+      const routeSteps = Array.from(root.querySelectorAll<HTMLElement>('[data-route-step]'));
+      const configs = {
+        normal: {
+          eyebrow: 'STANDARD PNG',
+          title: '量化颜色，再做无损收尾',
+          description: '普通图使用 65-85 质量区间，主要体积由 pngquant 降下来。',
+          policy: 'quality 65-85 · speed 1 · dithering 1.0',
+          gates: '解码 · 尺寸 · alpha · PSNR / SSIM / MAE · 更小',
+          action: '通过后原地覆盖，最终 hash 写入缓存',
+          file: 'hero-3x.png',
+          verdict: 'pass',
+          badge: 'PASS',
+          result: '候选图更小且质量门禁通过',
+          detail: '覆盖原图，缓存最终文件内容。',
+          activeRoute: 2,
+        },
+        small: {
+          eyebrow: 'SMALL IMAGE',
+          title: '小图提高质量下限',
+          description: '20KB 以下的 icon 改用更保守的 70-90 区间，减少边缘和细节发糊。',
+          policy: 'size < 20KB · quality 70-90',
+          gates: '同样经过解码、alpha 与质量检查',
+          action: '压完没有更小就保留原图，不强求收益',
+          file: 'icon.png',
+          verdict: 'keep',
+          badge: 'KEEP',
+          result: '候选图没有更小',
+          detail: '保留原图，并缓存当前 hash，后续不再重复尝试。',
+          activeRoute: 2,
+        },
+        alpha: {
+          eyebrow: 'ALPHA PNG',
+          title: '透明图要在两种底色上检查',
+          description: '只比较透明像素会漏掉边缘问题，因此分别垫白底和黑底计算质量指标。',
+          policy: 'white / black composite · alpha MAE ≤ 3',
+          gates: 'alpha 存在 · alpha MAE · 两组 PSNR / SSIM / MAE',
+          action: '透明边缘或颜色误差过大时自动回退',
+          file: 'overlay.png',
+          verdict: 'pass',
+          badge: 'PASS',
+          result: '透明通道和双底色质量检查通过',
+          detail: '候选图可以覆盖；正式交付仍抽检阴影和毛玻璃。',
+          activeRoute: 2,
+        },
+        apng: {
+          eyebrow: 'ANIMATED PNG',
+          title: '发现动画，整条有损链路跳过',
+          description: '脚本读取 PNG 的 acTL 块识别 APNG，避免量化工具只保留静态首帧。',
+          policy: 'frame_count > 1 · skip',
+          gates: '只完成格式与动画帧检测',
+          action: '保留原图并写入缓存',
+          file: 'spinner.png',
+          verdict: 'skip',
+          badge: 'SKIP',
+          result: '检测到 APNG',
+          detail: '不调用 pngquant 和 oxipng，动画原样保留。',
+          activeRoute: -1,
+        },
+      };
+
+      const render = (mode: keyof typeof configs) => {
+        const config = configs[mode];
+        buttons.forEach((button) => {
+          const active = button.dataset.compressMode === mode;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-selected', String(active));
+        });
+        if (eyebrow) eyebrow.textContent = config.eyebrow;
+        if (title) title.textContent = config.title;
+        if (description) description.textContent = config.description;
+        if (policy) policy.textContent = config.policy;
+        if (gates) gates.textContent = config.gates;
+        if (action) action.textContent = config.action;
+        if (file) file.textContent = config.file;
+        if (result) result.textContent = config.result;
+        if (detail) detail.textContent = config.detail;
+        if (verdict) {
+          verdict.className = `lab-verdict ${config.verdict}`;
+          const badge = verdict.querySelector<HTMLElement>('span');
+          if (badge) badge.textContent = config.badge;
+        }
+        routeSteps.forEach((step, index) => {
+          step.classList.toggle('active', config.activeRoute >= index);
+          step.classList.toggle('disabled', config.activeRoute < 0);
+        });
+      };
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          render((button.dataset.compressMode ?? 'normal') as keyof typeof configs);
+        });
+      });
+      render('normal');
+    });
+  };
+
+  initPngShowcase();
+  document.addEventListener('astro:page-load', initPngShowcase);
+</script>
+
+<style>
+  .png-showcase {
+    color: var(--ink);
+  }
+
+  .showcase-section,
+  .showcase-band > .wide {
+    padding-block: 102px;
+  }
+
+  .showcase-band {
+    border-block: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.012);
+  }
+
+  .section-heading {
+    display: grid;
+    margin-top: 32px;
+    grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.64fr);
+    align-items: end;
+    gap: 64px;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: 52px;
+    line-height: 1.18;
+  }
+
+  .section-heading p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.9;
+  }
+
+  .constraint-line {
+    display: grid;
+    margin-top: 66px;
+    grid-template-columns: 1fr 38px 1fr 38px 1fr 38px 1fr;
+    align-items: center;
+  }
+
+  .constraint-line > div {
+    display: grid;
+    min-height: 138px;
+    padding: 22px 20px;
+    align-content: center;
+    gap: 16px;
+    border-block: 1px solid var(--line);
+  }
+
+  .constraint-line > div:first-child {
+    border-left: 1px solid var(--line);
+  }
+
+  .constraint-line > div.target {
+    border: 1px solid rgba(245, 185, 113, 0.38);
+    background: rgba(245, 185, 113, 0.035);
+  }
+
+  .constraint-line span,
+  .build-story span,
+  .flow-source > span,
+  .flow-main > span,
+  .flow-tail > span,
+  .flow-output > span,
+  .evidence-note > span,
+  .safeguard-grid article > span,
+  .proof-command > span,
+  .proof-conclusion > span {
+    color: var(--accent);
+    font: 10px var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  .constraint-line strong {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.45;
+  }
+
+  .constraint-line > i,
+  .algorithm-flow > i {
+    position: relative;
+    height: 1px;
+    background: rgba(245, 185, 113, 0.3);
+  }
+
+  .constraint-line > i::after,
+  .algorithm-flow > i::after {
+    position: absolute;
+    top: -3px;
+    right: 1px;
+    width: 7px;
+    height: 7px;
+    border-top: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    content: "";
+    transform: rotate(45deg);
+  }
+
+  .build-story {
+    display: grid;
+    margin-top: 38px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+  }
+
+  .build-story > div {
+    min-height: 190px;
+    padding: 26px 28px 26px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .build-story > div + div {
+    padding-left: 28px;
+    border-left: 1px solid var(--line);
+  }
+
+  .build-story strong {
+    display: block;
+    margin-top: 22px;
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 400;
+  }
+
+  .build-story p,
+  .algorithm-flow p,
+  .safeguard-grid p,
+  .proof-command p {
+    margin: 10px 0 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.78;
+  }
+
+  .algorithm-flow {
+    display: grid;
+    margin-top: 68px;
+    grid-template-columns: 0.7fr 32px 1.25fr 32px 1.12fr 32px 0.7fr;
+    align-items: center;
+  }
+
+  .algorithm-flow > div {
+    display: grid;
+    min-height: 230px;
+    padding: 26px;
+    align-content: center;
+    gap: 13px;
+    border-block: 1px solid var(--line);
+    background: #050505;
+  }
+
+  .algorithm-flow > div:first-child {
+    border-left: 1px solid var(--line);
+  }
+
+  .algorithm-flow > div:last-child {
+    border-right: 1px solid var(--line);
+  }
+
+  .algorithm-flow strong {
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  .algorithm-flow b {
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+    font-weight: 400;
+  }
+
+  .flow-main {
+    border-color: rgba(245, 185, 113, 0.38) !important;
+    background: rgba(245, 185, 113, 0.035) !important;
+  }
+
+  .evidence-note {
+    display: grid;
+    margin-top: 38px;
+    padding-block: 22px;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 26px;
+    border-block: 1px solid var(--line);
+  }
+
+  .evidence-note p {
+    max-width: 980px;
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.9;
+  }
+
+  .compression-lab {
+    display: grid;
+    margin-top: 66px;
+    grid-template-columns: 260px minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #050505;
+  }
+
+  .mode-list {
+    border-right: 1px solid var(--line);
+  }
+
+  .mode-list button {
+    position: relative;
+    display: grid;
+    width: 100%;
+    min-height: 92px;
+    padding: 16px 20px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .mode-list button:last-child {
+    border-bottom: 0;
+  }
+
+  .mode-list button::after {
+    position: absolute;
+    top: 16px;
+    bottom: 16px;
+    left: 0;
+    width: 2px;
+    background: transparent;
+    content: "";
+  }
+
+  .mode-list button > span {
+    grid-row: 1 / span 2;
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+  }
+
+  .mode-list button > strong {
+    color: inherit;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .mode-list button > small {
+    margin-top: 4px;
+    color: var(--ink-faint);
+    font-size: 12px;
+  }
+
+  .mode-list button.active {
+    background: rgba(245, 185, 113, 0.04);
+    color: var(--accent);
+  }
+
+  .mode-list button.active::after {
+    background: var(--accent);
+  }
+
+  .lab-content {
+    display: grid;
+    min-height: 500px;
+    padding: 42px;
+    grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
+    align-items: center;
+    gap: 54px;
+  }
+
+  .lab-copy > span {
+    color: var(--accent);
+    font: 10px var(--mono);
+  }
+
+  .lab-copy h3 {
+    margin: 18px 0 14px;
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 400;
+  }
+
+  .lab-copy > p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.85;
+  }
+
+  .lab-copy dl {
+    margin: 32px 0 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .lab-copy dl > div {
+    display: grid;
+    min-height: 48px;
+    padding-block: 8px;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  .lab-copy dt {
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+  }
+
+  .lab-copy dd {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .lab-visual {
+    display: grid;
+    min-width: 0;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .lab-file {
+    display: grid;
+    width: min(100%, 280px);
+    margin-inline: auto;
+    gap: 8px;
+  }
+
+  .lab-file > span {
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+    text-align: center;
+  }
+
+  .lab-scene {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px solid rgba(245, 185, 113, 0.34);
+    background: #0c1114;
+  }
+
+  .lab-scene::after {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(3, 3, 3, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(3, 3, 3, 0.1) 1px, transparent 1px);
+    background-size: 12px 12px;
+    content: "";
+  }
+
+  .lab-scene i {
+    position: absolute;
+    top: 14%;
+    right: 13%;
+    width: 12%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .lab-scene b,
+  .lab-scene em {
+    position: absolute;
+    right: -4%;
+    bottom: -4%;
+    left: -4%;
+    height: 62%;
+    background: rgba(116, 145, 148, 0.36);
+    clip-path: polygon(0 82%, 20% 30%, 38% 61%, 58% 14%, 78% 55%, 100% 24%, 100% 100%, 0 100%);
+  }
+
+  .lab-scene em {
+    bottom: -16%;
+    background: rgba(245, 185, 113, 0.12);
+  }
+
+  .lab-route {
+    display: grid;
+    grid-template-columns: 1fr 28px 1fr 28px 1fr;
+    align-items: center;
+  }
+
+  .lab-route > span {
+    min-height: 42px;
+    display: grid;
+    place-items: center;
+    border-block: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+    text-align: center;
+  }
+
+  .lab-route > span.active {
+    border-color: rgba(245, 185, 113, 0.5);
+    color: var(--accent);
+  }
+
+  .lab-route > span.disabled {
+    opacity: 0.26;
+    text-decoration: line-through;
+  }
+
+  .lab-route > i {
+    height: 1px;
+    background: rgba(245, 185, 113, 0.25);
+  }
+
+  .lab-verdict {
+    display: grid;
+    padding: 20px;
+    gap: 8px;
+    border: 1px solid var(--line);
+  }
+
+  .lab-verdict > span {
+    color: var(--accent);
+    font: 10px var(--mono);
+  }
+
+  .lab-verdict > strong {
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 400;
+  }
+
+  .lab-verdict > p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .lab-verdict.keep {
+    border-color: rgba(238, 240, 246, 0.22);
+  }
+
+  .lab-verdict.keep > span,
+  .lab-verdict.skip > span {
+    color: var(--ink-dim);
+  }
+
+  .lab-verdict.skip {
+    border-style: dashed;
+    opacity: 0.78;
+  }
+
+  .safeguard-grid {
+    display: grid;
+    margin-top: 66px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+  }
+
+  .safeguard-grid article {
+    min-height: 210px;
+    padding: 26px 28px 26px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .safeguard-grid article:not(:nth-child(3n + 1)) {
+    padding-left: 28px;
+    border-left: 1px solid var(--line);
+  }
+
+  .safeguard-grid h3 {
+    margin: 22px 0 0;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.45;
+  }
+
+  .proof-run {
+    margin-top: 66px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #050505;
+  }
+
+  .proof-command {
+    display: grid;
+    min-height: 110px;
+    padding: 24px 28px;
+    grid-template-columns: 150px minmax(260px, 0.8fr) minmax(300px, 1fr);
+    align-items: center;
+    gap: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .proof-command code {
+    color: var(--accent);
+    font: 12px var(--mono);
+  }
+
+  .proof-command p {
+    margin: 0;
+  }
+
+  .proof-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .proof-metrics > div {
+    display: grid;
+    min-height: 170px;
+    padding: 24px;
+    align-content: center;
+    gap: 6px;
+    border-right: 1px solid var(--line);
+  }
+
+  .proof-metrics > div:last-child {
+    border-right: 0;
+  }
+
+  .proof-metrics span {
+    color: var(--ink-faint);
+    font: 9px var(--mono);
+  }
+
+  .proof-metrics strong {
+    font-family: var(--serif);
+    font-size: 45px;
+    font-weight: 400;
+  }
+
+  .proof-metrics small {
+    color: var(--ink-faint);
+    font-size: 12px;
+  }
+
+  .proof-metrics .accent strong {
+    color: var(--accent);
+  }
+
+  .proof-gates {
+    display: grid;
+    padding: 20px 24px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .proof-gates span {
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+
+  .proof-gates i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .proof-conclusion {
+    display: grid;
+    margin-top: 38px;
+    padding-block: 24px;
+    grid-template-columns: 180px minmax(0, 1fr);
+    align-items: start;
+    gap: 32px;
+    border-block: 1px solid rgba(245, 185, 113, 0.3);
+  }
+
+  .proof-conclusion strong {
+    max-width: 960px;
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 960px) {
+    .section-heading,
+    .lab-content {
+      grid-template-columns: 1fr;
+    }
+
+    .section-heading h2 {
+      font-size: 46px;
+    }
+
+    .constraint-line {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+    }
+
+    .constraint-line > div,
+    .constraint-line > div:first-child,
+    .constraint-line > div.target {
+      border: 0;
+      background: #050505;
+    }
+
+    .constraint-line > div.target {
+      box-shadow: inset 0 0 0 1px rgba(245, 185, 113, 0.35);
+    }
+
+    .constraint-line > i,
+    .algorithm-flow > i {
+      display: none;
+    }
+
+    .algorithm-flow {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--line);
+    }
+
+    .algorithm-flow > div,
+    .algorithm-flow > div:first-child,
+    .algorithm-flow > div:last-child {
+      border: 0;
+    }
+
+    .compression-lab {
+      grid-template-columns: 1fr;
+    }
+
+    .mode-list {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mode-list button {
+      border-right: 1px solid var(--line);
+      border-bottom: 0;
+    }
+
+    .mode-list button:last-child {
+      border-right: 0;
+    }
+
+    .safeguard-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .safeguard-grid article:not(:nth-child(3n + 1)) {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .safeguard-grid article:nth-child(even) {
+      padding-left: 28px;
+      border-left: 1px solid var(--line);
+    }
+
+    .proof-command {
+      grid-template-columns: 130px minmax(0, 1fr);
+    }
+
+    .proof-command p {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .showcase-section,
+    .showcase-band > .wide {
+      padding-block: 76px;
+    }
+
+    .section-heading {
+      gap: 26px;
+    }
+
+    .section-heading h2 {
+      font-size: 38px;
+    }
+
+    .constraint-line,
+    .algorithm-flow,
+    .build-story,
+    .safeguard-grid,
+    .proof-metrics {
+      grid-template-columns: 1fr;
+    }
+
+    .constraint-line {
+      margin-top: 46px;
+    }
+
+    .constraint-line > div {
+      min-height: 0;
+      padding: 24px 18px;
+    }
+
+    .build-story > div,
+    .build-story > div + div,
+    .safeguard-grid article,
+    .safeguard-grid article:nth-child(even) {
+      min-height: 0;
+      padding: 24px 0;
+      border-left: 0;
+    }
+
+    .algorithm-flow {
+      margin-top: 48px;
+    }
+
+    .algorithm-flow > div {
+      min-height: 0;
+      padding: 26px 20px;
+    }
+
+    .evidence-note,
+    .proof-conclusion {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .compression-lab {
+      margin-top: 48px;
+    }
+
+    .mode-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mode-list button {
+      min-height: 78px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mode-list button:nth-child(2) {
+      border-right: 0;
+    }
+
+    .mode-list button:nth-child(n + 3) {
+      border-bottom: 0;
+    }
+
+    .lab-content {
+      min-height: 0;
+      padding: 30px 18px;
+      gap: 40px;
+    }
+
+    .lab-route {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .lab-route > i {
+      width: 1px;
+      height: 8px;
+      margin-inline: auto;
+    }
+
+    .proof-run {
+      margin-top: 48px;
+    }
+
+    .proof-command {
+      padding: 22px 18px;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .proof-command p {
+      grid-column: auto;
+    }
+
+    .proof-metrics > div {
+      min-height: 120px;
+      padding: 20px 18px;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .proof-metrics > div:last-child {
+      border-bottom: 0;
+    }
+
+    .proof-gates {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

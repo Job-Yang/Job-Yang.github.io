@@ -10,7 +10,7 @@ tags:
   - Agent Skill
   - 技术解释
   - 调研
-order: 5
+order: 6
 featured: true
 draft: false
 visual: generic

@@ -1,7 +1,11 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import ILoopCaseStudy from '../components/ILoopCaseStudy.astro';
+import PngCompressInstrument from '../components/PngCompressInstrument.astro';
+import PngCompressShowcase from '../components/PngCompressShowcase.astro';
 import ProjectVisual from '../components/ProjectVisual.astro';
+import VideoReaderInstrument from '../components/VideoReaderInstrument.astro';
+import VideoReaderShowcase from '../components/VideoReaderShowcase.astro';
 
 interface Props {
   title: string;
@@ -21,6 +25,7 @@ const isWriting = visual === 'writing';
 const isVideo = visual === 'video';
 const isSystem = kind === 'system';
 const isILoop = title === 'iLoop';
+const isPngCompress = title === 'PNG Compress';
 ---
 
 <BaseLayout title={title} description={description} active="projects" article>
@@ -38,8 +43,8 @@ const isILoop = title === 'iLoop';
           ) : (
             status && <span class="project-status">{status}</span>
           )}
-          <a class="secondary-action" href={isILoop ? '#live-trim-case' : '#story'}>
-            {isILoop ? '看真实案例 ↓' : '了解它为什么存在 ↓'}
+          <a class="secondary-action" href={isILoop ? '#live-trim-case' : isVideo ? '#reader-lab' : isPngCompress ? '#compression-lab' : '#story'}>
+            {isILoop ? '看真实案例 ↓' : isVideo ? '看它怎样工作 ↓' : isPngCompress ? '进入压缩现场 ↓' : '了解它为什么存在 ↓'}
           </a>
         </div>
         {isILoop && (
@@ -50,8 +55,12 @@ const isILoop = title === 'iLoop';
         )}
       </div>
       {!isSystem && (
-        <div class="hero-visual">
-          <ProjectVisual type={visual} priority />
+        <div class:list={['hero-visual', { 'hero-video-instrument': isVideo, 'hero-compress-instrument': isPngCompress }]}>
+          {isVideo
+            ? <VideoReaderInstrument />
+            : isPngCompress
+              ? <PngCompressInstrument />
+              : <ProjectVisual type={visual} priority />}
         </div>
       )}
     </header>
@@ -221,62 +230,9 @@ const isILoop = title === 'iLoop';
           </section>
         </>
       ) : isVideo ? (
-        <>
-          <section id="story" class="story-section wide">
-            <div class="section-label">01 · 能力缺口</div>
-            <div class="story-heading">
-              <h2 class="display">模型看得见图片，<br />却看不见事情如何发生。</h2>
-              <p>
-                很多 App 问题只存在于一段动态过程里。均匀抽帧会留下大量重复画面，
-                真正出问题的瞬间反而可能一次都没被选中。
-              </p>
-            </div>
-
-            <div class="frame-demo">
-              <div class="frame-before">
-                <span>均匀抽帧</span>
-                <div class="frames">
-                  <i></i><i></i><i></i><i></i><i></i><i></i>
-                </div>
-                <p>六张几乎相同的画面，问题发生的 11.2 秒不在里面。</p>
-              </div>
-              <div class="frame-after">
-                <span>运动区间</span>
-                <div class="motion-window">
-                  <i></i><i></i><i class="key"></i><i></i>
-                </div>
-                <p>先找变化，再让模型只看真正有信息的瞬间。</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="pipeline-section">
-            <div class="wide">
-              <div class="section-label">02 · 方法</div>
-              <div class="pipeline-heading">
-                <h2 class="display">不是看更多，<br />而是先选对。</h2>
-                <div class="zero-token"><strong>0</strong><span>token 用于选择关键帧</span></div>
-              </div>
-              <div class="pipeline">
-                <div><span>01</span><strong>Grid</strong><p>先看完整视频的节奏</p></div>
-                <div><span>02</span><strong>Scan</strong><p>用帧差定位运动区间</p></div>
-                <div><span>03</span><strong>Zoom</strong><p>放大可疑的几秒</p></div>
-                <div><span>04</span><strong>Judge</strong><p>让模型理解发生了什么</p></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="evidence-section wide">
-            <div class="section-label">03 · 一次真实诊断</div>
-            <h2 class="display">结论落到具体时间，<br />而不是“视频里好像有问题”。</h2>
-            <div class="evidence-timeline">
-              <div><time>00:09.0</time><span>开始滚动</span></div>
-              <div><time>00:11.2</time><span>手指停止</span></div>
-              <div class="anomaly"><time>00:11.8</time><span>面板仍继续移动</span></div>
-              <div class="conclusion"><strong>结论</strong><span>交互状态异常，不是视频卡顿。</span></div>
-            </div>
-          </section>
-        </>
+        <VideoReaderShowcase />
+      ) : isPngCompress ? (
+        <PngCompressShowcase />
       ) : null
     }
 
@@ -284,7 +240,7 @@ const isILoop = title === 'iLoop';
       <div class="details-inner wide">
         <aside>
           <div class="section-label">
-            {isSystem ? '07 · 当前状态' : isWriting || isVideo ? '04 · 使用与边界' : '01 · 使用与边界'}
+            {isSystem ? '07 · 当前状态' : isVideo ? '05 · 使用与边界' : isPngCompress ? '06 · 使用与边界' : isWriting ? '04 · 使用与边界' : '01 · 使用与边界'}
           </div>
           <div class="project-facts">
             <div><span>TYPE</span><strong>{isSystem ? 'Agent System' : 'Agent Skill'}</strong></div>
@@ -546,6 +502,22 @@ const isILoop = title === 'iLoop';
 
   .hero-visual .project-visual {
     height: 100%;
+  }
+
+  .hero-video-instrument {
+    aspect-ratio: auto;
+  }
+
+  .hero-video-instrument .vr-instrument {
+    min-height: clamp(420px, 34vw, 500px);
+  }
+
+  .hero-compress-instrument {
+    aspect-ratio: auto;
+  }
+
+  .hero-compress-instrument .png-instrument {
+    min-height: clamp(440px, 35vw, 510px);
   }
 
   .story-section,
@@ -1382,6 +1354,14 @@ const isILoop = title === 'iLoop';
       width: 100%;
     }
 
+    .hero-video-instrument {
+      max-width: 820px;
+    }
+
+    .hero-compress-instrument {
+      max-width: 820px;
+    }
+
     .story-heading,
     .source-intro,
     .details-inner,
@@ -1448,6 +1428,14 @@ const isILoop = title === 'iLoop';
     .hero-visual {
       margin-inline: -18px;
       width: calc(100% + 36px);
+    }
+
+    .hero-video-instrument {
+      max-width: none;
+    }
+
+    .hero-compress-instrument {
+      max-width: none;
     }
 
     .hero-galaxy .galaxy {
