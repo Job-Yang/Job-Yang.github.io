@@ -654,6 +654,11 @@ const noteTeasers = notes.map((note) => ({
   }
 
   @media (max-width: 720px) {
+    .content-section {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 720px;
+    }
+
     .hero {
       min-height: calc(100svh - 52px);
       justify-content: flex-start;

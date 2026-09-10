@@ -88,7 +88,9 @@ if (canvas) {
       detail: 1,
     },
   };
-  let settings = { ...presets.default, paused: false };
+  const mobileViewport = matchMedia('(max-width: 720px)');
+  const initialPreset = mobileViewport.matches ? presets.saver : presets.default;
+  let settings = { ...initialPreset, paused: false };
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
@@ -225,17 +227,28 @@ if (canvas) {
   let accumulated = 0;
   let targetFrameDuration = 1000 / settings.fps;
   let pageVisible = !document.hidden;
+  let heroVisible = true;
   let renderedFrames = 0;
   let metricsStartedAt = performance.now();
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   settings.paused = reducedMotion;
 
-  const getState = () => ({ ...settings });
+  const getState = () => ({
+    ...settings,
+    ready: Boolean(postProcessing),
+    heroVisible,
+  });
+
+  const renderSuspended = () =>
+    !pageVisible ||
+    settings.paused ||
+    (mobileViewport.matches && !heroVisible && !plunge.active);
 
   const emitMetrics = (now = performance.now()) => {
     const elapsedMs = now - metricsStartedAt;
     if (elapsedMs < 500) return;
-    const fps = settings.paused ? 0 : (renderedFrames * 1000) / elapsedMs;
+    const suspended = renderSuspended();
+    const fps = suspended ? 0 : (renderedFrames * 1000) / elapsedMs;
     renderedFrames = 0;
     metricsStartedAt = now;
     window.dispatchEvent(
@@ -243,7 +256,7 @@ if (canvas) {
         detail: {
           fps,
           resolution: `${canvas.width}×${canvas.height}`,
-          status: settings.paused ? '已暂停' : '实时',
+          status: suspended ? '已暂停' : '实时',
         },
       }),
     );
@@ -282,14 +295,15 @@ if (canvas) {
   };
 
   const applyPreset = (name) => applySettings(presets[name] ?? presets.default);
-  const reset = () => applySettings({ ...presets.default, paused: false });
-  const togglePause = () => {
-    settings.paused = !settings.paused;
+  const reset = () => applySettings({ ...initialPreset, paused: false });
+  const setPaused = (paused) => {
+    settings.paused = Boolean(paused);
     accumulated = 0;
     last = performance.now();
     debug.settings = getState();
     return getState();
   };
+  const togglePause = () => setPaused(!settings.paused);
 
   const syncScroll = () => {
     if (plunge.active) return;
@@ -340,6 +354,7 @@ if (canvas) {
     applySettings,
     getState,
     reset,
+    setPaused,
     togglePause,
     plunge: startPlunge,
   };
@@ -466,7 +481,7 @@ if (canvas) {
     last = now;
     accumulated += delta * 1000;
     emitMetrics(now);
-    if (accumulated < targetFrameDuration || !pageVisible || settings.paused) return;
+    if (accumulated < targetFrameDuration || renderSuspended()) return;
     accumulated = 0;
     delta = Math.min(delta, 0.05);
 
@@ -492,6 +507,28 @@ if (canvas) {
   window.addEventListener('pageshow', clearPlunge);
   clearPlunge();
   window.addEventListener('scroll', syncScroll, { passive: true });
+
+  const hero = document.querySelector('.home .hero');
+  let heroObserver;
+  if (hero && mobileViewport.matches && 'IntersectionObserver' in window) {
+    const bounds = hero.getBoundingClientRect();
+    heroVisible = bounds.bottom > 0 && bounds.top < window.innerHeight;
+    heroObserver = new IntersectionObserver(([entry]) => {
+      heroVisible = entry.isIntersecting;
+      accumulated = targetFrameDuration;
+      last = performance.now();
+    });
+    heroObserver.observe(hero);
+  }
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      heroObserver?.disconnect();
+    },
+    { once: true },
+  );
+
   window.addEventListener(
     'resize',
     () => {

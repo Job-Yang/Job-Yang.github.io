@@ -92,7 +92,9 @@ const stages = [
       manualUntil: 0,
       manualAngle: null,
       frame: 0,
+      inViewport: !('IntersectionObserver' in window),
       lastFrameTime: performance.now(),
+      lastDrawTime: 0,
       lastCometPosition: null,
       particles: [],
       spawnAccumulator: 0,
@@ -173,6 +175,7 @@ const stages = [
       state.particles = [];
       state.lastCometPosition = null;
       drawGalaxy();
+      drawRestingFrame();
     };
 
     const drawGalaxy = () => {
@@ -381,9 +384,28 @@ const stages = [
       });
     };
 
+    const drawRestingFrame = () => {
+      context.clearRect(0, 0, state.width, state.height);
+      context.globalCompositeOperation = 'source-over';
+      context.drawImage(staticCanvas, 0, 0, state.width, state.height);
+      const angle = angleForStage(state.currentStage);
+      drawCometHead(orbit(angle), true, performance.now());
+      renderStations(performance.now(), state.currentStage);
+    };
+
     const frame = (time) => {
+      state.frame = 0;
+      if (!state.inViewport || reduceMotion) return;
+
+      const frameInterval = state.width < 520 ? 1000 / 30 : 0;
+      if (frameInterval && time - state.lastDrawTime < frameInterval) {
+        state.frame = requestAnimationFrame(frame);
+        return;
+      }
+
       const delta = Math.min(0.033, Math.max(0.001, (time - state.lastFrameTime) / 1000));
       state.lastFrameTime = time;
+      state.lastDrawTime = time;
       context.clearRect(0, 0, state.width, state.height);
       context.globalCompositeOperation = 'source-over';
       context.drawImage(staticCanvas, 0, 0, state.width, state.height);
@@ -426,9 +448,21 @@ const stages = [
       root.dataset.stage = String(stageIndex);
       root.dataset.atNode = String(atNode);
       root.dataset.particles = String(state.particles.length);
-      if (!reduceMotion) {
+      if (state.inViewport) {
         state.frame = requestAnimationFrame(frame);
       }
+    };
+
+    const startAnimation = () => {
+      if (reduceMotion || !state.inViewport || state.frame) return;
+      state.lastFrameTime = performance.now();
+      state.lastDrawTime = 0;
+      state.frame = requestAnimationFrame(frame);
+    };
+
+    const stopAnimation = () => {
+      cancelAnimationFrame(state.frame);
+      state.frame = 0;
     };
 
     stations.forEach((station, index) => {
@@ -453,11 +487,24 @@ const stages = [
     observer.observe(root);
     resize();
     setStage(state.currentStage, true);
-    state.frame = requestAnimationFrame(frame);
+    drawRestingFrame();
+
+    let visibilityObserver;
+    if ('IntersectionObserver' in window) {
+      visibilityObserver = new IntersectionObserver(([entry]) => {
+        state.inViewport = entry.isIntersecting;
+        if (state.inViewport) startAnimation();
+        else stopAnimation();
+      }, { rootMargin: '160px 0px' });
+      visibilityObserver.observe(root);
+    } else {
+      startAnimation();
+    }
 
     document.addEventListener('astro:before-swap', () => {
-      cancelAnimationFrame(state.frame);
+      stopAnimation();
       observer.disconnect();
+      visibilityObserver?.disconnect();
     }, { once: true });
   });
 </script>
