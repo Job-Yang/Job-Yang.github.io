@@ -1,0 +1,22 @@
+---
+import AlgorithmCourse from '../../../components/learning/AlgorithmCourse.astro';
+import PageBackdrop from '../../../components/PageBackdrop.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="算法思路训练场"
+  description="从新题判断到逐步推演，用 61 道高频题练会算法思路。"
+  active="field"
+  showFooter={false}
+>
+  <PageBackdrop
+    slot="background"
+    src="/images/cosmic/article-spacetime.webp"
+    position="center top"
+    mobilePosition="55% top"
+    opacity={0.2}
+    mobileOpacity={0.12}
+  />
+  <AlgorithmCourse />
+</BaseLayout>

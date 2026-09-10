@@ -1,0 +1,867 @@
+.algorithm-instrument {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--learn-rule);
+  border-radius: 8px;
+  background: rgba(8, 9, 11, 0.98);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.32);
+}
+
+.algorithm-instrument button {
+  cursor: pointer;
+}
+
+.algorithm-instrument__head {
+  display: flex;
+  min-height: 82px;
+  padding: 16px 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--learn-rule);
+}
+
+.algorithm-instrument__head > div {
+  min-width: 0;
+}
+
+.algorithm-instrument__head strong {
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.algorithm-instrument__head code {
+  max-width: 52%;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font: 12px var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.algorithm-kicker,
+.algorithm-stage__label,
+.algo-scene-label {
+  color: var(--learn-gold);
+  font: 11px var(--mono);
+  letter-spacing: 0.06em;
+}
+
+.algorithm-instrument__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(252px, 0.42fr);
+}
+
+.algorithm-stage {
+  position: relative;
+  min-width: 0;
+  border-right: 1px solid var(--learn-rule);
+  background: var(--learn-panel);
+}
+
+.algorithm-stage__canvas {
+  position: relative;
+  min-height: 306px;
+  padding: 36px 22px 24px;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-color: #08090b;
+  background-size: 44px 44px;
+}
+
+.algorithm-stage__label {
+  position: absolute;
+  z-index: 4;
+  top: 15px;
+  left: 18px;
+  color: var(--ink-faint);
+}
+
+.algorithm-variables {
+  display: grid;
+  min-height: 76px;
+  margin: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--learn-rule);
+  background: #08090b;
+}
+
+.algorithm-variables > div {
+  display: flex;
+  min-width: 0;
+  padding: 10px 12px;
+  align-items: baseline;
+  gap: 7px;
+  border-right: 1px solid var(--learn-rule);
+  border-bottom: 1px solid var(--learn-rule);
+}
+
+.algorithm-variables > div:nth-child(3n) {
+  border-right: 0;
+}
+
+.algorithm-variables dt {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+}
+
+.algorithm-variables dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 600 13px var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.algorithm-explanation {
+  min-width: 0;
+  padding: 17px 18px;
+  background: #08090b;
+}
+
+.algorithm-explanation > header {
+  display: flex;
+  min-height: 32px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+}
+
+.algorithm-explanation > header b {
+  max-width: 58%;
+  color: var(--learn-blue);
+  font-weight: 600;
+  text-align: right;
+}
+
+.algorithm-explanation dl {
+  margin: 0;
+  border-block: 1px solid var(--learn-rule);
+}
+
+.algorithm-explanation dl > div {
+  display: grid;
+  padding: 10px 0;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 9px;
+  border-bottom: 1px solid var(--learn-rule);
+}
+
+.algorithm-explanation dl > div:last-child {
+  border-bottom: 0;
+}
+
+.algorithm-explanation dt {
+  color: var(--ink-faint);
+  font: 700 11px var(--mono);
+}
+
+.algorithm-explanation dl > div:nth-child(2) dt {
+  color: var(--learn-gold);
+}
+
+.algorithm-explanation dl > div:nth-child(3) dt {
+  color: var(--learn-blue);
+}
+
+.algorithm-explanation dl > div:nth-child(4) dt {
+  color: var(--learn-green);
+}
+
+.algorithm-explanation dd {
+  margin: 0;
+  color: #d7d4cf;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.algorithm-explanation .is-calculation {
+  color: #a9c9ff;
+  font-family: var(--mono);
+}
+
+.algorithm-tip {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border-left: 3px solid var(--learn-gold);
+  background: rgba(245, 185, 113, 0.07);
+}
+
+.algorithm-tip span,
+.algorithm-quiz > span {
+  color: var(--learn-gold);
+  font: 11px var(--mono);
+}
+
+.algorithm-tip p {
+  margin: 6px 0 0;
+  color: #d0ccc5;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.algorithm-quiz > p {
+  margin: 18px 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.algorithm-quiz button {
+  width: 100%;
+  min-height: 42px;
+  margin-bottom: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--learn-rule);
+  border-radius: 5px;
+  background: var(--learn-control);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.algorithm-quiz button:hover,
+.algorithm-quiz button:focus-visible {
+  border-color: var(--learn-gold);
+}
+
+.algorithm-quiz output {
+  display: block;
+  min-height: 54px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-left: 3px solid var(--learn-rule);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.algorithm-quiz output[data-result="correct"] {
+  border-color: var(--learn-green);
+  color: var(--learn-green);
+}
+
+.algorithm-quiz output[data-result="wrong"] {
+  border-color: var(--learn-red);
+  color: var(--learn-red);
+}
+
+.algorithm-controls {
+  display: flex;
+  min-height: 66px;
+  padding: 0 20px;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--learn-rule);
+  background: #090a0c;
+}
+
+.algorithm-controls > div {
+  display: flex;
+  gap: 4px;
+}
+
+.algorithm-controls button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--learn-rule);
+  border-radius: 5px;
+  background: var(--learn-control);
+  color: var(--ink);
+}
+
+.algorithm-controls button.is-primary {
+  border-color: var(--learn-gold-strong);
+  background: var(--learn-gold-strong);
+  color: var(--learn-gold-ink);
+}
+
+.algorithm-controls button:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+.algorithm-controls input {
+  min-width: 0;
+  flex: 1;
+  accent-color: var(--learn-gold);
+}
+
+.algorithm-controls > span {
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+  white-space: nowrap;
+}
+
+.algorithm-instrument__foot {
+  display: grid;
+  min-height: 92px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(150px, 0.6fr);
+  border-top: 1px solid var(--learn-rule);
+  background: #060706;
+}
+
+.algorithm-instrument__foot > div {
+  min-width: 0;
+  padding: 14px 20px;
+}
+
+.algorithm-instrument__foot > div + div {
+  border-left: 1px solid var(--learn-rule);
+}
+
+.algorithm-instrument__foot span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+}
+
+.algorithm-instrument__foot code {
+  display: block;
+  overflow: hidden;
+  padding-left: 10px;
+  border-left: 2px solid var(--learn-gold);
+  color: var(--ink);
+  font: 13px/1.6 var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.algorithm-instrument__foot strong {
+  display: block;
+  overflow: hidden;
+  color: var(--learn-green);
+  font: 700 18px var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.algo-sequence {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.algo-cell {
+  position: relative;
+  display: flex;
+  min-width: 26px;
+  max-width: 62px;
+  height: 58px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--learn-rule);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 700 13px var(--mono);
+}
+
+.algo-cell small {
+  position: absolute;
+  top: 64px;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+}
+
+.is-active {
+  outline: 3px solid var(--learn-gold);
+  outline-offset: 0;
+}
+
+.is-selected {
+  border-color: var(--learn-blue) !important;
+  background: rgba(114, 167, 255, 0.26) !important;
+}
+
+.is-discarded {
+  opacity: 0.28;
+}
+
+.algo-cell.is-window {
+  box-shadow: inset 0 -5px var(--learn-green);
+}
+
+.algo-pointer {
+  position: absolute;
+  right: 50%;
+  bottom: -28px;
+  min-width: 19px;
+  padding: 2px 4px;
+  transform: translateX(50%);
+  background: var(--learn-gold);
+  color: var(--learn-gold-ink);
+  font: 800 10px var(--mono);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.algo-bars {
+  position: relative;
+  display: flex;
+  height: 100%;
+  padding: 18px 0 26px;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+}
+
+.algo-bar-slot {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-width: 22px;
+  max-width: 56px;
+  height: 164px;
+  flex: 1;
+  align-items: flex-end;
+}
+
+.algo-bar {
+  position: relative;
+  width: 100%;
+  min-height: 4px;
+  border: 1px solid #b9bbb9;
+  background: #d7d9dd;
+}
+
+.algo-bar > span {
+  position: absolute;
+  top: -19px;
+  width: 100%;
+  color: var(--ink);
+  font: 11px var(--mono);
+  text-align: center;
+}
+
+.algo-bar-slot > small {
+  position: absolute;
+  bottom: -19px;
+  width: 100%;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+  text-align: center;
+}
+
+.algo-area {
+  position: absolute;
+  z-index: 1;
+  bottom: 26px;
+  border: 2px solid var(--learn-blue);
+  background: rgba(114, 167, 255, 0.2);
+}
+
+.algo-area span {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #bdd3ff;
+  font: 700 11px var(--mono);
+  white-space: nowrap;
+}
+
+.algo-rain {
+  position: relative;
+  height: 100%;
+  padding: 22px 0 24px;
+}
+
+.algo-rain-grid {
+  display: grid;
+  height: 164px;
+  gap: 3px;
+}
+
+.algo-rain-cell {
+  min-width: 0;
+  border: 1px solid var(--learn-rule);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.algo-rain-cell.is-solid {
+  border-color: #c5c8cc;
+  background: #d7d9dd;
+}
+
+.algo-rain-cell.is-water {
+  border-color: var(--learn-blue);
+  background: rgba(114, 167, 255, 0.4);
+}
+
+.algo-rain-indexes {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  left: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.algo-rain-indexes > span {
+  position: relative;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+  text-align: center;
+}
+
+.algo-intervals {
+  display: flex;
+  height: 100%;
+  padding: 24px 10px 8px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.algo-interval-row {
+  position: relative;
+  height: 28px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(10% - 1px),
+    var(--learn-rule) calc(10% - 1px),
+    var(--learn-rule) 10%
+  );
+}
+
+.algo-interval {
+  position: absolute;
+  top: 3px;
+  display: flex;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  background: #d7d9dd;
+  color: #111318;
+  font: 11px var(--mono);
+}
+
+.algo-number-line {
+  position: relative;
+  height: 2px;
+  background: var(--ink-dim);
+}
+
+.algo-number-line i {
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 10px;
+  background: var(--learn-rule);
+}
+
+.algo-linked {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.algo-list-row {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.algo-row-name {
+  width: 26px;
+  color: var(--ink-faint);
+  font: 11px var(--mono);
+}
+
+.algo-node {
+  position: relative;
+  display: grid;
+  min-width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--ink-dim);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 700 12px var(--mono);
+}
+
+.algo-arrow {
+  color: var(--ink-faint);
+  font-size: 18px;
+}
+
+.algo-split-scene {
+  display: grid;
+  height: 100%;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 20px;
+}
+
+.algo-split-scene > div {
+  min-width: 0;
+}
+
+.algo-scene-label {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--ink-faint);
+}
+
+.algo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.algo-chip,
+.algo-stack span {
+  min-width: 34px;
+  padding: 8px 7px;
+  border: 1px solid var(--learn-rule);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 12px var(--mono);
+  text-align: center;
+}
+
+.algo-stack {
+  display: flex;
+  max-height: 160px;
+  flex-direction: column-reverse;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.algo-stack span:first-child {
+  border-color: var(--learn-gold);
+}
+
+.algo-tree {
+  display: grid;
+  height: 100%;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.algo-tree-node {
+  position: relative;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  justify-self: center;
+  border: 1px solid var(--ink-dim);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 700 12px var(--mono);
+}
+
+.algo-tree-node::before {
+  position: absolute;
+  top: -19px;
+  width: 1px;
+  height: 18px;
+  background: var(--learn-rule);
+  content: "";
+}
+
+.algo-tree-node.is-root::before {
+  display: none;
+}
+
+.algo-grid {
+  display: grid;
+  height: 100%;
+  align-content: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.algo-grid > span {
+  display: grid;
+  width: 42px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--learn-rule);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 700 12px var(--mono);
+}
+
+.algo-dp {
+  display: grid;
+  height: 100%;
+  overflow: auto;
+  align-content: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.algo-dp > span {
+  display: grid;
+  min-width: 34px;
+  height: 29px;
+  place-items: center;
+  border: 1px solid var(--learn-rule);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 11px var(--mono);
+}
+
+.algo-decision {
+  display: grid;
+  height: 100%;
+  align-content: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.algo-path,
+.algo-choices {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.algo-path span,
+.algo-choices span {
+  display: grid;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 7px 9px;
+  place-items: center;
+  border: 1px solid var(--learn-blue);
+  background: rgba(114, 167, 255, 0.22);
+  color: var(--ink);
+  font: 700 12px var(--mono);
+}
+
+.algo-path span.is-empty,
+.algo-choices span {
+  border-style: dashed;
+  border-color: var(--ink-faint);
+  background: transparent;
+}
+
+.algo-decision p {
+  margin: 0;
+  color: var(--ink-faint);
+  font: 12px var(--mono);
+}
+
+.algo-graph {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.algo-graph-node {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  border: 1px solid var(--ink-dim);
+  background: var(--learn-control);
+  color: var(--ink);
+  font: 700 18px var(--mono);
+}
+
+.algo-graph-arrow {
+  color: var(--ink-faint);
+  font-size: 26px;
+}
+
+@media (max-width: 820px) {
+  .algorithm-instrument__head {
+    padding-inline: 14px;
+  }
+
+  .algorithm-instrument__head code {
+    max-width: 44%;
+  }
+
+  .algorithm-instrument__body {
+    grid-template-columns: minmax(0, 1.3fr) minmax(242px, 0.9fr);
+  }
+
+  .algorithm-stage__canvas {
+    padding-inline: 14px;
+  }
+
+  .algo-cell {
+    min-width: 20px;
+  }
+}
+
+@media (max-width: 680px) {
+  .algorithm-instrument__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .algorithm-instrument__head code {
+    max-width: 100%;
+  }
+
+  .algorithm-instrument__body {
+    display: block;
+  }
+
+  .algorithm-stage {
+    border-right: 0;
+  }
+
+  .algorithm-stage__canvas {
+    min-height: 270px;
+    overflow-x: auto;
+  }
+
+  .algorithm-explanation {
+    border-top: 1px solid var(--learn-rule);
+  }
+
+  .algorithm-controls {
+    padding-inline: 12px;
+  }
+
+  .algorithm-instrument__foot {
+    grid-template-columns: 1fr;
+  }
+
+  .algorithm-instrument__foot > div + div {
+    border-top: 1px solid var(--learn-rule);
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .algorithm-instrument *,
+  .algorithm-instrument *::before,
+  .algorithm-instrument *::after {
+    transition: none !important;
+  }
+}

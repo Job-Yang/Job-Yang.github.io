@@ -1,0 +1,241 @@
+---
+import algorithms from '../../data/learning/algorithms.json';
+import AlgorithmPatternNavigator from './AlgorithmPatternNavigator.astro';
+import '../../styles/learning.css';
+import '../../styles/algorithm-visualizer.css';
+import '../../styles/algorithm-course.css';
+import '../../styles/algorithm-pattern-navigator.css';
+
+const defaultProblem = algorithms.problems.find((problem) => problem.number === 7)
+  ?? algorithms.problems[0];
+---
+
+<div class="algorithm-course" data-algorithm-course data-active-view="guide">
+  <aside class="algorithm-rail" aria-label="算法题库">
+    <a class="algorithm-brand" href="/learn/algorithms/">
+      <span>ALGORITHM THINKING LAB</span>
+      <strong>算法思路训练场</strong>
+    </a>
+
+    <button type="button" class="algorithm-guide-link" data-algorithm-open-guide aria-current="true">
+      <span>00</span>
+      <span>
+        <strong>拿到新题先怎么想</strong>
+        <small>每次选择都讲清理由和排除项</small>
+      </span>
+    </button>
+
+    <section class="algorithm-progress">
+      <div>
+        <span>掌握进度</span>
+        <strong data-algorithm-progress-value>0/{algorithms.problems.length}</strong>
+      </div>
+      <i data-algorithm-progress-bar></i>
+    </section>
+
+    <div class="algorithm-find">
+      <input
+        type="search"
+        placeholder="搜题号 / 题名"
+        aria-label="搜索算法题"
+        data-algorithm-search
+      />
+      <button type="button" title="随机一题" aria-label="随机一题" data-algorithm-random>↝</button>
+    </div>
+
+    <div class="algorithm-filter" aria-label="题目筛选">
+      <button type="button" data-algorithm-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-algorithm-filter="unmastered" aria-pressed="false">未掌握</button>
+      <button type="button" data-algorithm-filter="hard" aria-pressed="false">Hard</button>
+      <select aria-label="按题型筛选" data-algorithm-pattern>
+        <option value="all">全部题型</option>
+      </select>
+    </div>
+
+    <div class="algorithm-filter-count">
+      <span>当前范围</span>
+      <strong data-algorithm-result-count>{algorithms.problems.length} 题</strong>
+    </div>
+
+    <nav class="algorithm-list" aria-label="算法题目" data-algorithm-list>
+      {algorithms.problems.map((problem) => (
+        <a href={`#lc-${problem.number}`}>
+          {String(problem.number).padStart(2, '0')} · {problem.title}
+        </a>
+      ))}
+    </nav>
+
+    <div class="algorithm-data-actions">
+      <button type="button" data-algorithm-export>导出进度</button>
+      <button type="button" data-algorithm-clear>清除进度</button>
+    </div>
+  </aside>
+
+  <main class="algorithm-main" data-algorithm-practice-view hidden>
+    <header class="algorithm-head">
+      <div>
+        <span class="learning-kicker" data-algorithm-number>
+          第 {defaultProblem.number} 题 / 共 {algorithms.problems.length} 题
+        </span>
+        <h1 class="display" data-algorithm-title>{defaultProblem.title}</h1>
+        <p>
+          <span data-algorithm-difficulty>{defaultProblem.difficulty}</span>
+          <span aria-hidden="true"> · </span>
+          <span data-algorithm-pattern-value>{defaultProblem.pattern}</span>
+          <span aria-hidden="true"> · </span>
+          <span data-algorithm-step-count>{defaultProblem.steps.length} 步推演</span>
+        </p>
+      </div>
+      <div class="algorithm-head-actions">
+        <button type="button" data-algorithm-mark aria-pressed="false">标记掌握</button>
+        <button type="button" data-algorithm-random>随机一题 ↝</button>
+      </div>
+    </header>
+
+    <section class="algorithm-practice-shell" aria-label="算法练习工作台">
+      <section class="algorithm-reading-pane">
+        <nav class="algorithm-content-tabs" aria-label="题目内容">
+          <button type="button" data-algorithm-content-tab="problem" aria-pressed="true">题目</button>
+          <button type="button" data-algorithm-content-tab="solution" aria-pressed="false">解法与推演</button>
+        </nav>
+
+        <article class="algorithm-problem-panel" data-algorithm-content-panel="problem">
+          <h2 data-algorithm-problem-heading>{defaultProblem.number}. {defaultProblem.title}</h2>
+          <p class="algorithm-statement" data-algorithm-statement>{defaultProblem.statement}</p>
+
+          <section class="algorithm-example">
+            <span>示例 1</span>
+            <pre data-algorithm-example>{defaultProblem.exampleText}</pre>
+          </section>
+
+          <section class="algorithm-hints">
+            <header>
+              <div>
+                <h3>提示</h3>
+                <p>默认收起。卡住时一层一层看，不直接泄露答案。</p>
+              </div>
+              <span data-algorithm-hint-progress>0 / {defaultProblem.hints.length}</span>
+            </header>
+            <div data-algorithm-hint-list></div>
+            <button type="button" data-algorithm-hint-toggle>显示第 1 条提示 <span>＋</span></button>
+          </section>
+
+          <section class="algorithm-constraints">
+            <h3>约束与边界</h3>
+            <ul data-algorithm-constraints>
+              {defaultProblem.constraints.map((constraint) => <li>{constraint}</li>)}
+            </ul>
+          </section>
+        </article>
+
+        <article class="algorithm-solution-panel" data-algorithm-content-panel="solution" hidden>
+          <section class="algorithm-solution-summary">
+            <span class="learning-kicker">核心思路</span>
+            <p data-algorithm-core>{defaultProblem.core}</p>
+            <dl>
+              <div><dt>复杂度</dt><dd data-algorithm-complexity>{defaultProblem.complexity}</dd></div>
+              <div><dt>示例输出</dt><dd data-algorithm-expected>{JSON.stringify(defaultProblem.expected)}</dd></div>
+            </dl>
+          </section>
+
+          <section class="algorithm-answer-code">
+            <header>
+              <div>
+                <span>FINAL SOLUTION</span>
+                <strong>答案代码与下方推演同步高亮</strong>
+              </div>
+              <button type="button" data-algorithm-copy-solution>复制答案</button>
+            </header>
+            <div data-algorithm-solution-code></div>
+          </section>
+
+          <section class="algorithm-walkthrough">
+            <header>
+              <span class="learning-kicker">逐步解释</span>
+              <strong data-algorithm-linked-line>当前关联答案行</strong>
+            </header>
+            <div data-algorithm-visualizer-root></div>
+          </section>
+        </article>
+      </section>
+
+      <section class="algorithm-code-pane">
+        <header class="algorithm-editor-toolbar">
+          <div>
+            <strong>JavaScript</strong>
+            <span>浏览器 Worker 隔离运行</span>
+          </div>
+          <div>
+            <button type="button" data-algorithm-reset-code>重置</button>
+            <button type="button" data-algorithm-load-solution>载入答案</button>
+          </div>
+        </header>
+
+        <div class="algorithm-editor">
+          <div aria-hidden="true" data-algorithm-editor-lines></div>
+          <textarea
+            aria-label="代码编辑器"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            data-algorithm-editor
+          ></textarea>
+        </div>
+
+        <section class="algorithm-console">
+          <header>
+            <div class="algorithm-console-tabs">
+              <button type="button" data-algorithm-console-tab="case" aria-pressed="true">测试用例</button>
+              <button type="button" data-algorithm-console-tab="result" aria-pressed="false">运行结果</button>
+            </div>
+            <button type="button" class="algorithm-run" data-algorithm-run>运行代码 ▶</button>
+          </header>
+
+          <div class="algorithm-case-panel" data-algorithm-console-panel="case">
+            <label>
+              <span>JSON INPUT</span>
+              <textarea
+                aria-label="测试用例 JSON"
+                spellcheck="false"
+                data-algorithm-test-input
+              ></textarea>
+            </label>
+            <label>
+              <span>EXPECTED JSON</span>
+              <textarea
+                class="is-expected"
+                aria-label="期望输出 JSON"
+                spellcheck="false"
+                data-algorithm-test-expected
+              ></textarea>
+              <p>修改输入时也可同步修改期望；链表、树和类操作会自动转换。</p>
+            </label>
+          </div>
+
+          <div class="algorithm-result-panel" data-algorithm-console-panel="result" hidden>
+            <div>
+              <span data-algorithm-run-status>等待运行</span>
+              <strong data-algorithm-run-summary>尚无结果</strong>
+            </div>
+            <dl>
+              <div><dt>实际输出</dt><dd data-algorithm-actual-output>-</dd></div>
+              <div><dt>期望输出</dt><dd data-algorithm-expected-output>-</dd></div>
+              <div><dt>耗时</dt><dd data-algorithm-run-time>-</dd></div>
+            </dl>
+            <pre data-algorithm-run-error hidden></pre>
+            <button type="button" data-algorithm-open-walkthrough hidden>看这组用例为什么这样走 →</button>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <main class="algorithm-guide-main" data-algorithm-guide-view>
+    <AlgorithmPatternNavigator />
+  </main>
+</div>
+
+<script>
+  import '../../scripts/learning/algorithm-course-runtime.mjs';
+</script>

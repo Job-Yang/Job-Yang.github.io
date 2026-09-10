@@ -1,0 +1,170 @@
+---
+import algorithms from '../../data/learning/algorithms.json';
+import guide from '../../data/learning/algorithm-pattern-guide.json';
+
+const problemMap = new Map(algorithms.problems.map((problem) => [problem.number, problem]));
+const groupLabels = [
+  ['all', '全部'],
+  ['sequence', '序列'],
+  ['structure', '结构'],
+  ['tree-graph', '树图'],
+  ['search-optimize', '搜索 / 优化'],
+];
+---
+
+<section class="pattern-navigator" data-pattern-navigator>
+  <header class="pattern-navigator__hero">
+    <div>
+      <span class="learning-kicker">HOW TO THINK · {algorithms.problems.length} 题反推</span>
+      <h1 class="display">{guide.title}</h1>
+      <p>{guide.thesis}</p>
+    </div>
+    <button type="button" data-pattern-continue>继续上次练习 →</button>
+  </header>
+
+  <section class="pattern-diagnostic-order" aria-label="判断思路四步">
+    {guide.diagnosticOrder.map((item, index) => (
+      <article>
+        <span>{String(index + 1).padStart(2, '0')}</span>
+        <div>
+          <strong>{item.label}</strong>
+          <p>{item.question}</p>
+          <small>{item.reason}</small>
+        </div>
+      </article>
+    ))}
+  </section>
+
+  <section class="pattern-diagnosis">
+    <div class="pattern-diagnosis__main">
+      <header>
+        <div>
+          <span class="learning-kicker" data-pattern-step>正在判断 01</span>
+          <h2 data-pattern-question>{guide.nodes.start.title}</h2>
+          <p data-pattern-description>{guide.nodes.start.description}</p>
+        </div>
+        <button type="button" data-pattern-reset>重置 ↺</button>
+      </header>
+      <section class="pattern-decision-context" data-pattern-context hidden>
+        <article>
+          <span>你刚才选择了</span>
+          <p data-pattern-context-choice></p>
+        </article>
+        <article>
+          <span>这说明什么</span>
+          <p data-pattern-context-meaning></p>
+        </article>
+        <article>
+          <span>为什么接着问</span>
+          <p data-pattern-context-why></p>
+        </article>
+        <article>
+          <span>暂时排除</span>
+          <p data-pattern-context-eliminates></p>
+        </article>
+      </section>
+      <nav class="pattern-breadcrumbs" aria-label="判断路径" data-pattern-breadcrumbs></nav>
+      <div class="pattern-options" data-pattern-options></div>
+      <div class="pattern-results" data-pattern-results hidden></div>
+    </div>
+
+    <aside class="pattern-principle">
+      <span class="learning-kicker">WHY THIS ORDER</span>
+      <h2>关键词只能提醒，不能替你判断</h2>
+      <p>
+        “最长子串”会提醒你看窗口，但只有左右边界能单调前进时，窗口才成立。
+        这套导航每次给出候选后，都会再给一条反证条件。
+      </p>
+      <div>
+        <article>
+          <span>对象</span>
+          <p>决定你能怎样移动和存状态。</p>
+        </article>
+        <article>
+          <span>目标</span>
+          <p>找一个、找最优和列出全部不是一类题。</p>
+        </article>
+        <article>
+          <span>单调性</span>
+          <p>能永久排除候选，才值得二分、窗口或双指针。</p>
+        </article>
+        <article>
+          <span>规模</span>
+          <p>n=10 和 n=10⁵ 允许的解法完全不同。</p>
+        </article>
+      </div>
+    </aside>
+  </section>
+
+  <section class="pattern-atlas">
+    <header>
+      <div>
+        <span class="learning-kicker">PATTERN LIBRARY</span>
+        <h2>{guide.patterns.length} 种常用思路，不是 {algorithms.problems.length} 份答案</h2>
+      </div>
+      <nav aria-label="模式分类">
+        {groupLabels.map(([id, label]) => (
+          <button
+            type="button"
+            data-pattern-group={id}
+            aria-pressed={id === 'all' ? 'true' : 'false'}
+          >{label}</button>
+        ))}
+      </nav>
+    </header>
+
+    <div class="pattern-atlas__grid" data-pattern-atlas>
+      {guide.patterns.map((pattern, index) => (
+        <article data-pattern-card={pattern.id}>
+          <header>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <strong>{pattern.name}</strong>
+          </header>
+          <p>{pattern.signal}</p>
+          <small>{pattern.template}</small>
+          <div>
+            {pattern.problems.slice(0, 4).map((number) => {
+              const problem = problemMap.get(number);
+              return (
+                <button type="button" data-pattern-problem={number}>
+                  {problem ? `#${number} ${problem.title}` : `#${number}`}
+                </button>
+              );
+            })}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="pattern-specials">
+    <header>
+      <span class="learning-kicker">SPECIAL CASES</span>
+      <h2>覆盖不了的，不要硬塞进大类</h2>
+    </header>
+    <div>
+      {guide.specialCases.map((item) => (
+        <article>
+          <strong>{item.name}</strong>
+          <p>{item.signal}</p>
+          {item.problems.length > 0 && (
+            <div>
+              {item.problems.map((number) => (
+                <button type="button" data-pattern-problem={number}>
+                  #{number} {problemMap.get(number)?.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <footer class="pattern-sources">
+    <span>方法参考</span>
+    {guide.references.map((reference) => (
+      <a href={reference.url} target="_blank" rel="noreferrer">{reference.name}</a>
+    ))}
+  </footer>
+</section>
