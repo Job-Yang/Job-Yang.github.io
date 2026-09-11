@@ -131,50 +131,401 @@ function renderString(spec, step) {
 
 function renderIntervals(spec, step) {
   const intervals = spec.visual.intervals || [];
+  const merged = step.variables.merged || [];
   const min = spec.visual.min || 0;
   const max = spec.visual.max || Math.max(...intervals.flat());
   const span = Math.max(1, max - min);
+  const intervalBar = (interval, classes = '') => `
+    <span
+      class="algo-interval${classes ? ` ${classes}` : ''}"
+      style="left:${((interval[0] - min) / span) * 100}%;width:${Math.max(5, ((interval[1] - interval[0]) / span) * 100)}%"
+    >${interval[0]}–${interval[1]}</span>
+  `;
   return `
-    <div class="algo-intervals">
+    <div class="algo-intervals" data-structure-scene="interval">
+      <span class="algo-scene-label">INPUT · 当前比较</span>
       ${intervals.map((interval, index) => `
         <div class="algo-interval-row">
-          <span
-            class="algo-interval${tokenClass(index, step)}"
-            style="left:${((interval[0] - min) / span) * 100}%;width:${Math.max(5, ((interval[1] - interval[0]) / span) * 100)}%"
-          >${interval[0]}–${interval[1]}</span>
+          ${intervalBar(interval, tokenClass(index, step).trim())}
         </div>
       `).join('')}
       <div class="algo-number-line">
         ${Array.from({ length: 10 }, (_, index) => `<i style="left:${(index / 9) * 100}%"></i>`).join('')}
       </div>
+      <span class="algo-scene-label">MERGED · 真正输出</span>
+      <div class="algo-interval-result">
+        ${merged.map((interval, index) => intervalBar(
+          interval,
+          index === merged.length - 1 ? 'is-arriving' : '',
+        )).join('')}
+      </div>
     </div>
   `;
 }
 
-function renderLinked(spec, step) {
-  const rows = spec.visual.rows || [];
+function linkedPointers(index, step) {
+  return Object.entries(step.view?.pointers || {})
+    .filter(([, pointerIndex]) => pointerIndex === index)
+    .map(([name]) => `<b class="algo-link-pointer">${escapeHtml(name)}</b>`)
+    .join('');
+}
+
+function linkedNode(value, {
+  classes = '',
+  id = '',
+  pointers = '',
+  note = '',
+} = {}) {
   return `
-    <div class="algo-linked">
-      ${rows.map((row, rowIndex) => `
-        <div class="algo-list-row">
-          <span class="algo-row-name">${String.fromCharCode(65 + rowIndex)}</span>
-          ${row.map((value, index) => {
-            const active = includesToken(step.view?.active, value)
-              || includesToken(step.view?.active, index);
-            const selected = includesToken(step.view?.selected, value)
-              || includesToken(step.view?.selected, index);
-            return `
-              <span class="algo-node${active ? ' is-active' : ''}${selected ? ' is-selected' : ''}">${escapeHtml(value)}</span>
-              ${index < row.length - 1 ? '<span class="algo-arrow">→</span>' : ''}
-            `;
-          }).join('')}
-          ${spec.visual.cycleTo !== undefined && rowIndex === 0
-            ? `<span class="algo-arrow">↩ ${escapeHtml(row[spec.visual.cycleTo])}</span>`
-            : ''}
+    <span class="algo-link-node${classes ? ` ${classes}` : ''}"${id ? ` data-node-id="${escapeHtml(id)}"` : ''}>
+      ${pointers ? `<span class="algo-link-pointers">${pointers}</span>` : ''}
+      <strong>${escapeHtml(value)}</strong>
+      ${note ? `<small>${escapeHtml(note)}</small>` : ''}
+    </span>
+  `;
+}
+
+function linkedArrow(classes = '', label = 'next') {
+  return `
+    <span class="algo-link-edge${classes ? ` ${classes}` : ''}" data-edge="${escapeHtml(label)}">
+      <i></i><b>›</b>
+    </span>
+  `;
+}
+
+function renderLinkedChain(values, {
+  row = 'A',
+  consumed = 0,
+  current = -1,
+  moved = -1,
+  detached = -1,
+  pointerStep,
+  arriving = -1,
+} = {}) {
+  if (!values.length) {
+    return '<span class="algo-link-empty">∅</span>';
+  }
+  return values.map((value, index) => {
+    const classes = [
+      index < consumed ? 'is-consumed' : '',
+      index === current ? 'is-candidate' : '',
+      index === moved ? 'is-moving-source' : '',
+      index === detached ? 'is-detached' : '',
+      index === arriving ? 'is-arriving' : '',
+    ].filter(Boolean).join(' ');
+    return `
+      ${linkedNode(value, {
+        classes,
+        id: `${row}-${index}`,
+        pointers: pointerStep ? linkedPointers(index, pointerStep) : '',
+      })}
+      ${index < values.length - 1
+        ? linkedArrow(index === detached - 1 ? 'is-rewired' : '', `${row}-${index}-${index + 1}`)
+        : ''}
+    `;
+  }).join('');
+}
+
+function renderReverseList(spec, step) {
+  const values = spec.visual.rows?.[0] || [];
+  const reversed = step.variables.reversed || [];
+  const headIndex = Number(step.view?.pointers?.head ?? -1);
+  const currentIndex = Number(step.view?.active?.[0] ?? -1);
+  const remaining = headIndex >= 0 ? values.slice(headIndex) : [];
+  const current = values[currentIndex];
+  const next = step.variables.nxt;
+  const nextTarget = reversed[1] ?? 'null';
+  return `
+    <div class="algo-linked-scene algo-linked-reverse" data-linked-scene="reverse">
+      <section>
+        <span class="algo-scene-label">尚未处理 · head</span>
+        <div class="algo-link-chain">
+          ${renderLinkedChain(remaining, { row: 'source' })}
         </div>
-      `).join('')}
+      </section>
+      <div class="algo-link-action" data-link-action="rewire">
+        <span>先保存 <b>nxt = ${escapeHtml(next)}</b></span>
+        ${linkedNode(current, { classes: 'is-transfer-node', note: '当前节点' })}
+        <span class="algo-rewire-rule"><s>next → ${escapeHtml(next)}</s><b>next → ${escapeHtml(nextTarget)}</b></span>
+      </div>
+      <section>
+        <span class="algo-scene-label">已反转 · prev</span>
+        <div class="algo-link-chain is-result">
+          ${renderLinkedChain(reversed, {
+            row: 'result',
+            arriving: 0,
+          })}
+        </div>
+      </section>
     </div>
   `;
+}
+
+function renderCycleList(spec, step) {
+  const values = spec.visual.rows?.[0] || [];
+  const markerId = `algo-cycle-arrow-${spec.number}`;
+  const positions = [
+    [12, 49],
+    [42, 18],
+    [78, 39],
+    [59, 77],
+  ];
+  const pointers = step.view?.pointers || {};
+  return `
+    <div class="algo-linked-scene algo-linked-cycle" data-linked-scene="cycle">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z"></path>
+          </marker>
+        </defs>
+        <path d="M17 46 C24 37 31 28 37 23" marker-end="url(#${markerId})"></path>
+        <path d="M48 20 C60 21 68 28 74 35" marker-end="url(#${markerId})"></path>
+        <path d="M78 46 C75 59 69 68 63 73" marker-end="url(#${markerId})"></path>
+        <path class="is-cycle-edge" d="M54 76 C35 84 27 61 37 28" marker-end="url(#${markerId})"></path>
+      </svg>
+      <span class="algo-cycle-entry">入环点</span>
+      ${values.map((value, index) => {
+        const names = Object.entries(pointers)
+          .filter(([, pointerIndex]) => pointerIndex === index)
+          .map(([name]) => `<b class="algo-link-pointer">${escapeHtml(name)}</b>`)
+          .join('');
+        const selected = includesToken(step.view?.selected, index);
+        return `
+          <span
+            class="algo-cycle-node${selected ? ' is-selected' : ''}${names ? ' has-pointer' : ''}"
+            style="--cycle-x:${positions[index]?.[0] ?? 50}%;--cycle-y:${positions[index]?.[1] ?? 50}%"
+            data-node-id="cycle-${index}"
+          >
+            ${names ? `<span class="algo-link-pointers">${names}</span>` : ''}
+            <strong>${escapeHtml(value)}</strong>
+          </span>
+        `;
+      }).join('')}
+      <div class="algo-cycle-caption">
+        <span>3 先进入链表</span>
+        <b>-4.next 重新指向 2，形成闭环</b>
+      </div>
+    </div>
+  `;
+}
+
+function renderMergeLists(spec, step, stepIndex) {
+  const rows = spec.visual.rows || [];
+  const previous = spec.steps[stepIndex - 1]?.variables || { i: 0, j: 0, out: [] };
+  const i = Number(step.variables.i ?? previous.i ?? 0);
+  const j = Number(step.variables.j ?? previous.j ?? 0);
+  let source = i > Number(previous.i || 0) ? 0 : j > Number(previous.j || 0) ? 1 : -1;
+  let sourceIndex = source === 0 ? i - 1 : source === 1 ? j - 1 : -1;
+  if (source < 0 && Array.isArray(step.variables.rest) && step.variables.rest.length) {
+    source = i < (rows[0]?.length || 0) ? 0 : 1;
+    sourceIndex = source === 0 ? i : j;
+  }
+  const movedValue = source >= 0 ? rows[source]?.[sourceIndex] : step.variables.tail;
+  const out = step.variables.out || [];
+
+  return `
+    <div class="algo-linked-scene algo-linked-merge" data-linked-scene="merge-two">
+      <div class="algo-link-sources">
+        ${rows.map((row, rowIndex) => {
+          const consumed = rowIndex === 0 ? i : j;
+          return `
+            <section>
+              <span class="algo-row-name">${rowIndex === 0 ? 'A' : 'B'}</span>
+              <div class="algo-link-chain">
+                ${renderLinkedChain(row, {
+                  row: rowIndex === 0 ? 'A' : 'B',
+                  consumed,
+                  current: consumed,
+                  moved: rowIndex === source ? sourceIndex : -1,
+                })}
+              </div>
+            </section>
+          `;
+        }).join('')}
+      </div>
+      <div class="algo-link-transfer" data-link-action="append">
+        <span>${source >= 0 ? `从 ${source === 0 ? 'A' : 'B'} 摘下` : '接入剩余链'}</span>
+        ${linkedNode(movedValue ?? '—', { classes: 'is-transfer-node' })}
+        <i></i>
+        <b>接到 tail.next</b>
+      </div>
+      <section class="algo-link-result">
+        <span class="algo-scene-label">RESULT · 新链持续增长</span>
+        <div class="algo-link-chain is-result">
+          ${renderLinkedChain(out, {
+            row: 'out',
+            arriving: Math.max(0, out.length - 1),
+          })}
+          <b class="algo-tail-label">tail</b>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderRemoveNode(spec, step) {
+  const values = spec.visual.rows?.[0] || [];
+  const removedIndex = step.variables.removed === undefined
+    ? -1
+    : values.findIndex((value) => value === step.variables.removed);
+  const pointers = step.view?.pointers || {};
+  const result = removedIndex >= 0
+    ? values.filter((_, index) => index !== removedIndex)
+    : [];
+  return `
+    <div class="algo-linked-scene algo-linked-remove" data-linked-scene="remove">
+      <section>
+        <span class="algo-scene-label">固定间距 ${escapeHtml(step.variables.gap ?? 2)} · fast 先探路</span>
+        <div class="algo-link-chain">
+          ${linkedNode('D', {
+            classes: 'is-dummy',
+            pointers: Object.entries(pointers)
+              .filter(([, index]) => index === -1)
+              .map(([name]) => `<b class="algo-link-pointer">${escapeHtml(name)}</b>`)
+              .join(''),
+          })}
+          ${linkedArrow('', 'dummy-head')}
+          ${values.map((value, index) => `
+            ${linkedNode(value, {
+              id: `source-${index}`,
+              classes: index === removedIndex ? 'is-detached' : '',
+              pointers: linkedPointers(index, step),
+              note: index === removedIndex ? '待删除' : '',
+            })}
+            ${index < values.length - 1
+              ? linkedArrow(removedIndex === index + 1 ? 'is-rewired' : '', `source-${index}-${index + 1}`)
+              : ''}
+          `).join('')}
+        </div>
+      </section>
+      ${removedIndex >= 0 ? `
+        <div class="algo-remove-action">
+          ${linkedNode(values[removedIndex], { classes: 'is-transfer-node is-removed', note: '断开' })}
+          <span>${escapeHtml(values[removedIndex - 1])}.next 跨过它，改指向 ${escapeHtml(values[removedIndex + 1])}</span>
+        </div>
+        <section class="algo-link-result">
+          <span class="algo-scene-label">RESULT · 重新接好的链</span>
+          <div class="algo-link-chain is-result">
+            ${renderLinkedChain(result, { row: 'result', arriving: Math.max(0, removedIndex) })}
+          </div>
+        </section>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderIntersectionList(spec, step) {
+  const positions = {
+    A1: [8, 24], A2: [27, 24],
+    B1: [5, 76], B2: [20, 76], B3: [35, 76],
+    C1: [61, 50], C2: [83, 50],
+  };
+  const paths = [
+    ['A1', 'A2'], ['A2', 'C1'],
+    ['B1', 'B2'], ['B2', 'B3'], ['B3', 'C1'],
+    ['C1', 'C2'],
+  ];
+  const markerId = `algo-intersection-arrow-${spec.number}`;
+  const pointerByValue = {
+    [step.variables.p]: 'p',
+    [step.variables.q]: step.variables.p === step.variables.q ? 'p · q' : 'q',
+  };
+  return `
+    <div class="algo-linked-scene algo-linked-intersection" data-linked-scene="intersection">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z"></path>
+          </marker>
+        </defs>
+        ${paths.map(([from, to]) => {
+          const [x1, y1] = positions[from];
+          const [x2, y2] = positions[to];
+          return `<path d="M${x1 + 5} ${y1} L${x2 - 5} ${y2}" marker-end="url(#${markerId})"></path>`;
+        }).join('')}
+      </svg>
+      <span class="algo-branch-label is-a">A</span>
+      <span class="algo-branch-label is-b">B</span>
+      <span class="algo-shared-label">共享同一批节点，不是值相同</span>
+      ${Object.entries(positions).map(([value, [x, y]]) => {
+        const pointer = pointerByValue[value];
+        return `
+          <span
+            class="algo-intersection-node${value.startsWith('C') ? ' is-shared' : ''}${pointer ? ' is-active' : ''}"
+            style="--node-x:${x}%;--node-y:${y}%"
+            data-node-id="${value}"
+          >
+            ${pointer ? `<span class="algo-link-pointers"><b class="algo-link-pointer">${pointer}</b></span>` : ''}
+            <strong>${value}</strong>
+          </span>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderAddTwoNumbers(spec, step) {
+  const rows = spec.visual.rows || [];
+  const position = Number(step.variables.position || 0);
+  const out = spec.steps
+    .slice(0, position + 1)
+    .map((item) => item.variables.digit)
+    .filter((value) => value !== undefined);
+  return `
+    <div class="algo-linked-scene algo-linked-add" data-linked-scene="add-two">
+      <div class="algo-digit-grid">
+        <span class="algo-row-name">A</span>
+        ${rows[0].map((value, index) => linkedNode(value, {
+          classes: index === position ? 'is-candidate' : '',
+          id: `A-${index}`,
+        })).join('')}
+        <span class="algo-row-name">B</span>
+        ${rows[1].map((value, index) => linkedNode(value, {
+          classes: index === position ? 'is-candidate' : '',
+          id: `B-${index}`,
+        })).join('')}
+      </div>
+      <div class="algo-column-equation">
+        <span>第 ${position + 1} 位</span>
+        <strong>${escapeHtml(step.variables.a)} + ${escapeHtml(step.variables.b)} + 进位 ${escapeHtml(step.variables.carryIn)}</strong>
+        <b>= 写 ${escapeHtml(step.variables.digit)}，向后进 ${escapeHtml(step.variables.carryOut)}</b>
+      </div>
+      <section class="algo-link-result">
+        <span class="algo-scene-label">RESULT · 低位在前</span>
+        <div class="algo-link-chain is-result">
+          ${renderLinkedChain(out, { row: 'sum', arriving: out.length - 1 })}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderLinked(spec, step, stepIndex) {
+  switch (spec.runner.entry) {
+    case 'reverseList': return renderReverseList(spec, step);
+    case 'detectCycle': return renderCycleList(spec, step);
+    case 'mergeTwoLists': return renderMergeLists(spec, step, stepIndex);
+    case 'removeNthFromEnd': return renderRemoveNode(spec, step);
+    case 'getIntersectionNode': return renderIntersectionList(spec, step);
+    case 'addTwoNumbers': return renderAddTwoNumbers(spec, step);
+    default: {
+      const rows = spec.visual.rows || [];
+      return `
+        <div class="algo-linked" data-linked-scene="generic">
+          ${rows.map((row, rowIndex) => `
+            <div class="algo-list-row">
+              <span class="algo-row-name">${String.fromCharCode(65 + rowIndex)}</span>
+              ${renderLinkedChain(row, {
+                row: String.fromCharCode(65 + rowIndex),
+                pointerStep: step,
+              })}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+  }
 }
 
 function normalizeSecondary(step) {
@@ -185,9 +536,127 @@ function normalizeSecondary(step) {
 
 function renderStack(spec, step) {
   const input = spec.visual.input || spec.visual.values || [];
-  const secondary = normalizeSecondary(step);
+  const entry = spec.runner.entry;
+
+  if (entry === 'LRUCache') {
+    const entries = normalizeSecondary(step);
+    return `
+      <div class="algo-lru" data-structure-scene="lru">
+        <div class="algo-operation-strip">
+          ${input.map((value, index) => `<span class="algo-chip${tokenClass(index, step)}">${escapeHtml(value)}</span>`).join('')}
+        </div>
+        <div class="algo-lru-cache">
+          <span class="algo-scene-label">LRU · 下一次优先淘汰</span>
+          <div class="algo-lru-track">
+            ${entries.map((value, index) => `
+              ${linkedNode(value, { classes: index === entries.length - 1 ? 'is-arriving' : '' })}
+              ${index < entries.length - 1 ? linkedArrow('', `lru-${index}`) : ''}
+            `).join('')}
+          </div>
+          <span class="algo-scene-label">MRU · 刚刚使用</span>
+        </div>
+        ${step.variables.evicted !== '-' && step.variables.evicted !== undefined
+          ? `<div class="algo-evicted">淘汰 ${escapeHtml(step.variables.evicted)}</div>`
+          : ''}
+      </div>
+    `;
+  }
+
+  if (entry === 'MinStack') {
+    const stack = step.variables.stack || [];
+    const mins = step.variables.mins || [];
+    return `
+      <div class="algo-min-stack" data-structure-scene="min-stack">
+        <div>
+          <span class="algo-scene-label">VALUE STACK</span>
+          <div class="algo-stack-column">
+            ${stack.map((value, index) => `<span class="${index === stack.length - 1 ? 'is-active' : ''}">${escapeHtml(value)}</span>`).reverse().join('')}
+          </div>
+        </div>
+        <div class="algo-stack-sync">同步<br>压入 / 弹出</div>
+        <div>
+          <span class="algo-scene-label">MIN AT THIS LEVEL</span>
+          <div class="algo-stack-column is-min">
+            ${mins.map((value, index) => `<span class="${index === mins.length - 1 ? 'is-selected' : ''}">${escapeHtml(value)}</span>`).reverse().join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (entry === 'dailyTemperatures') {
+    const stack = step.variables.stack || [];
+    const answer = step.variables.answer || [];
+    return `
+      <div class="algo-temperature-scene" data-structure-scene="monotonic-stack">
+        <div class="algo-temperature-days">
+          ${input.map((value, index) => `
+            <span class="${tokenClass(index, step).trim()}">
+              <b>${escapeHtml(value)}°</b>
+              <small>day ${index}</small>
+              ${answer[index] ? `<em>等 ${answer[index]} 天</em>` : ''}
+            </span>
+          `).join('')}
+        </div>
+        <div class="algo-monotonic-stack">
+          <span class="algo-scene-label">单调栈 · 仍在等更暖一天</span>
+          <div>
+            ${stack.map((index) => linkedNode(`${index}:${input[index]}°`)).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (entry === 'topKFrequent') {
+    const counts = step.variables.counts || {};
+    const ranked = normalizeSecondary(step)
+      .map((item) => String(item).match(/(-?\d+):\s*(\d+)/))
+      .filter(Boolean)
+      .map((match) => [match[1], Number(match[2])]);
+    const entries = Object.keys(counts).length
+      ? Object.entries(counts)
+      : ranked;
+    const max = Math.max(1, ...entries.map(([, value]) => Number(value)));
+    return `
+      <div class="algo-frequency-scene" data-structure-scene="frequency">
+        ${entries.map(([value, count]) => `
+          <div class="${String(step.variables.value) === String(value) ? 'is-selected' : ''}">
+            <span>${escapeHtml(value)}</span>
+            <i style="height:${Math.max(18, Number(count) / max * 130)}px"></i>
+            <b>${escapeHtml(count)} 次</b>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  if (entry === 'decodeString') {
+    const nums = step.variables.numStack || [];
+    const strings = step.variables.strStack || [];
+    return `
+      <div class="algo-decode-scene" data-structure-scene="decode">
+        <div class="algo-operation-strip">
+          ${input.map((value, index) => `<span class="algo-chip${tokenClass(index, step)}">${escapeHtml(value)}</span>`).join('')}
+        </div>
+        <div class="algo-decode-frames">
+          ${nums.map((count, index) => `
+            <span style="--frame:${index}">
+              <b>${escapeHtml(count)} ×</b>
+              <em>${escapeHtml(strings[index] || '空前缀')}</em>
+            </span>
+          `).join('')}
+          <strong>${escapeHtml(step.variables.cur || '空串')}</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  const stack = Array.isArray(step.variables.stack)
+    ? step.variables.stack
+    : normalizeSecondary(step);
   return `
-    <div class="algo-split-scene">
+    <div class="algo-split-scene" data-structure-scene="stack">
       <div>
         <span class="algo-scene-label">INPUT / OPERATIONS</span>
         <div class="algo-chips">
@@ -197,8 +666,8 @@ function renderStack(spec, step) {
       <div>
         <span class="algo-scene-label">CURRENT STRUCTURE</span>
         <div class="algo-stack">
-          ${secondary.length
-            ? secondary.map((value) => `<span>${escapeHtml(value)}</span>`).join('')
+          ${stack.length
+            ? stack.map((value) => `<span>${escapeHtml(value)}</span>`).join('')
             : '<span>empty</span>'}
         </div>
       </div>
@@ -206,30 +675,74 @@ function renderStack(spec, step) {
   `;
 }
 
-function renderTree(spec, step) {
+function renderTree(spec, step, stepIndex) {
   const values = spec.visual.tree || spec.visual.values || [];
-  const slots = [
-    { row: 1, col: 4 },
-    { row: 2, col: 2 },
-    { row: 2, col: 6 },
-    { row: 3, col: 1 },
-    { row: 3, col: 3 },
-    { row: 3, col: 5 },
-    { row: 3, col: 7 },
+  const positions = [
+    [50, 10],
+    [28, 37],
+    [72, 37],
+    [16, 65],
+    [40, 65],
+    [60, 65],
+    [84, 65],
   ];
+  const visibleValues = spec.runner.entry === 'buildTree'
+    ? new Set(spec.steps.slice(0, stepIndex + 1).map((item) => item.variables.root))
+    : null;
+  const markerId = `algo-tree-arrow-${spec.number}`;
+  const edges = values.flatMap((value, index) => {
+    if (value === null || value === undefined) return [];
+    return [index * 2 + 1, index * 2 + 2]
+      .filter((child) => child < values.length && values[child] !== null && values[child] !== undefined)
+      .filter((child) => !visibleValues || (visibleValues.has(value) && visibleValues.has(values[child])))
+      .map((child) => [index, child]);
+  });
+  const returnValue = step.variables.return
+    ?? step.variables.returnDepth
+    ?? step.variables.returnGain;
   return `
-    <div class="algo-tree">
+    <div class="algo-tree" data-structure-scene="tree">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z"></path>
+          </marker>
+        </defs>
+        ${edges.map(([parent, child]) => {
+          const [x1, y1] = positions[parent];
+          const [x2, y2] = positions[child];
+          const selected = includesToken(step.view?.selected, values[parent])
+            && includesToken(step.view?.selected, values[child]);
+          return `<path class="${selected ? 'is-selected-edge' : ''}" d="M${x1} ${y1 + 7} L${x2} ${y2 - 7}" marker-end="url(#${markerId})"></path>`;
+        }).join('')}
+      </svg>
       ${values.slice(0, 7).map((value, index) => {
         if (value === null || value === undefined) return '';
+        if (visibleValues && !visibleValues.has(value)) return '';
         const active = includesToken(step.view?.active, value);
         const selected = includesToken(step.view?.selected, value);
         return `
           <span
-            class="algo-tree-node${index === 0 ? ' is-root' : ''}${active ? ' is-active' : ''}${selected ? ' is-selected' : ''}"
-            style="grid-row:${slots[index].row};grid-column:${slots[index].col}"
-          >${escapeHtml(value)}</span>
+            class="algo-tree-node${active ? ' is-active' : ''}${selected ? ' is-selected' : ''}"
+            style="--tree-x:${positions[index]?.[0] ?? 50}%;--tree-y:${positions[index]?.[1] ?? 50}%"
+            data-tree-index="${index}"
+          >
+            ${escapeHtml(value)}
+            ${active && returnValue !== undefined
+              ? `<small>return ${escapeHtml(returnValue)}</small>`
+              : ''}
+          </span>
         `;
       }).join('')}
+      ${spec.runner.entry === 'invertTree' ? `
+        <div class="algo-tree-swap">
+          <span>${escapeHtml(step.variables.leftBefore)}</span>
+          <b>交换 ${escapeHtml(step.variables.node)} 的左右孩子</b>
+          <span>${escapeHtml(step.variables.rightBefore)}</span>
+          <i>↘</i><i>↙</i>
+          <strong>${escapeHtml(step.variables.leftAfter)} · ${escapeHtml(step.variables.rightAfter)}</strong>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -268,14 +781,23 @@ function renderDecision(spec, step) {
   const path = step.view?.path || [];
   const choices = step.view?.choices || spec.visual.choices || [];
   return `
-    <div class="algo-decision">
+    <div class="algo-decision" data-structure-scene="backtrack">
       <span class="algo-scene-label">CURRENT PATH</span>
       <div class="algo-path">
         ${path.length
-          ? path.map((value) => `<span>${escapeHtml(value)}</span>`).join('')
+          ? path.map((value, index) => `
+              <span class="${index === path.length - 1 && step.variables.choose !== undefined ? 'is-arriving' : ''}">
+                ${escapeHtml(value)}
+              </span>
+              ${index < path.length - 1 ? '<i>→</i>' : ''}
+            `).join('')
           : '<span class="is-empty">空路径</span>'}
       </div>
-      <p>↓ choose / recurse / undo ↓</p>
+      <p class="${step.variables.undo !== undefined ? 'is-undo' : ''}">
+        ${step.variables.undo !== undefined
+          ? `↩ 撤销 ${escapeHtml(step.variables.undo)}，回到上一层`
+          : `↓ 选择 ${escapeHtml(step.variables.choose ?? '结果')}，进入第 ${escapeHtml((step.variables.depth ?? path.length) + 1)} 层 ↓`}
+      </p>
       <div class="algo-choices">
         ${choices.length
           ? choices.map((value) => `<span>${escapeHtml(value)}</span>`).join('')
@@ -286,14 +808,43 @@ function renderDecision(spec, step) {
 }
 
 function renderGraph(spec, step) {
+  const nodes = spec.visual.nodes || [];
+  const edges = spec.visual.edges || [];
+  const positions = nodes.map((_, index) => {
+    const angle = -Math.PI / 2 + index * (Math.PI * 2 / Math.max(nodes.length, 2));
+    return [50 + Math.cos(angle) * 30, 50 + Math.sin(angle) * 27];
+  });
+  const markerId = `algo-graph-arrow-${spec.number}`;
   return `
-    <div class="algo-graph">
-      ${(spec.visual.nodes || []).map((value, index) => `
-        ${index ? '<span class="algo-graph-arrow">→</span>' : ''}
-        <span class="algo-graph-node${includesToken(step.view?.active, value) ? ' is-active' : ''}${includesToken(step.view?.selected, value) ? ' is-selected' : ''}">
+    <div class="algo-graph" data-structure-scene="graph">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z"></path>
+          </marker>
+        </defs>
+        ${edges.map(([from, to]) => {
+          const fromIndex = nodes.indexOf(from);
+          const toIndex = nodes.indexOf(to);
+          if (fromIndex < 0 || toIndex < 0) return '';
+          const [x1, y1] = positions[fromIndex];
+          const [x2, y2] = positions[toIndex];
+          return `<path d="M${x1} ${y1} L${x2} ${y2}" marker-end="url(#${markerId})"></path>`;
+        }).join('')}
+      </svg>
+      ${nodes.map((value, index) => `
+        <span
+          class="algo-graph-node${includesToken(step.view?.active, value) ? ' is-active' : ''}${includesToken(step.view?.selected, value) ? ' is-selected' : ''}"
+          style="--graph-x:${positions[index][0]}%;--graph-y:${positions[index][1]}%"
+        >
           ${escapeHtml(value)}
+          <small>入度 ${escapeHtml(step.variables.indegree?.[index] ?? 0)}</small>
         </span>
       `).join('')}
+      <div class="algo-graph-queue">
+        <span class="algo-scene-label">可学习队列</span>
+        ${(step.variables.queue || []).map((value) => `<b>${escapeHtml(value)}</b>`).join('') || '<b>empty</b>'}
+      </div>
     </div>
   `;
 }
@@ -302,34 +853,121 @@ function renderHeap(spec, step) {
   const heap = Array.isArray(step.variables.heap)
     ? step.variables.heap
     : normalizeSecondary(step);
+  const positions = [
+    [50, 22],
+    [32, 57],
+    [68, 57],
+    [22, 84],
+    [42, 84],
+    [58, 84],
+    [78, 84],
+  ];
   return `
-    <div class="algo-split-scene">
+    <div class="algo-heap-scene" data-structure-scene="heap">
       <div>
         <span class="algo-scene-label">INPUT STREAM</span>
         <div class="algo-chips">
           ${(spec.visual.values || []).map((value, index) => `<span class="algo-chip${tokenClass(index, step)}">${escapeHtml(value)}</span>`).join('')}
         </div>
       </div>
-      <div>
-        <span class="algo-scene-label">MIN HEAP / CANDIDATES</span>
-        <div class="algo-chips">
-          ${heap.length
-            ? heap.map((value, index) => `<span class="algo-chip${index === 0 ? ' is-active' : ''}">${escapeHtml(value)}</span>`).join('')
-            : '<span class="algo-chip">empty</span>'}
+      <div class="algo-heap-tree">
+        <span class="algo-scene-label">MIN HEAP · 根节点是第 K 大门槛</span>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          ${heap.flatMap((_, index) => [index * 2 + 1, index * 2 + 2]
+            .filter((child) => child < heap.length)
+            .map((child) => {
+              const [x1, y1] = positions[index];
+              const [x2, y2] = positions[child];
+              return `<path d="M${x1} ${y1} L${x2} ${y2}"></path>`;
+            })).join('')}
+        </svg>
+        <div>
+          ${heap.map((value, index) => `
+            <span
+              class="algo-heap-node${index === 0 ? ' is-active' : ''}"
+              style="--heap-x:${positions[index]?.[0] ?? 50}%;--heap-y:${positions[index]?.[1] ?? 50}%"
+            >${escapeHtml(value)}</span>
+          `).join('')}
         </div>
       </div>
     </div>
   `;
 }
 
-function renderVisual(spec, step) {
+function renderMergeKLists(spec, step, stepIndex) {
+  const rows = spec.visual.rows || [];
+  const consumed = rows.map(() => new Set());
+  spec.steps.slice(0, stepIndex + 1).forEach((item) => {
+    const rowIndex = Number(item.variables.fromList);
+    const nodeIndex = Number(item.variables.index);
+    if (consumed[rowIndex]) consumed[rowIndex].add(nodeIndex);
+  });
+  const sourceRow = Number(step.variables.fromList);
+  const sourceIndex = Number(step.variables.index);
+  const heap = step.variables.heap || [];
+  const out = step.variables.out || [];
+
+  return `
+    <div class="algo-linked-scene algo-linked-merge-k" data-linked-scene="merge-k">
+      <div class="algo-k-sources">
+        ${rows.map((row, rowIndex) => `
+          <section>
+            <span class="algo-row-name">L${rowIndex + 1}</span>
+            <div class="algo-link-chain">
+              ${row.map((value, nodeIndex) => `
+                ${linkedNode(value, {
+                  id: `L${rowIndex}-${nodeIndex}`,
+                  classes: [
+                    consumed[rowIndex].has(nodeIndex) ? 'is-consumed' : '',
+                    rowIndex === sourceRow && nodeIndex === sourceIndex ? 'is-moving-source' : '',
+                  ].filter(Boolean).join(' '),
+                })}
+                ${nodeIndex < row.length - 1 ? linkedArrow('', `L${rowIndex}-${nodeIndex}-${nodeIndex + 1}`) : ''}
+              `).join('')}
+            </div>
+          </section>
+        `).join('')}
+      </div>
+      <div class="algo-k-transfer">
+        <div>
+          <span class="algo-scene-label">MIN HEAP · 下一批候选</span>
+          <div class="algo-mini-heap">
+            ${heap.length
+              ? heap.map((value, index) => linkedNode(value, {
+                  classes: index === 0 ? 'is-candidate' : '',
+                })).join('')
+              : '<span class="algo-link-empty">heap empty</span>'}
+          </div>
+        </div>
+        <div class="algo-link-transfer" data-link-action="heap-pop">
+          <span>从 L${sourceRow + 1} 弹出</span>
+          ${linkedNode(step.variables.value, { classes: 'is-transfer-node' })}
+          <i></i>
+          <b>接到结果链</b>
+        </div>
+      </div>
+      <section class="algo-link-result">
+        <span class="algo-scene-label">RESULT · 新链持续增长</span>
+        <div class="algo-link-chain is-result">
+          ${renderLinkedChain(out, { row: 'out', arriving: out.length - 1 })}
+          <b class="algo-tail-label">tail</b>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderVisual(spec, step, stepIndex) {
+  if (spec.runner.entry === 'mergeKLists') {
+    return renderMergeKLists(spec, step, stepIndex);
+  }
   switch (spec.family) {
     case 'bars': return renderBars(spec, step);
     case 'string': return renderString(spec, step);
     case 'interval': return renderIntervals(spec, step);
-    case 'linked': return renderLinked(spec, step);
+    case 'linked': return renderLinked(spec, step, stepIndex);
     case 'stack': return renderStack(spec, step);
-    case 'tree': return renderTree(spec, step);
+    case 'tree': return renderTree(spec, step, stepIndex);
     case 'grid': return renderGrid(spec, step);
     case 'dp': return renderDp(step);
     case 'decision': return renderDecision(spec, step);
@@ -339,7 +977,17 @@ function renderVisual(spec, step) {
   }
 }
 
-function visualLabel(family) {
+function visualLabel(spec) {
+  const entryLabels = {
+    reverseList: 'POINTER REWIRE / RESULT',
+    detectCycle: 'REAL CYCLE / POINTER CHASE',
+    mergeTwoLists: 'SOURCE / TRANSFER / RESULT',
+    removeNthFromEnd: 'GAP / DETACH / RECONNECT',
+    getIntersectionNode: 'SHARED NODE TOPOLOGY',
+    addTwoNumbers: 'DIGITS / CARRY / RESULT',
+    mergeKLists: 'SOURCE LISTS / HEAP / RESULT',
+  };
+  if (entryLabels[spec.runner.entry]) return entryLabels[spec.runner.entry];
   return {
     array: 'ARRAY / STATE',
     bars: 'MEASURE / AREA',
@@ -353,7 +1001,7 @@ function visualLabel(family) {
     decision: 'DECISION / BACKTRACK',
     graph: 'GRAPH / INDEGREE',
     heap: 'HEAP / TOP K',
-  }[family] || 'STATE';
+  }[spec.family] || 'STATE';
 }
 
 function visualizerMarkup() {
@@ -496,8 +1144,8 @@ export function mountAlgorithmVisualizer(root, spec, options = {}) {
     elements.step.textContent = `STEP ${String(current + 1).padStart(2, '0')} / ${String(spec.steps.length).padStart(2, '0')}`;
     elements.phase.textContent = step.change.split('；')[0];
     elements.input.textContent = spec.exampleInput;
-    elements.visualLabel.textContent = visualLabel(spec.family);
-    elements.visual.innerHTML = renderVisual(spec, step);
+    elements.visualLabel.textContent = visualLabel(spec);
+    elements.visual.innerHTML = renderVisual(spec, step, current);
     elements.observation.textContent = step.observation;
     elements.decision.textContent = step.decision;
     elements.calculation.textContent = step.calculation;

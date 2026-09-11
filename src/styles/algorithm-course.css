@@ -373,6 +373,25 @@
   border-right: 1px solid var(--line);
 }
 
+.algorithm-course[data-content-tab="solution"] .algorithm-reading-pane {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
+.algorithm-course[data-content-tab="solution"] .algorithm-code-pane {
+  display: none;
+}
+
+.algorithm-course[data-content-tab="solution"] .algorithm-solution-panel {
+  height: auto;
+  min-height: calc(100vh - 181px);
+}
+
+.algorithm-course[data-content-tab="solution"] .algorithm-walkthrough {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
 .algorithm-content-tabs,
 .algorithm-editor-toolbar,
 .algorithm-console > header {

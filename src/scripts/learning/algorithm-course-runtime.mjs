@@ -265,6 +265,7 @@ function createCourse(root) {
 
   function setContentTab(name) {
     activeContent = name;
+    root.dataset.contentTab = name;
     elements.contentTabs.forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.algorithmContentTab === name));
     });

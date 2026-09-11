@@ -95,6 +95,31 @@ test('shared renderer exposes step, playback and quiz controls', () => {
   assert.match(renderer, /mountAlgorithmVisualizer/);
 });
 
+test('structure-changing problems use semantic scenes instead of generic highlights', () => {
+  for (const scene of [
+    'reverse',
+    'cycle',
+    'merge-two',
+    'remove',
+    'intersection',
+    'add-two',
+    'merge-k',
+  ]) {
+    assert.match(renderer, new RegExp(`data-linked-scene="${scene}"`));
+  }
+  assert.match(renderer, /data-link-action="rewire"/);
+  assert.match(renderer, /data-link-action="append"/);
+  assert.match(renderer, /data-structure-scene="interval"/);
+  assert.match(renderer, /data-structure-scene="stack"/);
+  assert.match(renderer, /data-structure-scene="lru"/);
+  assert.match(renderer, /data-structure-scene="monotonic-stack"/);
+  assert.match(renderer, /data-structure-scene="min-stack"/);
+  assert.match(renderer, /data-structure-scene="tree"/);
+  assert.match(renderer, /data-structure-scene="backtrack"/);
+  assert.match(renderer, /data-structure-scene="graph"/);
+  assert.match(renderer, /data-structure-scene="heap"/);
+});
+
 test('algorithm visuals use the existing learning design tokens', () => {
   for (const token of [
     '--learn-gold',
