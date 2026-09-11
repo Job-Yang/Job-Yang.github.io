@@ -252,7 +252,7 @@ function createCourse(root) {
 
   function renderSolutionCode(activeLine = currentSolutionLine) {
     currentSolutionLine = activeLine;
-    const lines = currentProblem.solution.javascript.split('\n');
+    const lines = currentProblem.solution.typescript.split('\n');
     elements.solutionCode.innerHTML = lines.map((line, index) => `
       <div class="${index + 1 === activeLine ? 'is-active' : ''}" data-solution-line="${index + 1}">
         <span>${index + 1}</span>
@@ -410,7 +410,7 @@ function createCourse(root) {
     setConsoleTab('result');
     elements.runStatus.textContent = '执行中';
     elements.runStatus.dataset.status = 'running';
-    elements.runSummary.textContent = '正在浏览器隔离 Worker 中执行';
+    elements.runSummary.textContent = '正在 Worker 中转译并执行 TypeScript';
     elements.runError.hidden = true;
 
     try {
@@ -437,7 +437,9 @@ function createCourse(root) {
       elements.expectedOutput.textContent = displayValue(expected);
       elements.runTime.textContent = '-';
       elements.runError.hidden = false;
-      elements.runError.textContent = error.stack || error.message;
+      elements.runError.textContent = error.name === 'TypeScriptCompileError'
+        ? error.message
+        : error.stack || error.message;
     } finally {
       elements.run.disabled = false;
       elements.run.textContent = '运行代码 ▶';
@@ -512,12 +514,12 @@ function createCourse(root) {
     resetRunResult();
   });
   elements.loadSolution.addEventListener('click', () => {
-    elements.editor.value = currentProblem.solution.javascript;
+    elements.editor.value = currentProblem.solution.typescript;
     renderEditorLines();
     saveDraft();
   });
   elements.copySolution.addEventListener('click', async () => {
-    await navigator.clipboard?.writeText(currentProblem.solution.javascript);
+    await navigator.clipboard?.writeText(currentProblem.solution.typescript);
     elements.copySolution.textContent = '已复制';
     window.setTimeout(() => { elements.copySolution.textContent = '复制答案'; }, 1200);
   });

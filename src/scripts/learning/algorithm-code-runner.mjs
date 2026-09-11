@@ -1,4 +1,5 @@
 const DEFAULT_TIMEOUT_MS = 1800;
+const WORKER_LOAD_TIMEOUT_MS = 10000;
 let sequence = 0;
 
 export function runAlgorithmCode({ code, runner, input, timeoutMs = DEFAULT_TIMEOUT_MS }) {
@@ -8,14 +9,24 @@ export function runAlgorithmCode({ code, runner, input, timeoutMs = DEFAULT_TIME
       new URL('./algorithm-code-worker.mjs', import.meta.url),
       { type: 'module' }
     );
-    const timeout = window.setTimeout(() => {
+    let executionTimeout;
+    const loadTimeout = window.setTimeout(() => {
       worker.terminate();
-      reject(new Error(`运行超过 ${timeoutMs}ms，已停止。请检查死循环或过慢逻辑。`));
-    }, timeoutMs);
+      reject(new Error('TypeScript 执行环境加载超时，请检查网络后重试。'));
+    }, WORKER_LOAD_TIMEOUT_MS);
 
     worker.addEventListener('message', (event) => {
+      if (event.data?.type === 'ready') {
+        window.clearTimeout(loadTimeout);
+        executionTimeout = window.setTimeout(() => {
+          worker.terminate();
+          reject(new Error(`运行超过 ${timeoutMs}ms，已停止。请检查死循环或过慢逻辑。`));
+        }, timeoutMs);
+        worker.postMessage({ id, code, runner, input });
+        return;
+      }
       if (event.data?.id !== id) return;
-      window.clearTimeout(timeout);
+      window.clearTimeout(executionTimeout);
       worker.terminate();
       if (event.data.ok) {
         resolve(event.data.result);
@@ -27,10 +38,10 @@ export function runAlgorithmCode({ code, runner, input, timeoutMs = DEFAULT_TIME
       }
     });
     worker.addEventListener('error', (event) => {
-      window.clearTimeout(timeout);
+      window.clearTimeout(loadTimeout);
+      window.clearTimeout(executionTimeout);
       worker.terminate();
       reject(new Error(event.message || '代码 Worker 启动失败'));
     });
-    worker.postMessage({ id, code, runner, input });
   });
 }

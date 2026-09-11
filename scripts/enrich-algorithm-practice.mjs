@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
 
 const root = process.cwd();
 const sourceFlag = process.argv.indexOf('--source');
@@ -62,16 +61,19 @@ const fixtures = {
   21: fixture('LRUCache', { constructorArgs: [2], operations: [['put', [1, 1]], ['put', [2, 2]], ['get', [1]], ['put', [3, 3]], ['get', [2]]] }, [null, null, 1, null, -1], {
     kind: 'class',
     starterCode: `class LRUCache {
-  constructor(capacity) {
-    // TODO
+  private cap: number;
+  private cache = new Map<number, number>();
+
+  constructor(capacity: number) {
+    this.cap = capacity;
   }
 
-  get(key) {
-    // TODO
+  get(key: number): number {
+    throw new Error("TODO");
   }
 
-  put(key, value) {
-    // TODO
+  put(key: number, value: number): void {
+    throw new Error("TODO");
   }
 }`,
   }),
@@ -79,14 +81,13 @@ const fixtures = {
   23: fixture('MinStack', { constructorArgs: [], operations: [['push', [-2]], ['push', [0]], ['push', [-3]], ['getMin', []], ['pop', []], ['top', []], ['getMin', []]] }, [null, null, null, -3, null, 0, -2], {
     kind: 'class',
     starterCode: `class MinStack {
-  constructor() {
-    // TODO
-  }
+  private stack: number[] = [];
+  private mins: number[] = [];
 
-  push(x) {}
-  pop() {}
-  top() {}
-  getMin() {}
+  push(x: number): void { throw new Error("TODO"); }
+  pop(): void { throw new Error("TODO"); }
+  top(): number { throw new Error("TODO"); }
+  getMin(): number { throw new Error("TODO"); }
 }`,
   }),
   24: fixture('inorderTraversal', [[1, null, 2, 3]], [1, 3, 2], { inputAdapter: 'tree-first' }),
@@ -173,23 +174,14 @@ function extract(section, pattern, fallback = '') {
   return cleanMarkdown(section.match(pattern)?.[1] || fallback);
 }
 
-function transpile(sourceCode) {
-  const output = ts.transpileModule(sourceCode, {
-    compilerOptions: {
-      target: ts.ScriptTarget.ES2020,
-      module: ts.ModuleKind.None,
-      removeComments: false,
-    },
-  }).outputText;
-  return output.replace(/^"use strict";\s*/, '').trim();
-}
-
 function starterFrom(solutionCode, runner) {
   if (runner.starterCode) return runner.starterCode;
   const escaped = runner.entry.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = solutionCode.match(new RegExp(`function\\s+${escaped}\\s*\\([^)]*\\)`));
+  const match = solutionCode.match(
+    new RegExp(`function\\s+${escaped}\\s*\\([^)]*\\)\\s*(?::\\s*[^\\{]+)?`),
+  );
   if (!match) return `function ${runner.entry}() {\n  // TODO: 完成你的解法\n}`;
-  return `${match[0]} {\n  // TODO: 完成你的解法\n  throw new Error("TODO");\n}`;
+  return `${match[0].trim()} {\n  // TODO: 完成你的解法\n  throw new Error("TODO");\n}`;
 }
 
 function relatedLine(code, explanation, previous = 1) {
@@ -222,7 +214,6 @@ for (const problem of course.problems) {
 
   const typescript = section.match(/```TypeScript\n(.*?)\n```/s)?.[1]?.trim();
   if (!typescript) throw new Error(`Missing TypeScript solution for problem ${problem.number}`);
-  const javascript = transpile(typescript);
   let previousLine = 1;
 
   problem.statement = extract(section, /> \*\*题目描述\*\*:(.*?)(?=\n> 示例:)/s);
@@ -243,21 +234,20 @@ for (const problem of course.problems) {
   ];
   problem.solution = {
     entry: runner.entry,
-    language: 'JavaScript',
+    language: 'TypeScript',
     typescript,
-    javascript,
-    starterCode: starterFrom(javascript, runner),
+    starterCode: starterFrom(typescript, runner),
     explanation: problem.core,
   };
   problem.runner = runner;
   problem.steps = problem.steps.map((step) => {
-    const line = relatedLine(javascript, step.code || `${step.decision} ${step.calculation}`, previousLine);
+    const line = relatedLine(typescript, step.code || `${step.decision} ${step.calculation}`, previousLine);
     previousLine = line;
     return { ...step, solutionLine: line };
   });
 }
 
-course.version = '2.0.0';
+course.version = '2.1.0';
 fs.writeFileSync(targetPath, `${JSON.stringify(course, null, 2)}\n`);
 console.log(JSON.stringify({
   target: targetPath,

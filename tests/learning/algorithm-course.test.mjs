@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { executeAlgorithmCode } from '../../src/scripts/learning/algorithm-executor-core.mjs';
+import { transpileAlgorithmTypeScript } from '../../src/scripts/learning/algorithm-typescript.mjs';
 
 const algorithms = JSON.parse(
   fs.readFileSync('src/data/learning/algorithms.json', 'utf8')
@@ -40,7 +41,8 @@ test('every problem has a verified final result and required teaching fields', (
     assert.ok(problem.core);
     assert.ok(problem.lens);
     assert.ok(problem.tips);
-    assert.ok(problem.solution.javascript.includes(problem.runner.entry));
+    assert.equal(problem.solution.language, 'TypeScript');
+    assert.ok(problem.solution.typescript.includes(problem.runner.entry));
     assert.ok(problem.solution.starterCode.includes(problem.runner.entry));
     assert.ok(problem.steps.length > 0);
     const finalResults = problem.steps
@@ -78,6 +80,8 @@ test('course runtime supports durable practice workflows', () => {
   assert.match(courseRuntime, /data-algorithm-mark/);
   assert.match(courseRuntime, /history\.replaceState/);
   assert.match(courseRuntime, /runAlgorithmCode/);
+  assert.match(courseRuntime, /solution\.typescript/);
+  assert.doesNotMatch(courseRuntime, /solution\.javascript/);
   assert.match(courseRuntime, /data-algorithm-hint-toggle/);
   assert.match(courseRuntime, /data-algorithm-content-tab/);
 });
@@ -106,11 +110,29 @@ test('algorithm visuals use the existing learning design tokens', () => {
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
-test('all official solutions run against their example fixture', () => {
+test('all official TypeScript solutions compile and run against their example fixture', () => {
   for (const problem of algorithms.problems) {
-    const result = executeAlgorithmCode(problem.solution.javascript, problem.runner);
+    const javascript = transpileAlgorithmTypeScript(problem.solution.typescript);
+    const result = executeAlgorithmCode(javascript, problem.runner);
     assert.equal(result.passed, true, `problem ${problem.number}: ${problem.title}`);
   }
+});
+
+test('TypeScript runner accepts typed code and reports syntax errors with a line', () => {
+  const javascript = transpileAlgorithmTypeScript(
+    'function add(a: number, b: number): number { return a + b; }',
+  );
+  const result = executeAlgorithmCode(javascript, {
+    kind: 'function',
+    entry: 'add',
+    input: [2, 3],
+    expected: 5,
+  });
+  assert.equal(result.passed, true);
+  assert.throws(
+    () => transpileAlgorithmTypeScript('function add(a: number): number { return a;'),
+    /TypeScript 编译失败：\n第 1 行/,
+  );
 });
 
 test('pattern navigator is a closed decision graph with rejection rules', () => {

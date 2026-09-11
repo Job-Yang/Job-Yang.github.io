@@ -1,9 +1,13 @@
 import { executeAlgorithmCode } from './algorithm-executor-core.mjs';
+import { transpileAlgorithmTypeScript } from './algorithm-typescript.mjs';
+
+self.postMessage({ type: 'ready' });
 
 self.addEventListener('message', (event) => {
   const { id, code, runner, input } = event.data || {};
   try {
-    const result = executeAlgorithmCode(code, runner, input);
+    const javascript = transpileAlgorithmTypeScript(code);
+    const result = executeAlgorithmCode(javascript, runner, input);
     self.postMessage({ id, ok: true, result });
   } catch (error) {
     self.postMessage({

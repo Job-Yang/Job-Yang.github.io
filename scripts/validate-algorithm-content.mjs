@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { executeAlgorithmCode } from '../src/scripts/learning/algorithm-executor-core.mjs';
+import { transpileAlgorithmTypeScript } from '../src/scripts/learning/algorithm-typescript.mjs';
 
 const root = process.cwd();
 const dataPath = path.join(root, 'src/data/learning/algorithms.json');
@@ -53,10 +54,12 @@ for (const problem of data.problems) {
   requireValue(Array.isArray(problem.steps) && problem.steps.length > 0, `problem ${problem.number} has no steps`);
   requireValue(problem.hints.length >= 2, `problem ${problem.number} needs progressive hints`);
   requireValue(problem.constraints.length >= 1, `problem ${problem.number} needs constraints`);
-  requireValue(problem.solution.javascript.includes(problem.runner.entry), `problem ${problem.number} solution entry mismatch`);
+  requireValue(problem.solution.language === 'TypeScript', `problem ${problem.number} solution language must be TypeScript`);
+  requireValue(problem.solution.typescript.includes(problem.runner.entry), `problem ${problem.number} solution entry mismatch`);
   requireValue(problem.solution.starterCode.includes(problem.runner.entry), `problem ${problem.number} starter entry mismatch`);
   try {
-    const execution = executeAlgorithmCode(problem.solution.javascript, problem.runner);
+    const javascript = transpileAlgorithmTypeScript(problem.solution.typescript);
+    const execution = executeAlgorithmCode(javascript, problem.runner);
     requireValue(execution.passed, `problem ${problem.number} official solution failed its fixture`);
   } catch (error) {
     failures.push(`problem ${problem.number} official solution crashed: ${error.message}`);
