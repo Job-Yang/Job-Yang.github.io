@@ -22,6 +22,10 @@ const styles = fs.readFileSync(
   'src/styles/algorithm-visualizer.css',
   'utf8'
 );
+const embedBuilder = fs.readFileSync(
+  'scripts/build-algorithm-embeds.mjs',
+  'utf8'
+);
 
 test('algorithm catalog contains the complete ordered problem set', () => {
   assert.equal(algorithms.problems.length, 61);
@@ -118,6 +122,36 @@ test('structure-changing problems use semantic scenes instead of generic highlig
   assert.match(renderer, /data-structure-scene="backtrack"/);
   assert.match(renderer, /data-structure-scene="graph"/);
   assert.match(renderer, /data-structure-scene="heap"/);
+});
+
+test('binary tree scenes expose topology and algorithm-specific state', () => {
+  assert.match(renderer, /data-tree-mode=/);
+  assert.match(renderer, /algo-tree-edge/);
+  assert.match(renderer, /algo-tree-branch-label/);
+  assert.match(renderer, /algo-tree-return-flow/);
+  assert.match(renderer, /algo-tree-null/);
+  assert.match(renderer, /algo-tree-mirror-axis/);
+  assert.match(renderer, /algo-tree-sightline/);
+  for (const entry of [
+    'inorderTraversal',
+    'levelOrder',
+    'maxDepth',
+    'invertTree',
+    'isSymmetric',
+    'lowestCommonAncestor',
+    'diameterOfBinaryTree',
+    'maxPathSum',
+    'buildTree',
+    'isValidBST',
+    'rightSideView',
+  ]) {
+    assert.match(renderer, new RegExp(`${entry}: 'BINARY TREE`));
+  }
+  assert.match(styles, /\.algo-tree-node\s*\{[\s\S]*?border-radius:\s*50%/);
+});
+
+test('Lark embeds preserve the runner entry needed by semantic scenes', () => {
+  assert.match(embedBuilder, /runner:\s*\{\s*entry:\s*problem\.runner\.entry/);
 });
 
 test('algorithm visuals use the existing learning design tokens', () => {

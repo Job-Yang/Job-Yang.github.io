@@ -1356,23 +1356,93 @@
 
 .algo-tree {
   position: relative;
-  min-height: 240px;
+  min-height: 270px;
+  overflow: hidden;
 }
 
 .algo-tree-node {
   position: absolute;
-  display: grid;
+  display: flex;
   top: var(--tree-y);
   left: var(--tree-x);
-  z-index: 2;
-  width: 46px;
-  height: 46px;
-  place-items: center;
+  z-index: 3;
+  width: 58px;
+  height: 58px;
+  align-items: center;
+  justify-content: center;
   transform: translate(-50%, -50%);
-  border: 1px solid var(--ink-dim);
-  background: var(--learn-control);
+  border: 2px solid rgba(238, 240, 246, 0.55);
+  border-radius: 50%;
+  background: #101217;
+  box-shadow: 0 0 0 5px rgba(8, 9, 11, 0.88);
   color: var(--ink);
-  font: 700 12px var(--mono);
+  font: 800 15px var(--mono);
+  transition:
+    border-color 220ms ease,
+    background 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.algo-tree-node > b {
+  font: inherit;
+}
+
+.algo-tree-node > em {
+  position: absolute;
+  top: -19px;
+  color: var(--ink-faint);
+  font: normal 8px var(--mono);
+}
+
+.algo-tree-node.is-active {
+  transform: translate(-50%, -50%) scale(1.08);
+  border-color: var(--learn-blue);
+  background: rgba(114, 167, 255, 0.28);
+  box-shadow:
+    0 0 0 5px rgba(245, 185, 113, 0.82),
+    0 0 24px rgba(114, 167, 255, 0.34);
+}
+
+.algo-tree-node.is-selected:not(.is-active),
+.algo-tree-node.is-visible {
+  border-color: var(--learn-green);
+  background: rgba(101, 214, 166, 0.14);
+}
+
+.algo-tree-node.is-complete:not(.is-active):not(.is-selected) {
+  border-color: rgba(101, 214, 166, 0.62);
+}
+
+.algo-tree-node.is-target:not(.is-active) {
+  border-color: var(--learn-gold);
+  box-shadow:
+    0 0 0 5px rgba(8, 9, 11, 0.88),
+    0 0 16px rgba(245, 185, 113, 0.2);
+}
+
+.algo-tree-node.is-invalid {
+  border-color: var(--learn-red);
+  background: rgba(255, 125, 114, 0.16);
+  box-shadow:
+    0 0 0 5px rgba(255, 125, 114, 0.28),
+    0 0 20px rgba(255, 125, 114, 0.22);
+  color: var(--learn-red);
+}
+
+.algo-tree--levelOrder .algo-tree-node.is-active,
+.algo-tree--rightSideView .algo-tree-node.is-active {
+  border-color: var(--learn-blue);
+  background: rgba(114, 167, 255, 0.2);
+  box-shadow: 0 0 0 5px rgba(8, 9, 11, 0.88);
+}
+
+.algo-tree--rightSideView .algo-tree-node.is-visible {
+  border-color: var(--learn-green);
+  background: rgba(101, 214, 166, 0.2);
+  box-shadow:
+    0 0 0 5px rgba(101, 214, 166, 0.18),
+    0 0 18px rgba(101, 214, 166, 0.2);
 }
 
 .algo-tree > svg {
@@ -1382,60 +1452,152 @@
   height: 100%;
 }
 
-.algo-tree > svg path {
+.algo-tree > svg .algo-tree-edge,
+.algo-tree > svg .algo-tree-return-flow {
   fill: none;
-  stroke: var(--ink-faint);
-  stroke-width: 0.7;
+  stroke: rgba(238, 240, 246, 0.34);
+  stroke-width: 2;
+  stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
 
 .algo-tree > svg marker path {
-  fill: var(--ink-faint);
+  fill: var(--learn-blue);
   stroke: none;
 }
 
-.algo-tree > svg path.is-selected-edge {
+.algo-tree > svg .algo-tree-edge.is-active-edge {
   stroke: var(--learn-blue);
-  stroke-width: 1.6;
+  stroke-width: 3;
+}
+
+.algo-tree > svg .algo-tree-edge.is-selected-edge {
+  stroke: var(--learn-green);
+  stroke-width: 2.6;
+}
+
+.algo-tree > svg .algo-tree-edge.is-semantic-edge {
+  stroke: var(--learn-green);
+  stroke-width: 3.2;
+}
+
+.algo-tree > svg .algo-tree-edge.is-swap-edge {
+  stroke: var(--learn-gold);
+  stroke-width: 3;
+  stroke-dasharray: 5 5;
+  animation: algo-tree-return 780ms linear infinite;
+}
+
+.algo-tree > svg .algo-tree-edge.is-invalid-edge {
+  stroke: var(--learn-red);
+}
+
+.algo-tree > svg .algo-tree-edge.is-return-edge {
+  stroke: rgba(114, 167, 255, 0.38);
+}
+
+.algo-tree > svg .algo-tree-return-flow {
+  stroke: var(--learn-blue);
+  stroke-width: 2.8;
+  stroke-dasharray: 7 7;
+  animation: algo-tree-return 780ms linear infinite;
+}
+
+.algo-tree-branch-label {
+  fill: var(--learn-blue);
+  font: 700 4px var(--mono);
 }
 
 .algo-tree-node small {
   position: absolute;
   top: calc(100% + 5px);
-  padding: 2px 4px;
-  background: #08090b;
+  left: 50%;
+  padding: 3px 7px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(101, 214, 166, 0.58);
+  border-radius: 999px;
+  background: #080b0a;
   color: var(--learn-green);
-  font: 9px var(--mono);
+  font: 800 9px var(--mono);
   white-space: nowrap;
 }
 
-.algo-tree-swap {
+.algo-tree-mode {
   position: absolute;
-  right: 8px;
-  bottom: 5px;
+  top: 3px;
+  right: 2px;
+  z-index: 4;
+  max-width: 58%;
+  padding: 4px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(8, 9, 11, 0.9);
+  color: var(--ink-dim);
+  font: 9px var(--mono);
+  text-align: right;
+}
+
+.algo-tree-null {
+  position: absolute;
   display: grid;
-  grid-template-columns: 38px minmax(120px, auto) 38px;
-  align-items: center;
-  justify-items: center;
-  padding: 5px 8px;
-  border: 1px solid var(--learn-rule);
-  background: rgba(8, 9, 11, 0.92);
-  color: var(--ink-faint);
-  font: 10px var(--mono);
-}
-
-.algo-tree-swap b {
-  color: var(--learn-gold);
-}
-
-.algo-tree-swap i {
-  color: var(--learn-blue);
-  font-style: normal;
-}
-
-.algo-tree-swap strong {
-  grid-column: 2;
+  top: var(--tree-y);
+  left: var(--tree-x);
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(101, 214, 166, 0.72);
+  border-radius: 50%;
+  background: rgba(8, 11, 10, 0.94);
   color: var(--learn-green);
+  font: 800 10px var(--mono);
+}
+
+.algo-tree-null small {
+  position: absolute;
+  top: calc(100% + 2px);
+  color: var(--learn-green);
+  font: 8px var(--mono);
+}
+
+.algo-tree-mirror-axis,
+.algo-tree-sightline {
+  position: absolute;
+  z-index: 1;
+  top: 12%;
+  bottom: 9%;
+  left: 50%;
+  width: 1px;
+  border-left: 1px dashed rgba(245, 185, 113, 0.5);
+}
+
+.algo-tree-mirror-axis span,
+.algo-tree-sightline span {
+  position: absolute;
+  top: 0;
+  left: 7px;
+  color: var(--learn-gold);
+  font: normal 8px var(--mono);
+  white-space: nowrap;
+}
+
+.algo-tree-sightline {
+  right: 2%;
+  left: auto;
+  border-color: rgba(114, 167, 255, 0.6);
+}
+
+.algo-tree-sightline span {
+  right: 7px;
+  left: auto;
+  color: var(--learn-blue);
+}
+
+@keyframes algo-tree-return {
+  to {
+    stroke-dashoffset: -28;
+  }
 }
 
 .algo-grid {

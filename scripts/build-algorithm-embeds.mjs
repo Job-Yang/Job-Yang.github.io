@@ -49,6 +49,9 @@ function embedProblem(problem) {
     exampleInput: problem.exampleInput,
     expected: problem.expected,
     family: problem.family,
+    runner: {
+      entry: problem.runner.entry,
+    },
     visual: problem.visual,
     tips: problem.tips,
     steps: problem.steps,

@@ -676,19 +676,131 @@ function renderStack(spec, step) {
 }
 
 function renderTree(spec, step, stepIndex) {
-  const values = spec.visual.tree || spec.visual.values || [];
+  const baseValues = spec.visual.tree || spec.visual.values || [];
+  const values = [...baseValues];
   const positions = [
-    [50, 10],
-    [28, 37],
-    [72, 37],
-    [16, 65],
-    [40, 65],
-    [60, 65],
-    [84, 65],
+    [50, 14],
+    [28, 44],
+    [72, 44],
+    [14, 75],
+    [38, 75],
+    [62, 75],
+    [86, 75],
   ];
+
+  if (spec.runner.entry === 'invertTree') {
+    const swapSubtrees = (left, right) => {
+      if (left >= values.length && right >= values.length) return;
+      [values[left], values[right]] = [values[right], values[left]];
+      swapSubtrees(left * 2 + 1, right * 2 + 1);
+      swapSubtrees(left * 2 + 2, right * 2 + 2);
+    };
+    for (const item of spec.steps.slice(0, stepIndex + 1)) {
+      const parent = values.findIndex((value) => value === item.variables.node);
+      if (parent < 0) continue;
+      swapSubtrees(parent * 2 + 1, parent * 2 + 2);
+    }
+  }
+
   const visibleValues = spec.runner.entry === 'buildTree'
     ? new Set(spec.steps.slice(0, stepIndex + 1).map((item) => item.variables.root))
     : null;
+
+  const indexesFor = (tokens = []) => {
+    if (!Array.isArray(tokens)) return [];
+    return values.flatMap((value, index) => (
+      value !== null
+      && value !== undefined
+      && tokens.some((token) => JSON.stringify(token) === JSON.stringify(value))
+        ? [index]
+        : []
+    ));
+  };
+  const nodeIndex = (value) => values.findIndex((item) => (
+    item !== null
+    && item !== undefined
+    && JSON.stringify(item) === JSON.stringify(value)
+  ));
+  const symmetricPairs = [[1, 2], [3, 6], [4, 5], [4, 5], [3, 6]];
+  const activeValues = step.variables.level
+    || step.view?.active
+    || [step.variables.node ?? step.variables.root ?? step.variables.visible];
+  const activeIndexes = spec.runner.entry === 'isSymmetric'
+    ? symmetricPairs[stepIndex] || []
+    : indexesFor(Array.isArray(activeValues) ? activeValues : [activeValues]);
+  const activeIndex = activeIndexes[0] ?? -1;
+  const activePathEdges = new Set();
+  activeIndexes.forEach((startIndex) => {
+    for (let index = startIndex; index > 0;) {
+      const parent = Math.floor((index - 1) / 2);
+      activePathEdges.add(`${parent}-${index}`);
+      index = parent;
+    }
+  });
+
+  const completedValues = spec.steps.slice(0, stepIndex + 1).flatMap((item) => {
+    if (spec.runner.entry === 'inorderTraversal') return item.variables.res || [];
+    if (spec.runner.entry === 'levelOrder') return (item.variables.res || []).flat();
+    if (spec.runner.entry === 'rightSideView') return item.variables.res || [];
+    return [item.variables.node ?? item.variables.root].filter((value) => value !== undefined);
+  });
+  const completedIndexes = new Set(indexesFor(completedValues));
+  const selectedIndexes = new Set(indexesFor(step.view?.selected));
+  if (spec.runner.entry === 'isSymmetric') {
+    activeIndexes.forEach((index) => selectedIndexes.add(index));
+  }
+  if (spec.runner.entry === 'inorderTraversal') {
+    indexesFor(step.variables.res).forEach((index) => selectedIndexes.add(index));
+  }
+  if (spec.runner.entry === 'rightSideView') {
+    indexesFor(step.variables.res).forEach((index) => selectedIndexes.add(index));
+  }
+
+  const invalidIndexes = new Set(indexesFor(step.view?.discarded));
+  const returnValues = new Map();
+  spec.steps.slice(0, stepIndex + 1).forEach((item) => {
+    const node = item.variables.node;
+    const value = item.variables.return
+      ?? item.variables.returnDepth
+      ?? item.variables.returnGain;
+    if (node !== undefined && value !== undefined) returnValues.set(node, value);
+  });
+  const semanticPathEdges = new Set();
+  const addPathToRoot = (index) => {
+    for (let child = index; child > 0;) {
+      const parent = Math.floor((child - 1) / 2);
+      semanticPathEdges.add(`${parent}-${child}`);
+      child = parent;
+    }
+  };
+  const addBestBranch = (startIndex) => {
+    let parent = startIndex;
+    while (parent >= 0) {
+      const candidates = [parent * 2 + 1, parent * 2 + 2]
+        .filter((index) => index < values.length && values[index] !== null && values[index] !== undefined);
+      if (!candidates.length) return;
+      const child = candidates.sort((left, right) => (
+        Number(returnValues.get(values[right]) ?? 0) - Number(returnValues.get(values[left]) ?? 0)
+      ))[0];
+      semanticPathEdges.add(`${parent}-${child}`);
+      parent = child;
+    }
+  };
+  if (spec.runner.entry === 'lowestCommonAncestor') {
+    spec.steps.slice(0, 2).forEach((item) => addPathToRoot(nodeIndex(item.variables.node)));
+  }
+  if (['diameterOfBinaryTree', 'maxPathSum'].includes(spec.runner.entry) && activeIndex >= 0) {
+    const left = activeIndex * 2 + 1;
+    const right = activeIndex * 2 + 2;
+    if (left < values.length && values[left] !== null && values[left] !== undefined) {
+      semanticPathEdges.add(`${activeIndex}-${left}`);
+      addBestBranch(left);
+    }
+    if (right < values.length && values[right] !== null && values[right] !== undefined) {
+      semanticPathEdges.add(`${activeIndex}-${right}`);
+      addBestBranch(right);
+    }
+  }
   const markerId = `algo-tree-arrow-${spec.number}`;
   const edges = values.flatMap((value, index) => {
     if (value === null || value === undefined) return [];
@@ -700,8 +812,30 @@ function renderTree(spec, step, stepIndex) {
   const returnValue = step.variables.return
     ?? step.variables.returnDepth
     ?? step.variables.returnGain;
+  const hasReturnFlow = activeIndex > 0 && returnValue !== undefined;
+  const modeText = {
+    inorderTraversal: `遍历结果 ${formatValue(step.variables.res || [])}`,
+    levelOrder: `第 ${Number(step.variables.depth ?? 0) + 1} 层 ${formatValue(step.variables.level || [])}`,
+    maxDepth: '叶子返回 1 · 空节点返回 0',
+    invertTree: `交换节点 ${formatValue(step.variables.node)} 的 L / R`,
+    isSymmetric: `镜像配对 ${formatValue(step.variables.leftNode)} ↔ ${formatValue(step.variables.rightNode)}`,
+    lowestCommonAncestor: `左返回 ${formatValue(step.variables.leftReport)} · 右返回 ${formatValue(step.variables.rightReport)}`,
+    diameterOfBinaryTree: `穿过当前节点 ${formatValue(step.variables.through)} 条边`,
+    maxPathSum: `穿过当前节点 ${formatValue(step.variables.through)} · best ${formatValue(step.variables.best)}`,
+    buildTree: `前序取根 ${formatValue(step.variables.root)} · 中序切左右`,
+    isValidBST: `合法区间 (${formatValue(step.variables.low)}, ${formatValue(step.variables.high)})`,
+    rightSideView: `右侧可见 ${formatValue(step.variables.visible)}`,
+  }[spec.runner.entry] || 'ROOT / LEFT / RIGHT';
+  const showNullChildren = activeIndex >= 0
+    && (values[activeIndex * 2 + 1] === null || values[activeIndex * 2 + 1] === undefined)
+    && (values[activeIndex * 2 + 2] === null || values[activeIndex * 2 + 2] === undefined)
+    && ['maxDepth', 'diameterOfBinaryTree', 'maxPathSum'].includes(spec.runner.entry);
+  const targetValues = spec.runner.entry === 'lowestCommonAncestor'
+    ? spec.steps.slice(0, 2).map((item) => item.variables.node)
+    : [];
+
   return `
-    <div class="algo-tree" data-structure-scene="tree">
+    <div class="algo-tree algo-tree--${escapeHtml(spec.runner.entry)}" data-structure-scene="tree" data-tree-mode="${escapeHtml(spec.runner.entry)}">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
@@ -711,38 +845,71 @@ function renderTree(spec, step, stepIndex) {
         ${edges.map(([parent, child]) => {
           const [x1, y1] = positions[parent];
           const [x2, y2] = positions[child];
-          const selected = includesToken(step.view?.selected, values[parent])
-            && includesToken(step.view?.selected, values[child]);
-          return `<path class="${selected ? 'is-selected-edge' : ''}" d="M${x1} ${y1 + 7} L${x2} ${y2 - 7}" marker-end="url(#${markerId})"></path>`;
+          const classes = ['algo-tree-edge'];
+          const edgeKey = `${parent}-${child}`;
+          if (activePathEdges.has(edgeKey)) classes.push('is-active-edge');
+          if (semanticPathEdges.has(edgeKey)) classes.push('is-semantic-edge');
+          if (selectedIndexes.has(parent) && selectedIndexes.has(child)) classes.push('is-selected-edge');
+          if (invalidIndexes.has(child)) classes.push('is-invalid-edge');
+          if (
+            spec.runner.entry === 'invertTree'
+            && activeIndexes.includes(parent)
+            && selectedIndexes.has(child)
+          ) classes.push('is-swap-edge');
+          if (hasReturnFlow && child === activeIndex) classes.push('is-return-edge');
+          return `
+            <path class="${classes.join(' ')}" d="M${x1} ${y1} L${x2} ${y2}"></path>
+            ${parent === 0
+              ? `<text class="algo-tree-branch-label" x="${(x1 + x2) / 2 + (child === 1 ? -2 : 2)}" y="${(y1 + y2) / 2 - 2}">${child === 1 ? 'L' : 'R'}</text>`
+              : ''}
+            ${hasReturnFlow && child === activeIndex
+              ? `<path class="algo-tree-return-flow" d="M${x2} ${y2} L${x1} ${y1}" marker-end="url(#${markerId})"></path>`
+              : ''}
+          `;
         }).join('')}
       </svg>
+      ${spec.runner.entry === 'isSymmetric' ? '<i class="algo-tree-mirror-axis"><span>镜像轴</span></i>' : ''}
+      ${spec.runner.entry === 'rightSideView' ? '<i class="algo-tree-sightline"><span>RIGHT VIEW →</span></i>' : ''}
+      <div class="algo-tree-mode">${escapeHtml(modeText)}</div>
       ${values.slice(0, 7).map((value, index) => {
         if (value === null || value === undefined) return '';
         if (visibleValues && !visibleValues.has(value)) return '';
-        const active = includesToken(step.view?.active, value);
-        const selected = includesToken(step.view?.selected, value);
+        const classes = ['algo-tree-node'];
+        if (index === 0) classes.push('is-root');
+        if (activeIndexes.includes(index)) classes.push('is-active');
+        if (selectedIndexes.has(index)) classes.push('is-selected');
+        if (completedIndexes.has(index) && !activeIndexes.includes(index)) classes.push('is-complete');
+        if (invalidIndexes.has(index)) classes.push('is-invalid');
+        if (targetValues.some((target) => JSON.stringify(target) === JSON.stringify(value))) {
+          classes.push('is-target');
+        }
+        if (
+          spec.runner.entry === 'rightSideView'
+          && (step.variables.res || []).some((item) => JSON.stringify(item) === JSON.stringify(value))
+        ) classes.push('is-visible');
+        const nodeReturn = returnValues.get(value);
         return `
           <span
-            class="algo-tree-node${active ? ' is-active' : ''}${selected ? ' is-selected' : ''}"
+            class="${classes.join(' ')}"
             style="--tree-x:${positions[index]?.[0] ?? 50}%;--tree-y:${positions[index]?.[1] ?? 50}%"
             data-tree-index="${index}"
           >
-            ${escapeHtml(value)}
-            ${active && returnValue !== undefined
-              ? `<small>return ${escapeHtml(returnValue)}</small>`
+            <b>${escapeHtml(value)}</b>
+            ${index === 0 ? '<em>ROOT</em>' : ''}
+            ${nodeReturn !== undefined
+              ? `<small>${activeIndexes.includes(index) ? '↑ ' : ''}${escapeHtml(nodeReturn)}</small>`
               : ''}
           </span>
         `;
       }).join('')}
-      ${spec.runner.entry === 'invertTree' ? `
-        <div class="algo-tree-swap">
-          <span>${escapeHtml(step.variables.leftBefore)}</span>
-          <b>交换 ${escapeHtml(step.variables.node)} 的左右孩子</b>
-          <span>${escapeHtml(step.variables.rightBefore)}</span>
-          <i>↘</i><i>↙</i>
-          <strong>${escapeHtml(step.variables.leftAfter)} · ${escapeHtml(step.variables.rightAfter)}</strong>
-        </div>
-      ` : ''}
+      ${showNullChildren ? [-1, 1].map((direction) => `
+        <span
+          class="algo-tree-null"
+          style="--tree-x:${positions[activeIndex][0] + direction * 6}%;--tree-y:${Math.min(94, positions[activeIndex][1] + 18)}%"
+        >
+          <b>∅</b><small>0</small>
+        </span>
+      `).join('') : ''}
     </div>
   `;
 }
@@ -986,6 +1153,17 @@ function visualLabel(spec) {
     getIntersectionNode: 'SHARED NODE TOPOLOGY',
     addTwoNumbers: 'DIGITS / CARRY / RESULT',
     mergeKLists: 'SOURCE LISTS / HEAP / RESULT',
+    inorderTraversal: 'BINARY TREE / LEFT · ROOT · RIGHT',
+    levelOrder: 'BINARY TREE / LEVELS · QUEUE',
+    maxDepth: 'BINARY TREE / RETURNS · DEPTH',
+    invertTree: 'BINARY TREE / SWAP LEFT · RIGHT',
+    isSymmetric: 'BINARY TREE / MIRROR PAIRS',
+    lowestCommonAncestor: 'BINARY TREE / REPORTS · LCA',
+    diameterOfBinaryTree: 'BINARY TREE / DEPTHS · DIAMETER',
+    maxPathSum: 'BINARY TREE / GAINS · BEST PATH',
+    buildTree: 'BINARY TREE / PREORDER · INORDER',
+    isValidBST: 'BINARY TREE / VALID RANGE',
+    rightSideView: 'BINARY TREE / LEVELS · RIGHT VIEW',
   };
   if (entryLabels[spec.runner.entry]) return entryLabels[spec.runner.entry];
   return {
