@@ -8,8 +8,6 @@ tags: ["Agent", "记忆系统", "知识图谱", "上下文工程"]
 editorialRank: 90
 draft: false
 source: public-rewrite
-source_id: "article-8930b0176e"
-review_required: true
 ---
 # 先把「Agent 记忆系统」讲清楚
 

@@ -10,8 +10,6 @@ pinOrder: 4
 editorialRank: 96
 draft: false
 source: public-rewrite
-source_id: "article-cb341520399f"
-review_required: true
 ---
 > [!NOTE]
 > **先说结论**

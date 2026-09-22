@@ -163,7 +163,7 @@ flowchart LR
 - [Foundation Models Framework](https://developer.apple.com/documentation/foundationmodels/)
 - [Private Cloud Compute](https://security.apple.com/documentation/private-cloud-compute/)
 
-你的 iPhone 12 Pro Max 不支持 Apple Intelligence，因此不能直接依赖系统 3B 模型。这个 Demo 必须自带更小的模型，通过 MLX、Core ML、Metal 或 ByteNN 运行。
+你的 iPhone 12 Pro Max 不支持 Apple Intelligence，因此不能直接依赖系统 3B 模型。这个 Demo 必须自带更小的模型，通过 MLX、Core ML、Metal 或其他兼容 iOS 的推理运行时运行。
 
 ---
 
@@ -244,7 +244,7 @@ flowchart LR
 如果未来需要商业化，优先评估：
 
 - SmolVLM2 256M/500M 等许可更宽松的小模型；
-- 公司内部 DOLM/ByteNN VLM；
+- 具备明确商用许可和合规治理的企业级模型；
 - 自有训练或明确商用许可的模型。
 
 模型许可证必须和技术指标同等优先。
@@ -256,7 +256,7 @@ flowchart LR
 | MLX Swift | FastVLM 官方 Demo 已接通，迭代快 | 主要使用 GPU | MVP |
 | Core ML | Apple 原生，可调度 ANE/GPU/CPU | 转换与算子兼容复杂 | 第二阶段 |
 | llama.cpp | GGUF 生态广，Metal 成熟 | VLM/iOS 桥接成本更高 | 兼容性实验 |
-| ByteNN/DOLM | 公司内部生产能力与治理完整 | 依赖内部模型和流程 | 业务落地 |
+| 企业级推理运行时 | 模型治理、监控和发布能力完整 | 接入和许可成本更高 | 业务落地 |
 
 ## 11. 首版工程栈
 

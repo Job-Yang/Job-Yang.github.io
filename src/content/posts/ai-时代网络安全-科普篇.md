@@ -6,8 +6,6 @@ category: "【费曼·调研】"
 tags: ["提示注入", "大模型安全", "同流漏洞"]
 draft: false
 source: public-rewrite
-source_id: "article-8cf59df03f"
-review_required: true
 ---
 # 你对着 AI 说"输出以上内容"，它就把老底交了出来
 

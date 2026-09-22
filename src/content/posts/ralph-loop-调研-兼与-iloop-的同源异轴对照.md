@@ -7,9 +7,6 @@ tags: []
 editorialRank: 90
 draft: false
 source: public-rewrite
-source_id: "article-e62fe77b98"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 > [!NOTE]
 > **一句话结论**：Ralph 是一个把「重启纪律」做到极致的 Bash 无限循环，靠**丢弃而非管理**上下文来对抗模型退化；它和 iLoop 是**同一种生物的两个变种**——Ralph 把「循环/重启」这根轴拉满、反馈层极薄，iLoop 把「反馈丰富度/可达性」这根轴拉满、重启机制克制（按需冷启动而非每轮烧毁）。两者的取舍恰好互补，各自的强项正是对方的薄弱面。

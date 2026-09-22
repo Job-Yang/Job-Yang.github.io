@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-4612c4fafe"
-migration_classification: "needs_format_review"
-review_required: true
 ---
 > [!NOTE]
 > **一句话结论**：这次没有发明任何新的定位原理。底层还是那两把老武器：无障碍(Accessibility)+ 模拟输入(HID)。真正变的是**上面套的那层封装**：给控件发「号码牌」、给屏幕算「指纹」，把原来甩给大模型的脏活自己接管了。所以省下来的是**跟模型的来回**，不是跟设备的来回。这篇从原理、进程边界、交互流程到迁移，整个起底一遍。配套增量清单见姊妹篇《XcodeBuildMCP 还能这么玩？》的「新版本新特性」一节。

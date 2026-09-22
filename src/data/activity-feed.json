@@ -1,82 +1,64 @@
 {
-  "schema": "JobYangActivityFeed:v1",
-  "generatedAt": "2026-08-26T19:26:08+08:00",
+  "schema": "JobYangActivityFeed:v2",
+  "visibility": "public_only",
+  "generatedAt": "2026-09-22T18:32:00+08:00",
   "threadCount": 4,
   "statusCounts": {
     "building": 3,
     "verifying": 1
   },
-  "sourceSummary": {
-    "private_projection": 3,
-    "public_repository": 1
-  },
   "threads": [
     {
       "id": "iloop-2",
       "title": "iLoop 2.0",
-      "summary": "三类助手共用同一条诊断与处置链，正在补远端最终验证。",
-      "latestEvidence": "本地与 CI 门禁通过，接收链已恢复。",
-      "nextGate": "人工确认后合入，再做远端模型链复验。",
-      "sourceClass": "private_projection",
-      "sourceLabel": "iLoop 任务与验收回执",
+      "summary": "正在把诊断、取证和处置统一进一条可恢复的工作链。",
+      "latestEvidence": "开源版的核心协议、插件边界和交互案例已经可以查看。",
+      "nextGate": "继续补齐跨平台插件与公开示例。",
       "href": "/projects/iloop/",
       "status": "verifying",
-      "updatedAt": "2026-08-26T19:24:04+08:00",
+      "updatedAt": "2026-09-22T18:32:00+08:00",
       "metrics": {
-        "phase": "最终验证"
+        "方向": "诊断与处置"
       }
     },
     {
       "id": "speed-lab",
       "title": "iLoop Speed Lab",
-      "summary": "并行审查已经跑出提速，编译与 UI 异步验证仍在做实验。",
-      "latestEvidence": "审查阶段与完整任务都拿到了可复核的墙钟样本。",
-      "nextGate": "补齐编译与 UI 异步验证的真实样本。",
-      "sourceClass": "private_projection",
-      "sourceLabel": "实证评测",
+      "summary": "围绕验证范围、并行边界和重复执行做公开方法实验。",
+      "latestEvidence": "页面示例已经改为合成数据，只解释方法，不映射任何实际项目。",
+      "nextGate": "继续补充可公开复现的基准。",
       "href": "/field/#speed-lab",
       "status": "building",
-      "updatedAt": "2026-08-25T21:34:27+08:00",
+      "updatedAt": "2026-09-22T18:32:00+08:00",
       "metrics": {
-        "审查墙钟下降": "70.1%",
-        "完整任务下降": "21.7%"
+        "示例口径": "合成数据",
+        "并行边界": "独立任务"
       }
     },
     {
       "id": "haohao",
       "title": "好好说话",
-      "summary": "正在优化技能召回与定制化，让中文交付更稳定地匹配使用场景。",
-      "latestEvidence": "召回优化设计今天继续更新。",
-      "nextGate": "把定制化规则变成可复现样本并回归。",
-      "sourceClass": "private_projection",
-      "sourceLabel": "文档 metadata",
+      "summary": "继续优化技能召回和风格适配，让中文交付更稳定。",
+      "latestEvidence": "公开说明与示例正在持续整理。",
+      "nextGate": "补齐可复现的公开样本。",
       "href": "/projects/haohao-shuohua/",
       "status": "building",
-      "updatedAt": "2026-08-26T15:03:27+08:00"
+      "updatedAt": "2026-09-22T18:32:00+08:00"
     },
     {
       "id": "autoloop",
       "title": "AutoLoop",
-      "statusLabel": "持续运行",
-      "summary": "每日自迭代持续运行，公开证据经过独立隐私扫描。",
-      "latestEvidence": "最近一轮完成本地验证，公开隐私扫描通过；本轮没有发布。",
-      "nextGate": "等待下一次每日运行。",
-      "sourceClass": "public_repository",
-      "sourceLabel": "公开证据",
+      "statusLabel": "持续迭代",
+      "summary": "公开仓库按计划做自检和小步迭代。",
+      "latestEvidence": "公开仓库保留可复核的构建和发布结果。",
+      "nextGate": "只在公开数据源上继续自动化。",
       "href": "/field/#autoloop",
       "status": "building",
-      "updatedAt": "2026-08-25T19:09:14.073351+00:00",
+      "updatedAt": "2026-09-22T18:32:00+08:00",
       "metrics": {
-        "运行日期": "2026-08-26",
-        "隐私扫描": "通过",
-        "本地验证": "通过",
-        "本轮发布": "未发布"
+        "数据来源": "公开仓库",
+        "内容门禁": "启用"
       }
     }
-  ],
-  "privacy": {
-    "mode": "allowlist_projection",
-    "scanStatus": "passed",
-    "rawSourcesPublished": false
-  }
+  ]
 }

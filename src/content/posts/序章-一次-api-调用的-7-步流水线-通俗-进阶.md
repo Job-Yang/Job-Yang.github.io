@@ -6,9 +6,6 @@ category: "AI 底层原理连载"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-8f7f3ad269"
-migration_classification: "awaiting_human_approval"
-review_required: true
 ---
 这是《写给客户端工程师的 AI 底层原理》系列的第一篇。
 

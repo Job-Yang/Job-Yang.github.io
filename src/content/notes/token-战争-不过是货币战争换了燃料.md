@@ -5,8 +5,6 @@ order: 22
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-fc6c40153b60"
-review_required: true
 ---
 Token 已是 AI 世界的通用货币，模型厂商就是新央行，手握定价、限流、迭代三权。它跑的循环和《货币战争》逐环对上。今天的无限量 Token 不是慷慨，是放水期——你烧掉的一半是纯挥霍，一半是替公司跑"怎么用 AI 取代你"的探索学费。最优解一旦跑通，水龙头就关，回旋镖飞回的正是当初帮它跑通的那批人。
 

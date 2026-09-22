@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-b4040b7893"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 > [!NOTE]
 > **核心结论**：CodeGraph 是一个预索引代码知识图谱工具，通过 tree-sitter + SQLite FTS5 构建代码结构索引，以 MCP Server 形式为 AI 编码 Agent 提供精准的代码上下文检索能力。实测可降低 \~35% 成本、减少 \~59% token 消耗、提升 \~49% 速度、减少 \~70% 工具调用次数。

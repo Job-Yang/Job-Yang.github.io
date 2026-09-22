@@ -5,8 +5,6 @@ order: 8
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-841c402bd174"
-review_required: true
 ---
 过去，一个想法到真正落地之间，横着一道很深的沟：钱、精力、时间，每一关都要刷掉一批人，能走到最后的没几个。
 

@@ -5,8 +5,6 @@ order: 6
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-d1869959eef9"
-review_required: true
 ---
 你要还在维护一套系统、一个代码库，现在最值当做的就一件事：把它从**对人友好**改成**对 AI 友好**。
 

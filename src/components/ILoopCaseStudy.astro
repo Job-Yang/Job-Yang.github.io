@@ -9,15 +9,15 @@ import {
 
 <section class="case-study" id="live-trim-case" data-iloop-case>
   <header class="case-intro">
-    <div class="eyebrow section-label">01 · 一个真实案例</div>
+    <div class="eyebrow section-label">01 · 一个合成案例</div>
     <h2 class="display">
       <span>AI Agent 遇到复杂问题，</span>
       <span>是怎么一步步解决的？</span>
     </h2>
     <p>
-      这是一次真实但脱敏的<strong>直播 SDK 包体裁剪</strong>：一个迭代多年、跨团队维护的
-      <strong>近百兆 SDK</strong>，要在<strong>十天级周期</strong>内从<strong>百万行级代码</strong>
-      中逐轮识别可删闭包，还不能破坏核心直播业务。最终做到<strong>约四成整体优化</strong>。
+      这是一个基于常见工程难题组合出的<strong>大型移动端 SDK 裁剪演练</strong>：
+      依赖长期演进、边界不断变化，还要在有限周期内逐轮识别可删闭包，
+      同时保证核心功能不被破坏。它只用于解释方法，不对应任何实际项目。
     </p>
   </header>
 
@@ -73,9 +73,9 @@ import {
       看 Agent 为什么继续、修复、跳过或补证。
     </p>
     <div class="loop-layout">
-      <aside class="round-list" aria-label="真实问题模式">
+      <aside class="round-list" aria-label="合成问题模式">
         <div class="round-list-head">
-          <span>TASK LOG / 真实问题模式</span><strong data-round-count>R01 / 10</strong>
+          <span>SCENARIO / 合成问题模式</span><strong data-round-count>R01 / 10</strong>
         </div>
         {ILOOP_ROUNDS.map((round, index) => (
           <button
@@ -137,7 +137,7 @@ import {
 
         <div class="live-trace">
           <header>
-            <span>LIVE TRACE / 节点执行日志</span>
+            <span>SIMULATED TRACE / 步骤演示</span>
             <strong data-live-status>WAITING</strong>
           </header>
           <div class="trace-feed" data-trace aria-live="polite">

@@ -6,9 +6,6 @@ category: "AI 底层原理连载"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-04aec93f9d"
-migration_classification: "needs_semantic_redaction"
-review_required: true
 ---
 > [!NOTE]
 > **《写给客户端工程师的 AI 底层原理》连载 · 第 4 期**

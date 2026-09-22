@@ -80,7 +80,7 @@ async function buildRuntime(lesson) {
 fs.mkdirSync(outputDir, { recursive: true });
 const artifacts = [];
 
-for (const lesson of manifest.lessons.filter((item) => item.feishuPlacement)) {
+for (const lesson of manifest.lessons.filter((item) => item.companionDocumentPlacement)) {
   const frameHeight = heightByExperiment[lesson.experimentId] || 560;
   const runtime = await buildRuntime(lesson);
   const html = `<meta charset="UTF-8">

@@ -10,8 +10,6 @@ pinOrder: 5
 editorialRank: 95
 draft: false
 source: public-rewrite
-source_id: "article-ea0c7e1ff3"
-review_required: true
 interactiveCourse: "/learn/ai-foundations/"
 ---
 **写在前面**

@@ -7,9 +7,6 @@ tags: []
 editorialRank: 76
 draft: false
 source: public-rewrite
-source_id: "article-fa5c92d4b3"
-migration_classification: "needs_image_review"
-review_required: true
 ---
 # Token 战争
 

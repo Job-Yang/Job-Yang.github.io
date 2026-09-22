@@ -6,9 +6,6 @@ category: "锻造手记"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-839246786f"
-migration_classification: "needs_image_review"
-review_required: true
 ---
 ![图片展示了Kimi K3的架构相关内容。左侧文字说明Kimi K3拥有2.8万亿参数，每次只用1/175，且为开源第一、全球第三。还提到不吹不踩，拆开Kimi K3的两块地基，即拆架构。右侧是一个由黑色正方形组成的网格，其中部分正方形被橙色和绿色突出显示，可能代表模型中的不同组件或模块。该图片与文档中对Kimi K3架构探索的内容相关，直观呈现了其架构部分的结构。](/assets/content/开源第一-全球第三-拆开-kimi-k3-的-2-8-万亿参数-看它到底做对了什么/01-image-1-9f38d8fd.png)
 

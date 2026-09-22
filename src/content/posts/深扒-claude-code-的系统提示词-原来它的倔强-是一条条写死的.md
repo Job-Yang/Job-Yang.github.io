@@ -6,9 +6,6 @@ category: "【汤山·畅想】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-5539c8896d"
-migration_classification: "needs_image_review"
-review_required: true
 ---
 > 一个 GitHub 仓库，把全网 AI 的"开机咒语"扒了个精光。ChatGPT、Claude Code、Gemini、Grok，一个没跑。这篇不谈跑分，只谈一件事：当你能读到一个模型的系统提示词，你读到的其实是它的灵魂——厂商亲手给它注入的性格、边界和信仰。
 

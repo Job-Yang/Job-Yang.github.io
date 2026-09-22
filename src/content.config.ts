@@ -6,7 +6,7 @@ const posts = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    // The source Feishu document's creation time, not its latest edit time.
+    // Public publication time, independent from any private editorial source.
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
     category: z.string(),
@@ -26,13 +26,12 @@ const notes = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/notes' }),
   schema: z.object({
     title: z.string().optional(),
-    // Use the author's time when known; otherwise persist one generated time.
+    // Use the author's time when known; otherwise persist one public date.
     publishedAt: z.coerce.date(),
     tags: z.array(z.string()).default([]),
     order: z.number().int().optional(),
     draft: z.boolean().default(false),
     source: z.enum(['public-rewrite', 'legacy']).default('public-rewrite'),
-    source_id: z.string().optional(),
   }),
 });
 

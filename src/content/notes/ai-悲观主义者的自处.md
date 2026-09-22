@@ -5,8 +5,6 @@ order: 7
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-ae04b39f3418"
-review_required: true
 ---
 我没那么乐观地相信 AI 会同步长出等量的新岗位，去稳稳接住被替代下来的程序员。大多数常规岗位上的码农，确实会被压缩；但把 AI 用到极致的工程师，依然有自己的位置。
 

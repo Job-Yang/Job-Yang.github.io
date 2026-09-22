@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-c73733fa05"
-migration_classification: "needs_semantic_redaction"
-review_required: true
 ---
 # 把"系统提示词"和"跑分"对起来看，它到底强在哪
 

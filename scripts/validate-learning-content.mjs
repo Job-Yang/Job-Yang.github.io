@@ -99,8 +99,12 @@ const articleExperiments = manifest.lessons
   .map((lesson) => lesson.experimentId);
 requireValue(articleExperiments.length >= 6, `expected at least 6 article experiments, found ${articleExperiments.length}`);
 
-const feishuExperiments = manifest.lessons.filter((lesson) => lesson.feishuPlacement);
-requireValue(feishuExperiments.length === 6, `expected 6 Feishu experiments, found ${feishuExperiments.length}`);
+const companionDocumentExperiments = manifest.lessons
+  .filter((lesson) => lesson.companionDocumentPlacement);
+requireValue(
+  companionDocumentExperiments.length === 6,
+  `expected 6 companion document experiments, found ${companionDocumentExperiments.length}`,
+);
 
 for (const experimentId of articleExperiments) {
   const marker = `data-learning-experiment="${experimentId}"`;
@@ -131,11 +135,11 @@ const legacyImages = fs.existsSync(legacyImageDir)
   : [];
 requireValue(
   imagePaths.length === 0,
-  `legacy Feishu-derived images must not be referenced, found ${imagePaths.length}`
+  `legacy companion-document images must not be referenced, found ${imagePaths.length}`
 );
 requireValue(
   legacyImages.length === 0,
-  `legacy Feishu-derived images must not be published, found ${legacyImages.length}`
+  `legacy companion-document images must not be published, found ${legacyImages.length}`
 );
 
 if (failures.length) {

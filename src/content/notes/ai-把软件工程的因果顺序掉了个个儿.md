@@ -5,8 +5,6 @@ order: 24
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-2fd8c33537a9"
-review_required: true
 ---
 过去先理解后写码，coding 既是产出也是理解的载体，理解是写的时候免费送的；AI 把最长的 coding 链路一口气塌缩后，变成先有码后理解，理解没了寄生的宿主，只能事后专门腾时间去读、去重建。所以理解债不是理解变贵了，而是被推迟——外包给 AI 又没真外包成，活写完走了，债还挂在你名下。验证成本绝对值没降，但占比暴涨升成新瓶颈：过去 review 自己写的码等于确认、白嫖，现在 review AI 写的码等于从零补课。
 

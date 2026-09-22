@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-cb5dd2f91d"
-migration_classification: "needs_semantic_redaction"
-review_required: true
 ---
 > [!NOTE]
 > **一句话定位**：XcodeBuildMCP 把 `xcodebuild` / `xcrun simctl` / AXe / LLDB / xcresult 全部包成 MCP 工具，给 IDE 智能体一个稳定、结构化、可并发的 iOS/macOS 工程操作面板。

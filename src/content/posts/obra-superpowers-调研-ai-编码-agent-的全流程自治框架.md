@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-73278c5ced"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 > [!NOTE]
 > **一句话总结**：Superpowers 是一套让 AI 编码 Agent "自动驾驶"的开发方法论 + 可组合 skill 框架。Agent 从需求澄清到代码合并全程自治，强制 TDD、subagent 驱动、两阶段 code review。GitHub 201K stars，MIT 协议。

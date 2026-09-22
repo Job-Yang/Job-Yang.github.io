@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-ed0ce8d1b3"
-migration_classification: "needs_format_review"
-review_required: true
 ---
 > [!NOTE]
 > **这篇怎么读。**前两版要么只有"道理"(空谈)、要么只有"源码"(流水账)。这版每一条都走同一条链路**:① 源码事实(因)→ ② 它为什么非这么干不可(推导)→ ③ 我们的收获(果)**。你能清楚看到——每个收获都是从那行代码里**推**出来的，不是拍脑袋。

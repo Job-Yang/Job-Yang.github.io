@@ -23,8 +23,8 @@ date: 2016-08-22 15:07:00.000000000 +08:00
 ## URL Scheme的应用场景？
 
 1. 使用iOS系统预设的URL Scheme调用系统App：
-   iOS系统内置的App，如mail，电话等等，都有相应的URL Scheme供其他的App调用.比如下面的代码就是使用系统的电话App给18888888888打电话。
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://18888888888"]];
+   iOS系统内置的App，如mail，电话等等，都有相应的URL Scheme供其他的App调用。比如下面的代码就是使用系统的电话App拨打公开服务热线。
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://10086"]];
    关于其他系统支持的URL Scheme我在此不再赘述。以下是一些Scheme合集:
 - [常用iOS URL Scheme附录](http://blog.csdn.net/chenyong05314/article/details/47791023)
 - [你所知道好玩有趣的 iOS URL schemes 有哪些](https://www.zhihu.com/question/19907735)

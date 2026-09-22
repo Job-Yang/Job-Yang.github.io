@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro check && npm run validate:algorithms && astro build",
+    "build": "npm run audit:public && astro check && npm run validate:algorithms && astro build && npm run audit:public -- --include-dist",
     "preview": "astro preview",
     "check": "astro check",
     "audit:public": "node scripts/audit-public-content.mjs",
+    "test:audit": "node --test tests/public-content-audit.test.mjs",
     "sync:activity": "node scripts/sync-activity-feed.mjs",
     "validate:learning": "node scripts/validate-learning-content.mjs",
     "validate:algorithms": "node scripts/validate-algorithm-content.mjs",

@@ -12,6 +12,7 @@ npm run dev
 生产验证：
 
 ```bash
+npm run test:audit
 npm run audit:public
 npm run build
 npm run preview
@@ -28,20 +29,22 @@ npm run preview
 
 ## 发布规则
 
-飞书文档不能直接进入公开仓库。每篇内容必须经过：
+非公开文档不能直接进入公开仓库。每篇内容必须经过：
 
 1. 从对外内容总表选择候选；
-2. 导出源文档到本地私有 DATA；
-3. 删除内部链接、人员信息、业务数据、日志、Token 与未公开细节；
-4. 改写为公开读者可独立理解的文章；
+2. 导出源材料到仓库外的私有 DATA；
+3. 删除组织专名、来源标识、业务数据、任务状态、运行记录、Token 与未公开细节；
+4. 把案例改写为公开读者可独立理解的通用说明或明确标注的合成示例；
 5. 人工确认；
 6. 加入 `src/content/posts/`。
 
-`npm run audit:public` 会拦截常见内部链接、内部平台名、脱敏占位符、疑似 Token 和本机私有路径。
+`npm run audit:public` 会扫描全部受 Git 跟踪的文本文件，拦截内部链接、组织专名、
+私有来源投影、编辑工作流元数据、运行产物路径、疑似 Token 和本机私有路径。
+`npm run build` 会在构建前检查源码，并在构建后再次扫描 `dist`。
 
-飞书源稿与公开 Markdown 的映射、revision、规范化基线和待审核更新包只保存在 iLoop
-DATA。日常同步读取两个内容索引，并只对已经迁移的文章做单条 revision 轻检查；源稿变化
-后生成差异包，不直接覆盖公开文章。
+源稿与公开 Markdown 的映射、revision、规范化基线和待审核更新包只保存在仓库外的
+私有 DATA。源稿变化后只生成差异包，不直接覆盖公开文章。完整流程见
+`.trae/skills/public-release-redactor/SKILL.md`。
 
 ## 技术
 

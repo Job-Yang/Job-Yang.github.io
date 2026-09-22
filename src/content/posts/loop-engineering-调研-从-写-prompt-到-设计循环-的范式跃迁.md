@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-c66a27b1d2"
-migration_classification: "needs_semantic_redaction"
-review_required: true
 ---
 > [!NOTE]
 > **一句话结论**：Loop Engineering 主张你别再亲手给 AI 敲每一条指令，而是去**设计一套自动敲指令、自动验收、自动记进度的系统**。它的真正价值不在那 6 个能 clone 的模板，而在它给「AI 编程的下一步」搭了一套清晰的分层骨架，这套骨架和我们熟悉的 harness 是「层级关系」而非「替代关系」。

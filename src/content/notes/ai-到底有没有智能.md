@@ -5,8 +5,6 @@ order: 17
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-4ac99f0d3259"
-review_required: true
 ---
 有，但不完整。
 

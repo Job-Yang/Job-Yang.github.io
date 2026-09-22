@@ -8,8 +8,6 @@ tags: ["AI", "医疗", "短剧", "行业判断"]
 editorialRank: 88
 draft: false
 source: public-rewrite
-source_id: "article-e4824f402733"
-review_required: true
 ---
 判断AI先动哪个行业，别盯着技术，去看它的经济账。哪个行业的账先算不过来，AI就先进哪个。而账亏得最狠的，是医疗。
 

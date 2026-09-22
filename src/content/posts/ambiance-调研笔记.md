@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-321a82ba84"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 怎么让一个大模型摆脱聊天框，变成一个能持续干活、还能自己维护自己的 agent？这背后有一个容易被忽略、可一旦想通就能串起所有设计的核心判断。下面就从这个判断出发，一步步把它推到具体的架构。
 

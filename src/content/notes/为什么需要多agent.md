@@ -5,8 +5,6 @@ order: 5
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-a7cb768caae0"
-review_required: true
 ---
 一个 Agent 不靠谱就多整几个让它们工贼互相卷，听起来像段子，但本质上和正常软件工程没区别
 

@@ -6,8 +6,6 @@ category: "【费曼·调研】"
 tags: ["Agent Harness", "iLoop", "架构"]
 draft: false
 source: public-rewrite
-source_id: "article-9d07cbf30b"
-review_required: true
 ---
 ## 一分钟看完
 

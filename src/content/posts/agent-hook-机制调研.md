@@ -8,8 +8,6 @@ tags: ["Agent", "Hook", "自动化", "安全边界"]
 editorialRank: 91
 draft: false
 source: public-rewrite
-source_id: "article-d27be2e344"
-review_required: true
 ---
 > [!NOTE]
 > 一句话结论：Hook 是 Agent 装配体系里专门管「确定性自动化」的那一层。它不靠模型自觉，而是在 Agent 运行循环的固定节点上强制触发你的脚本。凡是「每次都该发生、不该靠人或模型记得」的事，都该下沉成 Hook。

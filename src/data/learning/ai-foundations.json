@@ -80,7 +80,7 @@
       "experimentId": "journey",
       "sourceAnchor": "序章：一次 API 调用里发生了什么",
       "articlePlacement": "expanded",
-      "feishuPlacement": true,
+      "companionDocumentPlacement": true,
       "controls": [
         "输入 token 数",
         "输出 token 数",
@@ -196,7 +196,7 @@
       "experimentId": "attention",
       "sourceAnchor": "第二章：Self-Attention（自注意力机制）",
       "articlePlacement": "expanded",
-      "feishuPlacement": true,
+      "companionDocumentPlacement": true,
       "controls": [
         "Query token",
         "Causal Mask",
@@ -234,7 +234,7 @@
       "experimentId": "attention-systems",
       "sourceAnchor": "第三章：多头注意力、位置编码、GQA",
       "articlePlacement": "expanded",
-      "feishuPlacement": true,
+      "companionDocumentPlacement": true,
       "controls": [
         "场景",
         "位置差",
@@ -276,7 +276,7 @@
       "experimentId": "multimodal",
       "sourceAnchor": "第四章：多模态（ViT/CLIP）",
       "articlePlacement": "expanded",
-      "feishuPlacement": true,
+      "companionDocumentPlacement": true,
       "controls": [
         "图像分辨率",
         "patch 尺寸",
@@ -356,7 +356,7 @@
       "experimentId": "on-device",
       "sourceAnchor": "第六章：端侧部署——把大模型塞进手机",
       "articlePlacement": "expanded",
-      "feishuPlacement": true,
+      "companionDocumentPlacement": true,
       "controls": [
         "设备内存",
         "参数量",
@@ -476,7 +476,7 @@
       "experimentId": "client-api",
       "sourceAnchor": "第九章：客户端调用侧的四件事",
       "articlePlacement": "expanded",
-      "feishuPlacement": true,
+      "companionDocumentPlacement": true,
       "controls": [
         "实验场景",
         "Temperature",

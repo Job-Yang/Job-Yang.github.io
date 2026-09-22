@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-b3827c3f3b"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 > [!NOTE]
 > **一句话结论**：grok-build 的价值，不在它是"又一个编码 Agent"，而在它系统地回答了一个问题：当一个 Agent 会改变真实世界、长期运行、注意力有限又会犯错时，支撑它的 harness 该建立哪些机制。本文抛开具体代码实现，提炼它七条相互咬合的核心设计思想，以及对通用 Agent/harness 工程的可迁移启示。

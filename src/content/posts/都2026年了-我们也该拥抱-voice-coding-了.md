@@ -8,8 +8,6 @@ tags: ["Voice Coding", "Agent", "人机交互"]
 editorialRank: 87
 draft: false
 source: public-rewrite
-source_id: "article-4a662666c3b2"
-review_required: true
 ---
 你确定你说的不是 Vibe Coding，而是 Voice Coding？别慌，让我细细讲来。
 

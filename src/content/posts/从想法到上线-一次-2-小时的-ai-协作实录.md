@@ -6,9 +6,6 @@ category: "【费曼·实战复盘】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-383683eda7"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 那天和 AI 在拉一份「防御科技树」的清单，写到一半我顺手多打了一句：「能不能搞个能点的 NPC？」没需求文档、没原型图，就这一句。把它留下来之后，花了两小时做出来挂上线了，记录一下。
 

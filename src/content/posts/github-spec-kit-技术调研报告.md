@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-69d3aca213"
-migration_classification: "needs_semantic_redaction"
-review_required: true
 ---
 > [!NOTE]
 > **一句话结论**：Spec Kit 是 GitHub 官方推出的 **Spec-Driven Development（规约驱动开发）**开源工具包，给 Claude Code、Copilot、Gemini CLI 等 30+ AI Coding Agent 套上一层"先把需求讲清楚再写代码"的流程脚手架。它不是新 Agent，也不内置模型，而是一层**方法论 + 命令模板 + 产物结构**。

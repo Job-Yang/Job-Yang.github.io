@@ -6,9 +6,6 @@ category: "【费曼·实战复盘】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-30840786fa"
-migration_classification: "needs_semantic_redaction"
-review_required: true
 ---
 > [!NOTE]
 > **一句话结论**：Agent = Model + Harness。模型是野马，Harness 是缰绳。决定一个 coding agent 好不好用的，不是模型参数量，而是包在模型外面那套让它能真正干完活的工程系统。有人拆开 Claude Code 发现，约 98% 是 harness，只有 2% 是模型调用。

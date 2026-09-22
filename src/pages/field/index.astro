@@ -7,8 +7,6 @@ import activityFeed from '../../data/activity-feed.json';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const autoLoop = activityFeed.threads.find((thread) => thread.id === 'autoloop');
-const autoLoopMetrics = autoLoop && 'metrics' in autoLoop ? autoLoop.metrics : undefined;
-const autoLoopPublished = autoLoopMetrics?.['本轮发布'] === '已发布';
 const speedLab = activityFeed.threads.find((thread) => thread.id === 'speed-lab');
 const speedMetrics = speedLab && 'metrics' in speedLab ? speedLab.metrics : undefined;
 
@@ -27,7 +25,7 @@ function formatTimestamp(value: string): string {
 
 <BaseLayout
   title="现场"
-  description="查看 Job Yang 正在推进的 Agent 工程、真实证据与可交互案例。"
+  description="查看 Job Yang 的公开工程进展、方法实验与可交互案例。"
   active="field"
 >
   <PageBackdrop
@@ -49,15 +47,15 @@ function formatTimestamp(value: string): string {
       </div>
       <dl class="field-stats">
         <div><dt>ACTIVE</dt><dd>{activityFeed.threadCount}</dd></div>
-        <div><dt>PUBLIC SOURCE</dt><dd>{activityFeed.sourceSummary.public_repository ?? 0}</dd></div>
-        <div><dt>SAFE PROJECTION</dt><dd>{activityFeed.sourceSummary.private_projection ?? 0}</dd></div>
+        <div><dt>OPEN DEMOS</dt><dd>5</dd></div>
+        <div><dt>DATA</dt><dd>PUBLIC</dd></div>
       </dl>
     </header>
 
     <section class="workbench wide">
       <ActivityFeed mode="full" heading="此刻在推进" />
       <p class="projection-note">
-        私有任务、验收记录和文档只导出字段白名单；页面不读取原始文件。
+        这里仅使用公开仓库和人工整理的公开内容。
       </p>
     </section>
 
@@ -70,8 +68,8 @@ function formatTimestamp(value: string): string {
         <a href="#live-trim-case">
           <span>01</span>
           <div>
-            <strong>直播裁剪任务回放</strong>
-            <p>从模糊目标到多轮编译、UI 取证、回退与续跑，完整看一次 Agent 闭环。</p>
+            <strong>大型 SDK 裁剪方法演示</strong>
+            <p>用合成场景展示 Agent 如何处理编译失败、UI 反证、回退与续跑。</p>
           </div>
           <b>进入回放 ↓</b>
         </a>
@@ -136,16 +134,16 @@ function formatTimestamp(value: string): string {
         </header>
         <div class="evidence-track">
           <div class="passed">
-            <span>01</span><strong>本地验证</strong><p>通过</p>
+            <span>01</span><strong>公开仓库</strong><p>可直接查看</p>
           </div>
           <div class="passed">
-            <span>02</span><strong>隐私扫描</strong><p>通过，0 条发现</p>
+            <span>02</span><strong>内容门禁</strong><p>提交前执行</p>
           </div>
-          <div class:list={[{ passed: autoLoopPublished, pending: !autoLoopPublished }]}>
-            <span>03</span><strong>本轮发布</strong><p>{autoLoopPublished ? '已发布' : '未发布'}</p>
+          <div class="passed">
+            <span>03</span><strong>构建记录</strong><p>随公开提交生成</p>
           </div>
-          <div class:list={[{ passed: autoLoopPublished, pending: !autoLoopPublished }]}>
-            <span>04</span><strong>线上回读</strong><p>{autoLoopPublished ? '通过' : '本轮未触发'}</p>
+          <div class="pending">
+            <span>04</span><strong>线上回读</strong><p>发布后核对</p>
           </div>
         </div>
         <div class="evidence-summary">
@@ -169,7 +167,7 @@ function formatTimestamp(value: string): string {
           ))}
         </div>
         <p class="lab-boundary">
-          数据边界：这些数字只来自并行审查。编译和 UI 异步验证还没有真实样本，不能外推。
+          数据边界：页面只使用合成示例解释方法，不映射任何实际项目。
         </p>
       </section>
     )}

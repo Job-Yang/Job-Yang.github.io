@@ -6,9 +6,6 @@ category: "【费曼·实战复盘】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-81ec54cf58"
-migration_classification: "needs_format_review"
-review_required: true
 ---
 # 背景
 

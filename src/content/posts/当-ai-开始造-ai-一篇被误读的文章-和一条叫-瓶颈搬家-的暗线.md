@@ -6,9 +6,6 @@ category: "【费曼·调研】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-b5882c3394"
-migration_classification: "ready_for_editorial_review"
-review_required: true
 ---
 > [!NOTE]
 > **这篇文档干嘛的**：Anthropic 那篇《When AI builds itself》原文很长、数字很唬人。我把它压成一条主线——它讲的其实不是「AI 快能自己造自己了」，而是「每自动化一步，瓶颈就往上游搬一格」。读完你能用三分钟给外行讲清：文章说了什么、哪里最硬、哪里不敢说满，以及它对做 Agent 的人意味着什么。

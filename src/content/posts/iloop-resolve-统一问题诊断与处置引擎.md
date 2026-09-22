@@ -8,8 +8,6 @@ tags: ["iLoop", "Agent 架构", "问题诊断", "原子能力"]
 editorialRank: 94
 draft: false
 source: public-rewrite
-source_id: "article-7ee0d49c3ae4"
-review_required: true
 ---
 > iLoop Resolve 不是从一张抽象架构图开始的。我们先做了一个 Oncall 助手，发现 AI 已经能接住排查里最费人的部分：从模糊现象出发，沿着证据不断缩小范围，直到找到根因。既然最复杂的诊断已经可以复用，修 Bug、稳定性治理、配置排查这些助手，就不必再各造一套。Resolve 做的，是把这条已经跑通过的链路拆成原子能力，再按不同任务重新组装。
 

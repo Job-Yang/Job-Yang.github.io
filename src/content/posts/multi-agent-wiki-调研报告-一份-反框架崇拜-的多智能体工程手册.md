@@ -6,9 +6,6 @@ category: "【费曼·实战复盘】"
 tags: []
 draft: false
 source: public-rewrite
-source_id: "article-7088b244ca"
-migration_classification: "needs_refactor"
-review_required: true
 ---
 > [!NOTE]
 > **一句话总结**：[Multi-Agent Wiki](https://multi-agent.wiki/) 是一个面向工程师的多智能体系统知识库，不是论文综述，也不是某个框架的宣传册。它用 **5 个工程维度**给 **29 个交互模式**做坐标系，并配套 **6 篇生产落地指南**，回答一个核心问题**："我这个任务，到底要不要、以及怎么用多智能体？"**

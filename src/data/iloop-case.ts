@@ -40,7 +40,7 @@ export const ILOOP_STAGES = [
 export const ILOOP_ROUNDS: ILoopRound[] = [
   {
     id: 'R01',
-    name: '连续十几个小时，跨夜续跑',
+    name: '长任务中断后，从断点续跑',
     state: 'continued',
     stateLabel: 'CONTINUED',
     focus: '长任务靠外置状态续跑，不靠一个对话窗口硬撑。',
@@ -48,7 +48,7 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
     finalLabel: '续跑',
     finalMessage: '上下文重建后从下一候选继续，而非从头来',
     events: [
-      event(0, 'pass', '恢复近百兆 SDK 的裁剪目标、边界和上次断点'),
+      event(0, 'pass', '恢复大型 SDK 的裁剪目标、边界和上次断点'),
       event(1, 'pass', '读取未决候选，选择下一组最小闭包'),
       event(2, 'pass', '只处理当前候选，不混入其它改动'),
       event(3, 'pass', '重新生成依赖并记录本轮差异'),
@@ -60,13 +60,13 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
   },
   {
     id: 'R02',
-    name: '三次编译红，逐层补齐闭包',
+    name: '多轮编译失败，逐层补齐闭包',
     state: 'accepted',
     stateLabel: 'REPAIRED',
     focus: '把连续编译错误当成依赖图探针，而不是重复撞同一个错误。',
-    summary: [['fail', '编译失败 ×3'], ['return', '逐层修复'], ['pass', '全链路通过']],
+    summary: [['fail', '编译失败'], ['return', '逐层修复'], ['pass', '全链路通过']],
     finalLabel: '修复完成',
-    finalMessage: '三次不同错误逐层暴露依赖，补回最小子闭包后构建通过',
+    finalMessage: '不同错误逐层暴露依赖，补回最小子闭包后构建通过',
     events: [
       event(0, 'pass', '锁定设置相关闭包，不扩大到整个模块'),
       event(1, 'pass', '提出“该闭包可以独立排除”的候选假设'),
@@ -108,13 +108,13 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
   },
   {
     id: 'R04',
-    name: '三个候选同根因失败，止损跳过',
+    name: '连续同根因失败，止损跳过',
     state: 'skipped',
     stateLabel: 'SKIPPED',
     focus: '连续失败说明假设已经被证伪，继续重试没有意义。',
-    summary: [['fail', '同根因失败 ×3'], ['return', '完整回补'], ['pass', '跳过并记录']],
+    summary: [['fail', '同根因失败'], ['return', '完整回补'], ['pass', '跳过并记录']],
     finalLabel: '跳过',
-    finalMessage: '三个候选连续命中同一根因，保留该簇并切换下一候选',
+    finalMessage: '多个候选连续命中同一根因，保留该簇并切换下一候选',
     events: [
       event(0, 'pass', '圈定低频候选簇，要求失败后可完整恢复'),
       event(1, 'pass', '选择第一个看似独立的候选'),
@@ -127,7 +127,7 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
       event(4, 'fail', '候选 3 第三次命中同一根因'),
       event(3, 'return', '回补候选 3，恢复现场后停止继续重试'),
       event(6, 'neutral', '同根因达到止损阈值，判定该候选簇跳过', '跳过'),
-      event(7, 'pass', '记录三次失败与跳过原因，切换下一候选'),
+      event(7, 'pass', '记录失败模式与跳过原因，切换下一候选'),
     ],
   },
   {
@@ -156,7 +156,7 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
   },
   {
     id: 'R06',
-    name: '真机不崩，仍缺三类关键证据',
+    name: '运行不崩，仍缺关键证据',
     state: 'partial',
     stateLabel: 'PARTIAL',
     focus: '没有崩溃只能证明“活着”，不能证明功能正确。',
@@ -178,7 +178,7 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
   },
   {
     id: 'R07',
-    name: '本机生效，冷环境依赖却回灌',
+    name: '单机生效，冷环境依赖却回灌',
     state: 'accepted',
     stateLabel: 'FORMALIZED',
     focus: '单机成功不是可交付证据，换环境后仍成立才算闭环。',
@@ -186,7 +186,7 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
     finalLabel: '双环境通过',
     finalMessage: '正式无依赖变体在两台环境构建一致',
     events: [
-      event(0, 'pass', '要求裁剪结果在本机和冷环境都可复现'),
+      event(0, 'pass', '要求裁剪结果在开发环境和冷环境都可复现'),
       event(1, 'pass', '验证“本地 patch 已形成稳定方案”的假设'),
       event(2, 'pass', '应用临时无依赖改动'),
       event(3, 'pass', '本地缓存让依赖生成看起来正常'),
@@ -230,7 +230,7 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
     finalLabel: '环境阻塞',
     finalMessage: '不改基础设施、不虚报收益，恢复可用环境继续下一批',
     events: [
-      event(0, 'pass', '目标是用 Release 产物量化真实收益'),
+      event(0, 'pass', '目标是用发布产物验证裁剪效果'),
       event(1, 'pass', '先区分业务失败与分析环境故障'),
       event(2, 'pass', '保持业务改动不变，单独检查工具链'),
       event(3, 'pass', '生成 Release 分析输入'),
@@ -268,15 +268,15 @@ export const ILOOP_ROUNDS: ILoopRound[] = [
 
 export const ILOOP_CONSTRAINTS = [
   ['C1', '目标没有现成答案', '只能说“尽可能瘦身”，没人能给最终删除清单'],
-  ['C2', '百万行级候选，边界动态', '反射、DI、配置和特殊场景让静态无引用失效'],
+  ['C2', '候选规模大，边界动态', '反射、DI、配置和特殊场景让静态无引用失效'],
   ['C3', '改动必须最小且可回退', '一刀过大会让编译错误和行为回归无法归因'],
-  ['C4', '每轮都要拿真实反馈', '生成依赖、编译、日志、UI 树、截图缺一不可'],
+  ['C4', '每轮都要取得外部反馈', '按目标选择编译、日志、UI 树或截图作为证据'],
   ['C5', '失败要修，也要知道停', '同类错误可修；顽固候选必须回补并跳过'],
-  ['C6', '十天级周期，人力不可达', '人工无法持续完成修改、验证、记录和下一轮决策'],
+  ['C6', '周期有限，人力不可达', '人工很难持续完成修改、验证、记录和下一轮决策'],
 ] as const;
 
 export const ILOOP_VERDICTS = [
-  ['人工手改', 'kill', '✗ 不可达', '人能判断单个问题，但十天内读不完、改不完，也盯不住数百次反馈。'],
+  ['人工手改', 'kill', '✗ 不可达', '人能判断单个问题，但难以持续处理大量候选并跟踪每轮反馈。'],
   ['规则脚本', 'kill', '✗ 不成立', '脚本需要确定规则；这里的边界来自编译、运行和业务现场，写不成一套静态规则。'],
   ['普通 AI 单次改', 'kill', '✗ 走不完', '能给一次修改，却不会持有长程状态、读取下一次反馈、回退并自行换候选。'],
   ['AI Agent', 'win', '✓ 唯一可执行解', '持有目标与进度，调用工具拿反馈，根据证据修复、回退、跳过，再决定下一轮。'],

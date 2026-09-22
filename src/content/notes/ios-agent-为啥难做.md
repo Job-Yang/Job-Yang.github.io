@@ -5,8 +5,6 @@ order: 3
 tags: []
 draft: false
 source: public-rewrite
-source_id: "note-2014629dd401"
-review_required: true
 ---
 **不是 iOS 难，是它先天缺东西。**比如我们看看前端为什么 AI 写得飞起？因为它有完整的"写 → 编 → 跑"反馈闭环。而iOS的问题是
 
