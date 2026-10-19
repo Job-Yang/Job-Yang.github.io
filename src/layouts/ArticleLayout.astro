@@ -183,6 +183,7 @@ const {
     margin: 18px 0 24px;
     font-size: clamp(40px, 6vw, 60px);
     line-height: 1.18;
+    text-wrap: balance;
     overflow-wrap: anywhere;
   }
 
@@ -507,6 +508,16 @@ const {
     border-radius: 12px;
   }
 
+  .prose video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 28px 0 12px;
+    border-radius: 12px;
+    background: #0a0a0a;
+  }
+
   .prose table {
     display: block;
     width: 100%;
@@ -662,7 +673,7 @@ const {
       padding-top: 48px;
     }
 
-    .article h1 {
+    .article header h1 {
       font-size: 40px;
     }
 

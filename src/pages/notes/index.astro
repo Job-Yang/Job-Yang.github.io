@@ -5,7 +5,7 @@ import FeedbackLoopDiagram from '../../components/FeedbackLoopDiagram.astro';
 import SpaceModel from '../../components/SpaceModel.astro';
 import { formatContentDate } from '../../lib/dates';
 
-const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+const notes = (await getCollection('notes', ({ data }) => import.meta.env.DEV || !data.draft)).sort(
   (a, b) =>
     b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf() ||
     (a.data.title ?? '').localeCompare(b.data.title ?? '', 'zh-CN'),

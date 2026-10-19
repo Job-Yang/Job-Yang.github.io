@@ -3,7 +3,7 @@ import { getCollection, render } from 'astro:content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  const posts = await getCollection('posts', ({ data }) => import.meta.env.DEV || !data.draft);
   return posts.map((post) => ({
     params: { id: post.id },
     props: { post },
@@ -20,7 +20,8 @@ const charCount = (bodyText.match(/[\u4e00-\u9fff]/g) || []).length
 const readingMinutes = post.data.readingMinutes ?? Math.max(1, Math.round(charCount / 350));
 
 // First in-body image → og:image for richer social cards.
-const firstImage = (post.body ?? '').match(/!\[[^\]]*\]\((\/[^)\s]+)\)/)?.[1];
+const firstImage = (post.body ?? '').match(/!\[[^\]]*\]\((\/[^)\s]+)\)/)?.[1]
+  ?? (post.body ?? '').match(/<img\b[^>]*\bsrc="(\/[^"]+)"/)?.[1];
 ---
 
 <ArticleLayout

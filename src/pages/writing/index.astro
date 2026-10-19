@@ -6,7 +6,7 @@ import { formatContentDate } from '../../lib/dates';
 import { getLegacyPosts } from '../../lib/legacy';
 import { comparePosts } from '../../lib/posts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(comparePosts);
+const posts = (await getCollection('posts', ({ data }) => import.meta.env.DEV || !data.draft)).sort(comparePosts);
 const legacyPosts = await getLegacyPosts();
 const categories = [...new Set(posts.map((post) => post.data.category))];
 ---
