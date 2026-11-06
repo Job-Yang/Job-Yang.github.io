@@ -27,6 +27,7 @@ jobs:
 
       - run: npm ci
       - run: npm run test:audit
+      - run: node --test tests/pages-deployment.test.cjs
       - run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
@@ -39,10 +40,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
     timeout-minutes: 35
     steps:
+      - uses: actions/checkout@v4
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/github-script@v8
         with:
-          timeout: 1800000
+          script: |
+            const deployPages = require("./scripts/deploy-pages.cjs");
+            await deployPages({ github, context, core });
