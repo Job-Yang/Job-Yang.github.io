@@ -1,64 +1,67 @@
 {
   "schema": "JobYangActivityFeed:v2",
   "visibility": "public_only",
-  "generatedAt": "2026-09-22T18:32:00+08:00",
-  "threadCount": 4,
+  "generatedAt": "2026-11-06T22:22:45+08:00",
+  "threadCount": 5,
   "statusCounts": {
-    "building": 3,
+    "building": 4,
     "verifying": 1
   },
   "threads": [
     {
       "id": "iloop-2",
-      "title": "iLoop 2.0",
-      "summary": "正在把诊断、取证和处置统一进一条可恢复的工作链。",
-      "latestEvidence": "开源版的核心协议、插件边界和交互案例已经可以查看。",
-      "nextGate": "继续补齐跨平台插件与公开示例。",
+      "title": "iLoop",
+      "status": "building",
+      "statusLabel": "持续迭代",
+      "summary": "继续打磨目标、工具、反馈与验收，让 Agent 按证据推进任务。",
+      "latestEvidence": "闭环方法已整理成 iLoop 与 VDD，设计说明和可交互示例可以查看。",
+      "nextGate": "继续核对工具反馈与完成标准，补充可公开复现的示例。",
       "href": "/projects/iloop/",
-      "status": "verifying",
-      "updatedAt": "2026-09-22T18:32:00+08:00",
-      "metrics": {
-        "方向": "诊断与处置"
-      }
+      "updatedAt": "2026-11-06T22:22:45+08:00"
     },
     {
-      "id": "speed-lab",
-      "title": "iLoop Speed Lab",
-      "summary": "围绕验证范围、并行边界和重复执行做公开方法实验。",
-      "latestEvidence": "页面示例已经改为合成数据，只解释方法，不映射任何实际项目。",
-      "nextGate": "继续补充可公开复现的基准。",
-      "href": "/field/#speed-lab",
+      "id": "personal-harness",
+      "title": "Personal Harness",
       "status": "building",
-      "updatedAt": "2026-09-22T18:32:00+08:00",
-      "metrics": {
-        "示例口径": "合成数据",
-        "并行边界": "独立任务"
-      }
+      "statusLabel": "开发中",
+      "summary": "组合模型、技能与工具，搭建可迁移的个人研发工作台。",
+      "latestEvidence": "已明确运行时、方法和软件交互的分工，设计与组合取舍有文章可查。",
+      "nextGate": "继续验证日常任务的工具组合，逐项确认迁移与恢复的边界。",
+      "href": "/writing/personal-harness-workbench/",
+      "updatedAt": "2026-11-06T22:22:45+08:00"
     },
     {
       "id": "haohao",
       "title": "好好说话",
-      "summary": "继续优化技能召回和风格适配，让中文交付更稳定。",
-      "latestEvidence": "公开说明与示例正在持续整理。",
-      "nextGate": "补齐可复现的公开样本。",
+      "status": "verifying",
+      "statusLabel": "评测中",
+      "summary": "从单一总分转向逐句核对，用人工判断检验保真与表达。",
+      "latestEvidence": "评测方法已改为先核对事实，再判断表达；作者反馈用于整理问题与候选规则。",
+      "nextGate": "继续补充盲测与人工标注，确认改写是否有用、是否改变了原意。",
       "href": "/projects/haohao-shuohua/",
-      "status": "building",
-      "updatedAt": "2026-09-22T18:32:00+08:00"
+      "updatedAt": "2026-11-06T22:22:45+08:00"
     },
     {
       "id": "autoloop",
       "title": "AutoLoop",
-      "statusLabel": "持续迭代",
-      "summary": "公开仓库按计划做自检和小步迭代。",
-      "latestEvidence": "公开仓库保留可复核的构建和发布结果。",
-      "nextGate": "只在公开数据源上继续自动化。",
-      "href": "/field/#autoloop",
       "status": "building",
-      "updatedAt": "2026-09-22T18:32:00+08:00",
-      "metrics": {
-        "数据来源": "公开仓库",
-        "内容门禁": "启用"
-      }
+      "statusLabel": "交互试验",
+      "summary": "试验多角色任务协作与现场回放，继续打磨流程和交互。",
+      "latestEvidence": "任务现场已有交互原型；角色、弹窗和流程的关系仍在调整。",
+      "nextGate": "减少弹窗遮挡，让界面清楚表达任务正在做什么。",
+      "href": "/field/#autoloop",
+      "updatedAt": "2026-11-06T22:22:45+08:00"
+    },
+    {
+      "id": "games-and-hardware",
+      "title": "游戏与硬件",
+      "status": "building",
+      "statusLabel": "持续尝试",
+      "summary": "从《界门》《神兵录》，试到改键软件、水豚硬件与语音输入。",
+      "latestEvidence": "游戏实机演示、改键界面和硬件画面已整理；新的个人工具继续小步尝试。",
+      "nextGate": "继续验证玩法和日常使用，让每个原型留下能复核的演示。",
+      "href": "/writing/a-year-building-with-ai/",
+      "updatedAt": "2026-11-06T22:22:45+08:00"
     }
   ]
 }

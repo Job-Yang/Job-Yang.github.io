@@ -7,8 +7,6 @@ import activityFeed from '../../data/activity-feed.json';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const autoLoop = activityFeed.threads.find((thread) => thread.id === 'autoloop');
-const speedLab = activityFeed.threads.find((thread) => thread.id === 'speed-lab');
-const speedMetrics = speedLab && 'metrics' in speedLab ? speedLab.metrics : undefined;
 
 function formatTimestamp(value: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -16,9 +14,6 @@ function formatTimestamp(value: string): string {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
   }).format(new Date(value));
 }
 ---
@@ -43,7 +38,7 @@ function formatTimestamp(value: string): string {
       <div>
         <span class="eyebrow">FIELD / LIVE ENGINEERING</span>
         <h1 class="display">现场</h1>
-        <p>这里不讲方法，直接看 Agent 正在做什么。</p>
+        <p>当前在做的方向，和可以直接查看的作品、方法与交互。</p>
       </div>
       <dl class="field-stats">
         <div><dt>ACTIVE</dt><dd>{activityFeed.threadCount}</dd></div>
@@ -76,10 +71,10 @@ function formatTimestamp(value: string): string {
         <a href="#autoloop">
           <span>02</span>
           <div>
-            <strong>AutoLoop 公开证据</strong>
-            <p>不看 Supervisor 自报成功，直接核对隐私扫描、本地验证、提交和发布状态。</p>
+            <strong>AutoLoop：任务协作与回放</strong>
+            <p>把角色、任务和结果放进同一个现场，看看协作怎样被表达。</p>
           </div>
-          <b>查看证据 ↓</b>
+          <b>查看进展 ↓</b>
         </a>
         <button
           type="button"
@@ -90,7 +85,7 @@ function formatTimestamp(value: string): string {
           <span>03</span>
           <div>
             <strong>3D 铁匠铺</strong>
-            <p>进入一个真实运行的交互世界，看 AutoLoop 每日迭代的公开作品。</p>
+            <p>进入一个可以操作的交互原型，查看角色与任务现场。</p>
           </div>
           <b>进入世界 →</b>
         </button>
@@ -121,56 +116,37 @@ function formatTimestamp(value: string): string {
       <section class="evidence-section wide" id="autoloop">
         <header class="evidence-heading">
           <div>
-            <span class="eyebrow">PUBLIC EVIDENCE / AUTOLOOP</span>
-            <h2 class="display">每天跑一轮，结果如实留在这里。</h2>
+            <span class="eyebrow">PROTOTYPE / AUTOLOOP</span>
+            <h2 class="display">把多角色协作做成看得懂的现场。</h2>
           </div>
-          <a
-            href="https://github.com/Job-Yang/npc_voice_panel_3d/tree/master/.autoloop/runs/public-evidence"
-            target="_blank"
-            rel="noreferrer"
-          >
-            打开公开证据 ↗
-          </a>
+          <a href="/writing/a-year-building-with-ai/">阅读试验记录 →</a>
         </header>
         <div class="evidence-track">
-          <div class="passed">
-            <span>01</span><strong>公开仓库</strong><p>可直接查看</p>
-          </div>
-          <div class="passed">
-            <span>02</span><strong>内容门禁</strong><p>提交前执行</p>
-          </div>
-          <div class="passed">
-            <span>03</span><strong>构建记录</strong><p>随公开提交生成</p>
-          </div>
-          <div class="pending">
-            <span>04</span><strong>线上回读</strong><p>发布后核对</p>
-          </div>
+          <div><span>01</span><strong>任务目标</strong><p>当前要做什么</p></div>
+          <div><span>02</span><strong>角色分工</strong><p>谁负责哪一部分</p></div>
+          <div><span>03</span><strong>过程回放</strong><p>动作与结果怎样对应</p></div>
+          <div><span>04</span><strong>交互调整</strong><p>减少遮挡与操作干扰</p></div>
         </div>
         <div class="evidence-summary">
-          <p><strong>当前结论</strong>{autoLoop.latestEvidence}</p>
-          <p><strong>下一道 Gate</strong>{autoLoop.nextGate}</p>
-          <time datetime={autoLoop.updatedAt}>证据更新于 {formatTimestamp(autoLoop.updatedAt)}</time>
+          <p><strong>已有进展</strong>{autoLoop.latestEvidence}</p>
+          <p><strong>接下来</strong>{autoLoop.nextGate}</p>
+          <time datetime={autoLoop.updatedAt}>整理于 {formatTimestamp(autoLoop.updatedAt)}</time>
         </div>
       </section>
     )}
 
-    {speedLab && (
-      <section class="lab-section wide" id="speed-lab">
-        <div>
-          <span class="eyebrow">EXPERIMENT / SPEED LAB</span>
-          <h2 class="display">先把已经证实的提速摆出来。</h2>
-          <p>{speedLab.summary}</p>
-        </div>
-        <div class="lab-metrics">
-          {speedMetrics && Object.entries(speedMetrics).map(([label, value]) => (
-            <div><strong>{String(value)}</strong><span>{label}</span></div>
-          ))}
-        </div>
-        <p class="lab-boundary">
-          数据边界：页面只使用合成示例解释方法，不映射任何实际项目。
-        </p>
-      </section>
-    )}
+    <section class="lab-section wide" id="speed-lab">
+      <div>
+        <span class="eyebrow">METHOD / SPEED LAB</span>
+        <h2 class="display">怎样选择验证范围与并行边界。</h2>
+        <p>保留提速方法的讨论：明确这轮要验证什么，把互不依赖的工作并行，再核对有没有漏掉反馈。</p>
+      </div>
+      <div class="lab-metrics">
+        <div><strong>合成示例</strong><span>解释方法</span></div>
+        <div><strong>独立任务</strong><span>并行前提</span></div>
+      </div>
+      <p class="lab-boundary">这里只解释方法，不把示例当成实际项目收益。<a href="/writing/iloop-性能优化-任务分析与验证提速/">阅读方法说明 →</a></p>
+    </section>
   </div>
 </BaseLayout>
 

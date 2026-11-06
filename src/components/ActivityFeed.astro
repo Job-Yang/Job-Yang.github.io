@@ -29,9 +29,6 @@ function formatTimestamp(value: string): string {
     timeZone: 'Asia/Shanghai',
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
   }).format(new Date(value));
 }
 ---
@@ -44,14 +41,14 @@ function formatTimestamp(value: string): string {
       {mode === 'compact' && (
         <div class="feed-meta">
           <strong>{threads.length} 条主线</strong>
-          <span>更新于 {formatTimestamp(feed.generatedAt)}</span>
+          <span>整理于 {formatTimestamp(feed.generatedAt)}</span>
         </div>
       )}
     </div>
     {mode === 'full' && (
       <div class="feed-meta">
         <strong>{threads.length} 条主线</strong>
-        <span>更新于 {formatTimestamp(feed.generatedAt)}</span>
+        <span>整理于 {formatTimestamp(feed.generatedAt)}</span>
       </div>
     )}
     {mode === 'compact' && (
@@ -88,7 +85,7 @@ function formatTimestamp(value: string): string {
             {mode === 'full' && (
               <div class="activity-flow">
                 <div>
-                  <span>刚完成</span>
+                  <span>已有进展</span>
                   <p>{thread.latestEvidence}</p>
                 </div>
                 <b aria-hidden="true">→</b>
