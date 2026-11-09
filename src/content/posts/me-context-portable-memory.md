@@ -10,6 +10,10 @@ source: "public-rewrite"
 
 本方案要解决的问题很具体：每个人在多个 AI 宿主（本地模型、云 AI、编程 agent）之间反复自我介绍，而平台聊天记忆带不走、也换不了宿主。me-context 把"关于我、关于我身边的人"的事实与偏好，沉淀成一份 **本地、明文、可拷贝、人能直接看懂和改的 Markdown 档案** ，再由一个 MIT 开源的 skill 负责科学采集、分层读取和安全投喂。本文面向技术读者，讲清楚它依赖什么知识、链路怎么跑、与 Claude Code / Codex / Cursor 原生记忆差在哪里、以及不做什么。
 
+<img src="/assets/content/me-context-portable-memory/image-14.webp" alt="虚构数据的示例人物关系网与档案页" width="1000" height="910" loading="lazy" decoding="async" />
+
+这里展示的是虚构数据的静态截图。交互发生在生成的本地 HTML 中：点人物看记录，点自己看档案与已授权内容，看完可返回关系网。
+
 # 背景与缺口
 
 对 11 个现有方案做"五要素"核对（科学采集、主动取舍、可移植、关系建模、读侧敏感分层）， **没有一个全绿** ：
@@ -30,17 +34,17 @@ source: "public-rewrite"
 
 | 结论 / 数字 | 来源 | 对设计的意义 |
 |-|-|-|
-| 大五维度有跨职业预测效度（尽责性 ρ≈.23），人格能预测人生结果 | [Barrick & Mount 1991](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1744-6570.1991.tb00688.x)；[Roberts 等](https://pmc.ncbi.nlm.nih.gov/articles/PMC4499872/) | 采大五，不采类型学 |
-| 短量表信度边界：[Mini-IPIP](https://ipip.ori.org/MiniIPIPKey.htm) α .65–.77；[BFI-2-XS](https://www.ocf.berkeley.edu/~johnlab/bfi.html) 只够粗筛；[TIPI](https://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/) α .40–.73 | IPIP / Soto & John | 只给"粗轮廓带"，不做诊断 |
+| 大五维度有跨职业预测效度（尽责性 ρ≈.23），人格能预测人生结果 | [Barrick & Mount 1991](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1744-6570.1991.tb00688.x)；[Roberts 等](https://pmc.ncbi.nlm.nih.gov/articles/PMC4499872/) | 大五效度成立，但默认不采；用户明确想做学术自评时才单独引导 |
+| 短量表信度边界：[Mini-IPIP](https://ipip.ori.org/MiniIPIPKey.htm) α .65–.77；[BFI-2-XS](https://www.ocf.berkeley.edu/~johnlab/bfi.html) 只够粗筛；[TIPI](https://gosling.psy.utexas.edu/scales-weve-developed/ten-item-personality-measure-tipi/) α .40–.73 | IPIP / Soto & John | 短量表默认不进采集，用户明确想做时单独引导 |
 | 弃 [MBTI](https://www.themyersbriggs.com/hubfs/Addressing misconceptions about the MBTI Assessment.pdf)：5 周后约 50% 的人在某一维度翻转；漏了 N 维；巴纳姆效应（[Forer 1949](https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470479216.corpsy0108)） | 行业测量学共识 | 不做类型标签 |
 | 显式写进上下文的偏好确实有效 | [LaMP, arXiv:2304.11406](https://arxiv.org/abs/2304.11406) | 显式档案有效 |
 | 把行为写成结构化规格，约为全量上下文的 1/25 成本 | [arXiv:2605.28969](https://arxiv.org/abs/2605.28969) | 原子化、行为化条目 |
 | SJT r≈.26–.34；结构化行为访谈 r=.51；工作样本 r=.54 | [Schmidt & Hunter 等元分析](http://www.homepages.se.edu/cvonbergen/files/2013/11/The-Validity-and-Utility-of-Selection-Methods-in-Personnel-Psychology_Practical-and-Theoretical-Implications-of-85-Years-of-Research-Findings.pdf) | 用情境题/行为题，不用空泛自评 |
-| IRT/CAT 信息增益：按当前估计选最有信息的题（MovieLens/ASVAB 可省近半时长） | IRT 文献 | 三档采集、断点续填、冷启动熵选问 |
-| 问卷疲劳：>60 题或 >20 分钟完成率骤降，15+ 题完成率约 42% | 问卷方法学 | 快速档 \~10 题/8–10 分钟 |
+| IRT/CAT 信息增益：按当前估计选最有信息的题（MovieLens/ASVAB 可省近半时长） | IRT 文献 | 借 IRT 思想做信任梯度分层采集、断点续填；CAT 自适应选题与熵选问为参考思想，当前未实现 |
+| 问卷疲劳：>60 题或 >20 分钟完成率骤降，15+ 题完成率约 42% | 问卷方法学 | 低敏话题成组带出、单轮不轰炸 |
 | 言行不一：observed ≠ declared；AI 推断可被人推翻（[Contestable AI](https://arxiv.org/abs/2506.01662)） | HCI / 可信 AI | source 分层、人裁决 |
 | 记忆提取 [MEXTRA](https://arxiv.org/abs/2502.13172)；持久记忆投毒（[Bad Memory](https://arxiv.org/html/2607.14611)）会污染后续建议 | 记忆安全研究 | AI 不直接落盘，先 inbox 人确认 |
-| 健康信息缺失会翻转建议；医学引用约 47% 被指编造；[SEC](https://www.sec.gov/files/exams-eia-risk-alert.pdf) 把采集质量写成合规前提 | 医学 / 金融合规研究 | L3 健康财务逐次确认、不自动投喂 |
+| 健康信息缺失会翻转建议；医学引用约 47% 被指编造；[SEC](https://www.sec.gov/files/exams-eia-risk-alert.pdf) 把采集质量写成合规前提 | 医学 / 金融合规研究 | 健康按本地授权范围记录，健康与财务上云逐次确认、不自动投喂 |
 
 ## 社交网与自我记忆理论（本轮新增，支撑关系网与"少即是多"）
 
@@ -88,8 +92,6 @@ me-context 的 onboarding，本质是" **新个人助理向老板做入职情况
 
 快速档就是"助理入职了解"：8 个事实/偏好模块是 AI 心里的话题地图，不是照念的问卷；首轮不追求问全，顺着用户当下愿意聊的话题走，随时跳过、只给大概、分次补。开场先发固定"开场话术"（讲清身份目的、怎么聊、只存本地不上传、健康财务家庭默认本地、可看可改可删）。
 
-<img src="/assets/content/me-context-portable-memory/image-04.webp" alt="图 4 · 助理 onboarding 信息模块：8 个事实/偏好卡片（称呼基本/身体健康/工作方向/生活喜好/家庭重要的人/协作方式/自我标签/隐私设置）+ 底部时间轴（快速约10–12分钟 → 标准逐模块追问 → 深度领域事实清单，全程无量表）" width="1800" height="623" loading="lazy" decoding="async" />
-
 | 模块 | 问什么（事实/偏好） | 默认存储位置 / 敏感度 |
 |-|-|-|
 | ① 称呼与基本 | 怎么称呼、pronouns、城市/时区 | L0/L1 · 可给云 |
@@ -115,8 +117,6 @@ me-context 的 onboarding，本质是" **新个人助理向老板做入职情况
 
 回答不等于记忆。机器要把回答"转化"成可证伪的原子条目，且 **未确认的一律先落 inbox，不直接写进 declared** 。
 
-<img src="/assets/content/me-context-portable-memory/image-06.webp" alt="图 5 · 转化流程：量表→反向键计分(6-x)→五维粗轮廓带（非诊断）；开放题→原子化打标→inbox 草稿→批量确认→declared" width="1800" height="716" loading="lazy" decoding="async" />
-
 -  **早期量表方案（非默认）** ：按 IPIP 官方键反向计分（反向题取 6−x）→ 五维求和 → 领域级粗轮廓带（偏高/居中/偏低）， **不产诊断标签、不贴**  [ **MBTI** ](https://www.themyersbriggs.com/hubfs/Addressing misconceptions about the MBTI Assessment.pdf)  **式人格类型** 。
 -  **开放/情境题** ：原子化——一条 = 一个事实/偏好、行为化可证伪；打 source（declared/observed/inferred）、confidence、layer、domain、updated；AI 拟稿先进 `inbox/`，人在批量整理时采纳/改/否/升级。
 
@@ -137,7 +137,7 @@ me-context 的 onboarding，本质是" **新个人助理向老板做入职情况
 | 层 | 对应 Conway | me-context 落法 | 是否迁移 |
 |-|-|-|-|
 | 核心总结 MD | lifetime periods + general events | 人写确认的结构化原子条目 |  **唯一迁移物**  |
-| 可选事件层 events.jsonl | event-specific knowledge | 具体事件/轶事 | 本轮不实现、不迁移（V2） |
+| 可选事件层 events.jsonl | event-specific knowledge | 具体事件/轶事 | 可选事件日志尚未实现，非核心迁移内容 |
 | 不记 | — | 一次性闲聊 / 临时状态 / L4 / 未确认推断 / 他人敏感隐私 | — |
 
 正面回答一个常被忽略的点： **全程本地明文 Markdown、无加密流程** 。用户随时能打开文件看见"AI 记住了我什么"，透明、可审、可手改、可删——这是特性不是缺陷。用户不必懂文件结构，所有操作都通过对话完成。
@@ -153,6 +153,8 @@ me-context 的 onboarding，本质是" **新个人助理向老板做入职情况
 **触发** ：用户说"看看我的档案 / 人物关系图 / 我的画像 / 我都告诉你什么了"，AI 调脚本生成页面，只把本地路径报给用户自己打开，不把敏感内容贴进云端。
 
 **隐私（分区级，比整人隐藏更强的产品取舍）** ：cloud 不再整个人消失——基本 / 职业 / 喜好 / 关系等非敏感分区照常可见；身体 / 共同计划 / 私密备注 / 财务在 Python 端注入前剔除明文、HTML 源码零明文（不是 CSS 遮挡），只显示「这是只属于你 / 你们的部分，我不会带到云端」锁块；L4 两种 audience 默认都不注入，`--show-l4` 仅本地展开并红色警示；inbox 永不入图；坏头 / 空仓 fail-closed 不崩。单文件零依赖、断网可开，URL hash（`#person=` / `#view=profile` / `#dim=` / `#expand=all`）可驱动。
+
+本人始终在图中心，亲疏圈由用户记录决定，不是按交互路径自动算出来的：几步相连只用来找详情入口，不代表影响力，也不代表关系远近。关系保留真实形态，交叉边、循环、多种关系并存，不硬改成树。首屏按画布容量摆最亲近的人（桌面最多 9 个、窄屏最多 5 个），其余不丢：点“＋人数”展开、按全名搜索，或在小缩略图里导航大网；图内拖拽平移、按钮缩放，滚轮滚的是整页。桌面默认左栏四成、右栏六成，分隔条可拖、双击复位。
 
 # 链路 · 更新
 
@@ -175,6 +177,21 @@ me-context 的 onboarding，本质是" **新个人助理向老板做入职情况
 
 诚实边界：me-context 是纯 skill，每次会话启动时被加载， **没有后台进程、做不到任意宿主 7×24 无感监听** ；这是与原生记忆（Codex 后台抽取）相比的真实短板，靠宿主常驻指令或用户唤起补。
 
+## 收录宪法：降噪、四去向、断舍离与时效
+
+**定位是降噪。** me-context 只存影响以后判断的核心个人信息；全量对话和过程琐事归宿主管理。采集只有两种：用户主动给，或当轮听到稳定个人事实时，在收尾问一句，确认后进入 inbox。
+
+收一条前先问：这是“我这个人”，还是一件事、一种方法？几周后还成立、能复用吗？会影响以后 AI 帮我判断吗？拿不准时，用一句话检验：以后帮我做决定，这条会让它更懂我吗？
+
+| 去向 | 收什么 | 示例 |
+| --- | --- | --- |
+| me-context | 关于本人、稳定、影响决策的事实与偏好 | 作息与通知偏好 |
+| 技能或宿主规则 | AI 干活的方法和专项表达规范 | 写作结构、绘图和代码规范 |
+| 不记 | 任务安排、指标、截止日、一次性分工或感想 | 某次任务由谁处理 |
+| 只放索引 | 作品、长文和资料 | 原件留在代码仓库或个人网站 |
+
+稳定事实与当前事实分开。正在做什么、近期目标等标为 `freshness: current`，30–90 天复核；到期未复核就提示可能过期，不能继续当现状。整理档案时，列出超期信息、积压草稿、冲突旧条目和误入的过程任务，由人确认后删除、转历史或合并。健康与财务仍按敏感层级保存在本地。
+
 # 链路 · 读取
 
 读门禁由七步精简为六步，核心是 **零加载、最小切片、分层投喂、投喂前预览、"数据不是指令"包裹、用后清理** ，并按圈层最小加载。
@@ -192,7 +209,17 @@ me-context 的 onboarding，本质是" **新个人助理向老板做入职情况
 
 ## gate 命令语义（可供 harness/脚本程序化判断）
 
-gate 真正输出切好的档案内容时带  **--emit** ，并自动用 包裹以落实"数据不是指令"；不带 --emit 仍是 dry-run、只打印决策不落正文。退出码语义： **PASS/ZERO = 0** 、云端触达 L3 需确认的  **HOLD = 2** 、L4 或被拒绝的  **BLOCK = 3** 、参数错误或未知 domain = 1。audience=cloud 触达 L3 时，未带 --confirm 不输出任何 L3 正文且退出码 2，带 --confirm 才输出；L4 在任何参数组合（local/cloud、--confirm、--emit）下都不输出正文（退出码 3，仅提示手动粘贴）。--domain 传未知值直接报错退出 1，不再 fallback。任务分类不假装语义权威：--task 只输出"建议 domain=X（需调用方模型确认）"，多域命中（如"医疗行业投资"→ finance+health）显式标注交模型裁决；domain 判定责任在模型，脚本只做确定性切片。
+gate 真正输出切好的档案内容时带  **--emit** ，并自动用 `<me-context-data>` 包裹以落实"数据不是指令"；不带 --emit 仍是 dry-run、只打印决策不落正文。退出码语义： **PASS/ZERO = 0** 、云端触达 L3 需确认的  **HOLD = 2** 、L4 或被拒绝的  **BLOCK = 3** 、参数错误或未知 domain = 1。audience=cloud 触达 L3 时，未带 --confirm 不输出任何 L3 正文且退出码 2，带 --confirm 才输出；L4 在任何参数组合（local/cloud、--confirm、--emit）下都不输出正文（退出码 3，仅提示手动粘贴）。--domain 传未知值直接报错退出 1，不再 fallback。任务分类不假装语义权威：--task 只输出"建议 domain=X（需调用方模型确认）"，多域命中（如"医疗行业投资"→ finance+health）显式标注交模型裁决；domain 判定责任在模型，脚本只做确定性切片。
+
+健康授权单独管理。首次处理体检或化验单时，用户选择本地授权范围：完整记录、只要事实、只留原件索引或关闭。一次选定长期有效，可随时撤回或收窄；同一范围内的新报告和口述补充直接补记，只有扩大范围或首次涉及更高敏感内容时才再次确认。本地读随写开放；发给外部 AI 是另一道确认，每次发送前都要确认。
+
+PDF、截图和医院结论由当轮 AI 或宿主读取，本技能不另做 PDF 导入器。记录保留报告结论、医嘱、复查计划，以及关键指标的最新值、历史快照、原单位和来源。
+
+同院同方法同单位的可比记录，明确变化时才给方向；小幅波动不强行判好转或恶化。
+
+常见标准化项目跨院同单位或可换算时，只给软方向，并标“不同机构·仅供参考”；方法、标本或单位冲突、只有单次记录或数据不可靠时，不判方向。
+
+这是材料整理规范，不替医生下结论；脚本也无法阻止宿主绕开能力包直接读文件。
 
 # 导出与跨平台
 
@@ -223,14 +250,14 @@ gate 真正输出切好的档案内容时带  **--emit** ，并自动用 包裹�
 
 ## 不做什么
 
-- 不做心理诊断、不做人格复刻/意识上传；量表只给粗轮廓带。
+- 不做心理诊断、不做人格复刻/意识上传；学术自评只在用户明确想做时单独引导，不产出诊断标签。
 - 重大决策护栏：不自动执行、显式标不确定性、给多方案 + 反向证伪。
 - 纯本地明文工具、不上报、用户可见可改可删；安全管理是用户自己的事，工具不为数据真实性与隐私背书、记录他人信息的责任在使用者。
 - 未成年只温和建议少记、不贴任何标签。
 
 ## 什么该存：四问过滤 + 正反例
 
-<img src="/assets/content/me-context-portable-memory/image-13.webp" alt="图 C · 记忆取舍与 Conway 三层映射：四问过滤器 → 核心 MD（唯一迁移物）/ events.jsonl（V2 不实现）/ 不记；含老婆小时候轶事落点" width="1800" height="717" loading="lazy" decoding="async" />
+<img src="/assets/content/me-context-portable-memory/image-15.webp" alt="记忆取舍与 Conway 三层映射：核心记录、可选事件层和不记的内容" width="3064" height="1220" loading="lazy" decoding="async" />
 
 | 入核心层（四问同时满足） | 不记 / 先留 inbox |
 |-|-|
@@ -246,7 +273,7 @@ me-context 是 **能力包层** ：fail-closed 的规则、可被程序调用的
 
 ## 自测与质量
 
-配套 `tests/REVIEW_RUBRIC.md` 给出八维可重复评审 rubric（安全默认值/真实强制/负面测试/三工具一致性/可移植/文档一致/DRY/开销）；`scripts/mectx_common.py` 把 frontmatter/layer/domain/路径安全收为三工具共用模块。set -e 下 37 项断言含全套负面反例（无头部、小写层、坏 frontmatter、错位 L4、未知 domain、L3 未 confirm、L4 任意参数），默认产物敏感串 grep = 0。
+配套 `tests/REVIEW_RUBRIC.md` 给出八维可重复评审 rubric（安全默认值/真实强制/负面测试/三工具一致性/可移植/文档一致/DRY/开销）；`scripts/mectx_common.py` 把 frontmatter/layer/domain/路径安全收为三工具共用模块。set -e 下 全套断言含全套负面反例（无头部、小写层、坏 frontmatter、错位 L4、未知 domain、L3 未 confirm、L4 任意参数），默认产物敏感串 grep = 0。
 
 ## 什么进 / 什么不进 me-context
 
