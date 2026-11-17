@@ -118,6 +118,13 @@ AI 写代码，也不全是跟 iOS 这么糟，前端就写得挺好。这是为
 4. 补充新上下文，再复核一轮意见和说明。
 5. 拿最终裁剪表找直播同学 review。
 
+下图用虚构模块演示这张裁剪表：除了“保留、建议裁剪、待分析”，还要写清依据与复核项。模块名都是示例，不包含真实体积数据。
+
+<figure class="annual-figure annual-matrix">
+<iframe src="/assets/content/a-year-building-with-ai/figures/trim-example.html" title="裁剪表构造示例：模块分类、裁剪意见、依据与复核项" loading="lazy" sandbox style="height:690px"></iframe>
+<figcaption>构造示例。建议裁剪仍须复核，待分析保留为未知。<a href="/assets/content/a-year-building-with-ai/figures/trim-example.html" target="_blank" rel="noopener">放大查看裁剪表</a></figcaption>
+</figure>
+
 它只是经验值，不保证全对。这也让我们总结出处理开放问题的一条思路：**拿现有上下文缩小范围，逼近真相。**
 
 ## 怎么裁？
@@ -128,7 +135,12 @@ AI 写代码，也不全是跟 iOS 这么糟，前端就写得挺好。这是为
 
 于是搭了一个 Loop，让它自己裁代码、自己编译、自己验证。
 
-![我成瓶颈了](/assets/content/a-year-building-with-ai/bottleneck.webp)
+下图把这个 Loop 展开：编译失败回到改动，编过再运行取证；对照本轮验收标准，未达标继续改，达标才留下结果和记录。
+
+<figure class="annual-figure">
+<iframe src="/assets/content/a-year-building-with-ai/figures/trim-loop.html" title="裁剪反馈闭环：编译失败和验收未达标均返回改动" loading="lazy" sandbox style="height:610px"></iframe>
+<figcaption>把编译和运行结果直接交回 Agent，人工验证才不必卡住每一轮。<a href="/assets/content/a-year-building-with-ai/figures/trim-loop.html" target="_blank" rel="noopener">放大查看反馈闭环</a></figcaption>
+</figure>
 
 - **纯人工**：键盘冒烟了也做不到
 - **写脚本**：清单维度过粗，无从下手
@@ -169,6 +181,13 @@ Harness Engineering 也早有记载：前馈在动作之前给方向，反馈在
 
 裁完还要 AI 帮我验证，因为这么多改动我也 review 不过来。
 
+下图对照四个阶段的目标与验收标准：前两段先编过，第三段强调可控、可回退，第四段再看运行表现。
+
+<figure class="annual-figure annual-stages">
+<iframe src="/assets/content/a-year-building-with-ai/figures/trim-stages.html" title="裁剪四阶段：编译通过、可控可回退、运行不崩与页面正常" loading="lazy" sandbox style="height:690px"></iframe>
+<figcaption>四个阶段，三种标准。编译与页面验证形成闭环，也不表示核心播放已全覆盖。<a href="/assets/content/a-year-building-with-ai/figures/trim-stages.html" target="_blank" rel="noopener">放大查看阶段验收</a></figcaption>
+</figure>
+
 结果是：代码裁掉百万行以上，包体积两期合计减少数十兆；按执行时间算，绝大多数时间不需要我介入，基本都在夜间跑。代价是十天里前四五天边调 Agent 边裁剪，编译验证两百多次，失败本身就是它在拿反馈。
 
 **Loop 能不能跑长，取决于反馈是否持续、记录是否留下。**
@@ -208,6 +227,13 @@ Harness Engineering 也早有记载：前馈在动作之前给方向，反馈在
 > 具体设计见[站内iLoop文章](/writing/iloop-设计思路/)。
 
 整体看：Loop核心负责循环和验收，平台、业务、宿主这些会变的部分，从外面的插槽接入。可以把底层Loop当成iOS的RunLoop事件循环，业务基于这个基础的Loop来迭代上层的业务目标。整体架构如下：
+
+下图把前馈、真实反馈与外部插槽分开：前馈给核心方向，反馈帮它纠偏；平台、业务和宿主分别接入。
+
+<figure class="annual-figure">
+<iframe src="/assets/content/a-year-building-with-ai/figures/iloop-architecture.html" title="iLoop架构：稳定核心、前馈反馈及外部插槽" loading="lazy" sandbox style="height:550px"></iframe>
+<figcaption>核心负责循环与验收，外部接入各自升级；平台覆盖程度仍以设计文档为准。<a href="/assets/content/a-year-building-with-ai/figures/iloop-architecture.html" target="_blank" rel="noopener">放大查看 iLoop 架构</a></figcaption>
+</figure>
 
 从里往外看：
 
@@ -359,9 +385,14 @@ AI基建也覆盖不了所有 AI 能力。比如处理交互问题时经常会�
 
 7 月中旬起，iOS 端两个核心页面的首屏指标大量取到兜底值，占比从约一成升到四成。这是字段缺失造成的指标失真，不能据此认定页面变慢。7 月 22 日，Oncall 机器人被拉进群。
 
-![Oncall 远端闭环](/assets/content/a-year-building-with-ai/oncall-loop.webp)
-
 它先按双端和版本数据锁定时间窗，排除客户端与发布记录，再看相关实验。按用户分组看不出差异，就扩大到基建实验，继续找和异常时间吻合的变化。最终用源码解释了为什么总开关关闭后，该字段不再写出。
+
+下图重画这次排查的证据路径：分组看不出差异，就扩大范围；根因与建议回到群里，负责人决定处置，需要补证时再回排查。
+
+<figure class="annual-figure">
+<iframe src="/assets/content/a-year-building-with-ai/figures/oncall-evidence.html" title="Oncall证据路径：扩大排查范围、解释字段缺失、交回负责人决策" loading="lazy" sandbox style="height:660px"></iframe>
+<figcaption>字段缺失造成指标失真，不能据此认定页面变慢；诊断与处置分开。<a href="/assets/content/a-year-building-with-ai/figures/oncall-evidence.html" target="_blank" rel="noopener">放大查看 Oncall 证据路径</a></figcaption>
+</figure>
 
 根因查清了，如何止损还得负责人确认。AI 给出回滚、缩量、看板剔除的建议，拉相关负责人进群，交回证据和影响面，没有替人做处置决定。
 
@@ -511,6 +542,13 @@ DSH 提供通用运行时，我没有再造一套 Agent 循环。Personal Harnes
 -  **再委派：** 执行层按分工使用模型与工具，具体结果回到主模型；复杂判断不随手交给一个只负责执行的角色。
 -  **记录后再继续：** 任务记录保存身份、版本、检查点和批准范围。会话重启先只读核对，回执未知就停，不自动把旧动作重做一遍。
 -  **方法与环境分开：** 方法在核心里，模型、宿主版本、MCP 与本机工具从适配层接入。换基建形态时保留工作方式，不重新拼整套流程。
+
+下图按职责展示 Personal Harness 的装配：方法与验证标准、统筹与执行、任务记录、外围适配分别放在各自的位置。
+
+<figure class="annual-figure annual-harness">
+<iframe src="/assets/content/a-year-building-with-ai/figures/harness-assembly.html" title="Personal Harness装配：方法、模型分工、任务记录、外围适配" loading="lazy" sandbox style="height:920px"></iframe>
+<figcaption>按职责分区，不表示调用先后；当前仍是初版。<a href="/assets/content/a-year-building-with-ai/figures/harness-assembly.html" target="_blank" rel="noopener">放大查看 Harness 装配</a></figcaption>
+</figure>
 
 这就是它的增量：把前面零散的方法装成可持续维护的工作台。现在仍是初版，分项验证不等于整套工作流已经成熟。
 
@@ -715,3 +753,15 @@ AI 变化得太快，焦虑很正常。但我们不必靠比手速、比谁干�
 > 人类文明要想从地球扩展到整个宇宙，凭人类现在的能力可能永远也做不到。
 > 但正像威尔斯所说的，人类要么遍布宇宙，要么彻底灭亡。
 > 人类最宏大的理想，最长远的目标，甚至终极目标，最后可能是要靠人工智能来实现。
+
+<style>
+.annual-figure{margin:36px 0;max-width:100%;overflow:hidden}
+.annual-figure iframe{display:block;width:100%;border:1px solid #283242;border-radius:12px;background:#11151c}
+.annual-figure figcaption{margin-top:10px;font-size:14px;line-height:1.75;color:#aaa9a4}
+.annual-figure figcaption a{display:inline-block;margin-left:8px}
+@media(max-width:600px){
+  .annual-matrix iframe{height:930px!important}
+  .annual-stages iframe{height:790px!important}
+  .annual-harness iframe{height:850px!important}
+}
+</style>
