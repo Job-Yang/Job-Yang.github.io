@@ -20,6 +20,9 @@ interactiveCourse: "/learn/ai-foundations/"
 
 ## 序章：一次 API 调用里发生了什么
 
+![一次 API 调用的 7 步](/assets/content/ai-foundations/image-01.webp)
+
+
 在把模型内部拆开之前，先看一遍从"调 API"到"拿到回复"这条链路上，模型到底做了几件事。有了这张全景图，后面的章节就是往这七步里各自填肉。
 
 ```swift
@@ -52,6 +55,11 @@ let reply = await llm.chat(prompt: "今天天气怎么样？")
 ---
 
 ## 先读这一节：模型是怎么"学会"的
+
+![训练四步：前向、Loss、反向、更新](/assets/content/ai-foundations/image-02.webp)
+
+![训练三阶段：读书学生、实习生、职场人](/assets/content/ai-foundations/image-03.webp)
+
 
 ### 通俗版
 
@@ -135,6 +143,9 @@ RLHF（人类反馈强化学习）是在 Instruction Tuning 之后再做的一�
 
 ## 第一章：向量（Embedding）是什么
 
+![Embedding：把词变成坐标](/assets/content/ai-foundations/image-04.webp)
+
+
 ### 通俗版
 
 先来回答一个最基础的问题：**模型吃的是数字，但文字不是数字，怎么办？**
@@ -182,6 +193,11 @@ Embedding 向量的每个维度是模型自己学出来的，没有人可以告�
 ---
 
 ## 第二章：Self-Attention（自注意力机制）
+
+![自注意力：猫追了狗，它跑掉了](/assets/content/ai-foundations/image-05.webp)
+
+![Q / K / V 三角色](/assets/content/ai-foundations/image-06.webp)
+
 
 ### 通俗版
 
@@ -303,6 +319,13 @@ Self-Attention 的计算复杂度是 O(N²)：每个 token 都要和所有其他
 
 ## 第三章：多头注意力、位置编码、GQA
 
+![单头 vs 多头注意力](/assets/content/ai-foundations/image-07.webp)
+
+![RoPE：从绝对位置到相对位置](/assets/content/ai-foundations/image-08.webp)
+
+![MHA / GQA / MQA：K/V 头一步步变少](/assets/content/ai-foundations/image-09.webp)
+
+
 ### 通俗版
 
 **多头（Multi-Head）：为什么单头不够**
@@ -364,6 +387,13 @@ RoPE 的旋转变换是把每个向量的相邻两维当作一个复数平面，
 ---
 
 ## 第四章：多模态（ViT/CLIP）
+
+![CLIP：图文对齐 → 零样本分类](/assets/content/ai-foundations/image-10.webp)
+
+![多模态融合：早期融合 vs 交叉融合](/assets/content/ai-foundations/image-11.webp)
+
+![CNN 局部滑窗 vs ViT 全局分块](/assets/content/ai-foundations/image-12.webp)
+
 
 ### 通俗版
 
@@ -428,6 +458,9 @@ batch size 越大，任务越难，模型学到的表示越细致。实际训练
 ---
 
 ## 第五章：深度思考模型（o1/R1）
+
+![普通回答 vs 深度思考](/assets/content/ai-foundations/image-13.webp)
+
 
 ### 通俗版
 
@@ -508,6 +541,15 @@ func solve(_ state: State) -> State? {
 
 ## 第六章：端侧部署——把大模型塞进手机
 
+![量化：把参数降分辨率](/assets/content/ai-foundations/image-14.webp)
+
+![LoRA：轻量补丁，按需切换](/assets/content/ai-foundations/image-15.webp)
+
+![Prefill vs Decode：端侧推理的两个阶段](/assets/content/ai-foundations/image-16.webp)
+
+![投机解码：小模型猜，大模型验](/assets/content/ai-foundations/image-17.webp)
+
+
 ### 通俗版
 
 **量化：把参数"降分辨率"**
@@ -581,6 +623,9 @@ target model 在第 k 个位置不接受 draft token 时，会从 (target_prob -
 
 ## 第七章：Mamba——内存恒定的替代方案
 
+![KV Cache vs Mamba 压缩状态](/assets/content/ai-foundations/image-18.webp)
+
+
 ### 通俗版
 
 **O(N²) 有多严重，用数字感受一下**
@@ -636,6 +681,11 @@ Mamba 的"选择性"体现在：A、B、C 这三个矩阵不是固定的，而�
 ---
 
 ## 第八章：Attention Is All You Need 论文真正说了什么
+
+![编码器 / 解码器工作流程](/assets/content/ai-foundations/image-19.webp)
+
+![Attention Is All You Need 的三个孩子](/assets/content/ai-foundations/image-20.webp)
+
 
 ### 通俗版
 

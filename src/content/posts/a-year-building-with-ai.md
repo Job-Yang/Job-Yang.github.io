@@ -29,16 +29,7 @@ draft: false
 
 很多时候都是事情推着人走，边改边优化。<strong>有时候实在没思路，就套用“仿生学”，学习人类程序员是怎么解决这些问题的，然后再抽象给AI</strong>。
 
-一路积累了不少文章和工具，也收到了不少反馈：
-
-<grid>
-<column width-ratio="0.587881">
-![好好说话工具卡片](/assets/content/a-year-building-with-ai/original/image-01.webp)
-</column>
-<column width-ratio="0.412119">
-![关键成果总结](/assets/content/a-year-building-with-ai/original/image-02.webp)
-</column>
-</grid>
+一路积累了不少文章和工具。有的技能已经有几千人在用，也收到了不少反馈。
 
 细数自己从去年开始尝试 AI 写代码到现在，过程上大概<strong>经历了八个阶段</strong>，最终的整体架构如下：
 
@@ -71,9 +62,8 @@ draft: false
 
 那时候的一个小技巧是：让它分析这段代码哪里需要加 Log。它把加 Log 的代码给我，我把运行态日志喂回去。程序报什么错、哪个分支没走到、实际输出和预期差在哪，AI 就大概有数了，效果好很多。
 
-那个时候经常需要质疑它，看它有没有骗我（被质疑后开始疯狂彩虹屁）。
+那个时候经常需要质疑它，看它有没有骗我。
 
-![美包情绪价值还是有的](/assets/content/a-year-building-with-ai/original/image-05.webp)
 
 <callout emoji="📍">
 <strong>运行时信息是一种重要的AI上下文</strong>
@@ -109,7 +99,6 @@ AI 写代码，也不全是跟 iOS 这么糟，前端就写得挺好。这是为
 
 所以就疯狂补 AI 的底层原理，从梯度下降到 Transformer 架构。一遍遍地问 AI，多蠢的问题都问（反正它不会笑我）。有时候 AI 老师讲几遍也没听懂，就让它换成客户端能听懂的类比。一轮轮下来，一个个知识点就都清楚了。但时间长了又会忘，为了备忘，就总结了一篇文档[《写给 RD 的 AI 底层原理》](/writing/%E5%86%99%E7%BB%99%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%9A%84-ai-%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/)，让自己常看常新。后来感觉大家也有类似的困惑，就分享了出来，没想到大家还挺喜欢。
 
-![《写给 RD 的 AI 底层原理》分享卡片](/assets/content/a-year-building-with-ai/original/image-07.webp)
 
 <callout emoji="💡">
 <strong>技术平权，AI是最好的老师，借助AI持续学习</strong>
@@ -516,16 +505,7 @@ AI基建也覆盖不了所有 AI 能力。比如Oncall 的时候经常会扔一�
 
 它先按双端和版本数据锁定时间窗，排除客户端、Lynx 和 服务端发布，再看页面 A、页面 B的相关实验。 页面 A、页面 B相关实验里，按 VID分组看不出对应差异。业务实验解释不了，就扩大到基建实验，继续找和异常时间吻合的变化。最终用源码解释了为什么总开关关闭后，FMP 字段不再写出。
 
-根因查清了，如何止损还得负责人确认。AI 给出回滚、缩量、看板剔除的建议，拉相关负责人进群，交回证据和影响面，没有替人做处置决定。下面是问题现场。
-
-<grid>
-<column width-ratio="0.500000">
-![Oncall 排查现场（一）](/assets/content/a-year-building-with-ai/original/image-28.webp)
-</column>
-<column width-ratio="0.500000">
-![Oncall 排查现场（二）](/assets/content/a-year-building-with-ai/original/image-29.webp)
-</column>
-</grid>
+根因查清了，如何止损还得负责人确认。AI 给出回滚、缩量、看板剔除的建议，拉相关负责人进群，交回证据和影响面，没有替人做处置决定。
 
 事后把症状、假设、证据、下一步存成病例，下一轮接着查，不重新开图。再把定位和修复拆成两个原子能力，用 [Resolve](/writing/iloop-resolve-%E7%BB%9F%E4%B8%80%E9%97%AE%E9%A2%98%E8%AF%8A%E6%96%AD%E4%B8%8E%E5%A4%84%E7%BD%AE%E5%BC%95%E6%93%8E/) 串起诊断、处置、验证、观察，供 [Oncall](/writing/oncall-%E5%8A%A9%E6%89%8B/)、BugFix、稳定性助手按场景组合。
 
