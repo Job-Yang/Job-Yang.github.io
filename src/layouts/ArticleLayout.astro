@@ -245,27 +245,27 @@ const {
     max-width: 100%;
     overflow-x: clip;
     color: #c5c3bf;
-    font-size: 17.5px;
-    line-height: 1.9;
+    font-size: 16px;
+    line-height: 1.75;
     overflow-wrap: anywhere;
   }
 
   .prose h2,
   .prose h3 {
     color: var(--ink);
-    font-family: var(--serif);
+    font-family: var(--sans);
     font-synthesis: none;
-    font-weight: 400;
+    font-weight: 600;
     scroll-margin-top: 90px;
   }
 
   .prose h1 {
-    margin: 56px 0 22px;
+    margin: 40px 0 16px;
     color: var(--ink);
-    font-family: var(--serif);
-    font-weight: 400;
-    font-size: 30px;
-    line-height: 1.4;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 1.5;
     scroll-margin-top: 90px;
   }
 
@@ -274,18 +274,18 @@ const {
   }
 
   .prose h2 {
-    margin: 64px 0 22px;
-    font-size: 30px;
-    line-height: 1.4;
+    margin: 36px 0 16px;
+    font-size: 24px;
+    line-height: 1.5;
   }
 
   .prose h3 {
-    margin: 42px 0 18px;
-    font-size: 23px;
+    margin: 28px 0 12px;
+    font-size: 20px;
   }
 
   .prose p {
-    margin: 0 0 28px;
+    margin: 0 0 12px;
   }
 
   .prose strong {
@@ -361,17 +361,105 @@ const {
 
   .prose ul,
   .prose ol {
-    margin: 0 0 30px;
+    margin: 0 0 16px;
     padding-left: 1.4em;
   }
 
   .prose li {
-    margin-bottom: 10px;
+    margin-bottom: 4px;
+  }
+
+  .prose li > p {
+    margin-bottom: 4px;
+  }
+
+  .prose li > ul,
+  .prose li > ol {
+    margin-block: 4px 8px;
+  }
+
+  .prose .document-columns {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin: 20px 0;
+  }
+
+  .prose .document-column {
+    flex: var(--document-column-weight, 1) 1 0;
+    min-width: 0;
+  }
+
+  .prose .document-column > :first-child {
+    margin-top: 0;
+  }
+
+  .prose .document-column > :last-child {
+    margin-bottom: 0;
+  }
+
+  .prose .document-figure {
+    margin: 0;
+  }
+
+  .prose .document-column img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .prose .document-column figure:not(.document-figure) {
+    margin: 0 0 12px;
+  }
+
+  .prose .document-column figcaption {
+    margin-top: 8px;
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .prose .document-columns table,
+  .prose .document-columns pre,
+  .prose .document-columns .callout,
+  .prose .document-columns video {
+    margin-block: 0 12px;
+  }
+
+  .prose .document-callout {
+    display: flex;
+    gap: 12px;
+  }
+
+  .prose .document-callout-icon {
+    flex: 0 0 auto;
+  }
+
+  .prose .document-callout-body {
+    min-width: 0;
+  }
+
+  .prose .document-callout-body > :last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 640px) {
+    .prose .document-columns {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .prose .document-column {
+      flex: none;
+      width: 100%;
+    }
   }
 
   .prose blockquote {
-    margin: 36px 0;
-    padding: 2px 0 2px 24px;
+    margin: 20px 0;
+    padding: 2px 0 2px 18px;
     border-left: 2px solid var(--accent);
     color: var(--ink-dim);
   }
@@ -386,7 +474,7 @@ const {
 
   .prose pre {
     max-width: 100%;
-    margin: 34px 0;
+    margin: 24px 0;
     padding: 22px;
     overflow-x: auto;
     border: 1px solid var(--line);
@@ -508,12 +596,25 @@ const {
     border-radius: 12px;
   }
 
+  .prose p > img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 72vh;
+    margin-inline: auto;
+    object-fit: contain;
+  }
+
+  .prose .document-column img {
+    max-height: none;
+  }
+
   .prose video {
     display: block;
     width: 100%;
     max-width: 100%;
     height: auto;
-    margin: 28px 0 12px;
+    margin: 20px 0 8px;
     border-radius: 12px;
     background: #0a0a0a;
   }
@@ -522,7 +623,7 @@ const {
     display: block;
     width: 100%;
     max-width: 100%;
-    margin: 34px 0;
+    margin: 20px 0;
     overflow-x: auto;
     border-collapse: collapse;
     font-size: 15px;
@@ -556,7 +657,7 @@ const {
   }
 
   .prose .callout {
-    margin: 30px 0;
+    margin: 20px 0;
     padding: 16px 20px;
     border-left: 3px solid var(--accent);
     border-radius: 0 10px 10px 0;
@@ -580,7 +681,7 @@ const {
   }
 
   .prose hr {
-    margin: 58px 0;
+    margin: 32px 0;
     border: 0;
     border-top: 1px solid var(--line);
   }
@@ -688,7 +789,7 @@ const {
     }
 
     .prose {
-      font-size: 16.5px;
+      font-size: 16px;
     }
 
     .article-flow,
