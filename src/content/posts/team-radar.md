@@ -8,7 +8,7 @@ draft: false
 source: public-rewrite
 ---
 
-<callout emoji="💡"><p><b>是什么</b>：放在 <a href="https://github.com/Job-Yang/team-kit">team-kit</a> 里的轻量数据快照编译器，汇总转化、崩溃、上线变动与研发返工。</p><p><b>解决什么问题</b>：先用交互看板看准卡点所在页面与代码位置，再打包 <b>AI 排查上下文包</b> 查代码与日志，减少反复踩坑。</p><p><b>形态与定位</b>：零三方依赖，仅用 Python 3 标准库运行；与 <code>context/</code> 同仓物理隔离，工具带走、真实数据留内网，支持独立运行也支持与 [Team Context：给团队和 AI 用的团队工作台方案](/writing/team-context/) 联动。</p></callout>
+<callout emoji="💡"><p><b>是什么</b>：放在 <a href="https://github.com/Job-Yang/team-kit">team-kit</a> 里的轻量数据快照编译器，汇总转化、崩溃、上线变动与研发返工。</p><p><b>解决什么问题</b>：先用交互看板看准卡点所在页面与代码位置，再打包 <b>AI 排查上下文包</b> 查代码与日志，减少反复踩坑。</p><p><b>形态与定位</b>：零三方依赖，仅用 Python 3 标准库运行；与 <code>context/</code> 同仓物理隔离，工具带走、真实数据留内网，支持独立运行也支持与 <a href="/writing/team-context/">Team Context：给团队和 AI 用的团队工作台方案</a> 联动。</p></callout>
 
 ![图 1：Team Radar 整体架构](/assets/content/team-radar/sync-01.webp)
 
