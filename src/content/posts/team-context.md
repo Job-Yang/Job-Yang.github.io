@@ -6,6 +6,7 @@ category: "方法与工具"
 tags: ["Team Context", "知识库", "AI 编码", "工程规范"]
 draft: false
 source: public-rewrite
+updatedAt: 2026-11-20
 ---
 
 <callout emoji="💡">
@@ -178,3 +179,5 @@ git log --since="180 days ago" --oneline --grep="revert\|hotfix\|fix:" -n 50
 # 3. 各核心目录下近 90 天高频提交人（生成不依赖过时架构图的找人映射）
 git shortlog -sn --since="90 days ago" -- src/ Sources/
 ```
+
+<callout emoji="🔗"><p><b>仓库升级与配套工具</b>：本方案代码已并入通用仓库 <a href="https://github.com/Job-Yang/team-kit">team-kit</a>（作为其中的 <code>context/</code> 模块），同仓新增「发现问题并交接 AI 排查」的可视化工具 <b>Team Radar</b>（<code>radar/</code> 模块），详细设计请见 [Team Radar：面向团队的问题发现可视化与 AI 排查方案](/writing/team-radar/)。</p></callout>

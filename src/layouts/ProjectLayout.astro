@@ -1211,6 +1211,32 @@ const isPngCompress = title === 'PNG Compress';
     margin: 0 0 28px;
   }
 
+  .project-prose img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 72vh;
+    margin-inline: auto;
+    object-fit: contain;
+  }
+
+  .project-prose table {
+    display: block;
+    max-width: 100%;
+    margin-block: 28px;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  .project-prose th,
+  .project-prose td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+
   .project-prose strong {
     color: var(--ink);
   }

@@ -1,67 +1,69 @@
 ---
-title: "Personal Harness：可迁移的个人研发工作台"
+title: "Personal Harness：打造高效、可迁移的个人研发工作台"
 description: "把研发方法、Skills、模型与工具装进一个工作台，重点解决插件组合、可迁移性和完成声明的验证。"
 publishedAt: "2026-09-29"
 category: "AI 与工程"
 tags: ["AI"]
 draft: false
 source: "public-rewrite"
+updatedAt: 2026-11-20
 ---
 
-本文说明架构与设计取舍，具体版本和可用能力以项目自身的验证记录为准。
+适用版本：Personal Harness 0.4.0（第 7–9 节含 0.5.0 组合治理，第 13 节含 0.6.0–0.6.5 更新）　最后核验：2026-09-29
 
-> [!NOTE]
->  **核心判断：**  高效工作台不是一组 Prompt 或插件清单，而是一套能随人迁移、按环境替换、用真实反馈持续验证的研发系统。Personal Harness 把稳定的方法与运行规则收进公共核心，把模型、环境账号和本机工具留在可插拔边界。
-
-这份文档面向未来维护者、团队研发同学，以及希望把个人研发流程迁移到不同项目和设备的人。读完后，应能回答四件事：为什么要做 Personal Harness；工作台由哪些模块组成；新增能力应该接在哪一层；哪些社区插件值得引入，以及怎样组合才能互不冲突、真正提效。
+<callout emoji="💡">
+**一句话定位：**一套能跨宿主机、按环境插拔模型与账号、靠真实反馈验证结果的个人研发工作台。稳定工作流与方法收进公共核心，模型网关、公司配置与凭据放在可替换边界。
+</callout>
 
 # 为什么要做
 
-过去沉淀下来的 iLoop、VDD、OPC 和个人 Skills 已经能改善研发过程，但它们必须依附在某个宿主里运行。宿主一旦更换，模型入口、工具权限、插件能力和会话体验都会变化，方法本身虽然还在，交付能力却未必能完整复现。
+iLoop、VDD、OPC 和 Skills 之前全绑在单个宿主软件里。一换 IDE 或换环境，工具链与会话机制一变，研发流就得重搭。
 
-Personal Harness 要解决的不是“再做一个 IDE”，而是把宿主之上的个人研发系统固定下来，让同一套工作方式可以跨项目、跨模型、跨环境复用。
+做 Personal Harness 就是为了在宿主之上架起个人固定工作台，让整套研发方法可以跨项目、跨模型、跨公司直接复用。
 
 | 原来的问题 | 如果不处理 | Personal Harness 的回答 |
 |-|-|-|
-| 方法依赖具体宿主 | 换工具或更换环境后，需要重新拼装工作流 | 用 Personal Workbench 固定运行入口，用 Skills 保存方法 |
-| 模型和环境账号混在工作流里 | 模型来源变化会牵动整个系统 | 把 Provider 与 Company Overlay 放到可替换边界 |
-| “安装成功”常被当成“能力可用” | 实际调用时才暴露权限、协议和兼容问题 | 以真实工具调用、运行结果和独立验收作为完成标准 |
+| 方法依赖具体宿主 | 换工具或换公司后，需要重新拼装工作流 | 用 Personal Workbench 固定运行入口，用 Skills 保存方法 |
+| 模型和公司账号混在工作流里 | 模型来源变化会牵动整个系统 | 把 Provider 与 Company Overlay 放到可替换边界 |
+| “安装成功”常被当成“能力可用” | 真实任务里才暴露权限、协议和兼容问题 | 以真实工具调用、运行结果和独立验收作为完成标准 |
 | 插件越多，维护成本越高 | 上下文、权限面和版本冲突持续膨胀 | 默认集合保持克制，同时保留开放插件市场 |
 
 # 设计原则
 
 当前架构由五条原则约束。它们比某个插件或模型更稳定，也是后续迭代时判断能力归属的依据。
 
-1.  **稳定核心向内收。** 工作流、Skills、安装规则、验证方法和迁移契约进入公共仓库。
-2.  **环境差异向外插拔。** 模型网关、环境认证、专属平台和本机凭据只存在于 Provider 或 Overlay。
-3.  **运行时只保留一个。** DeepSeek Harness 负责 Agent Loop、工具、会话和权限；Personal Harness 负责装配，不重复实现第二套 Agent Runtime。
-4.  **所有权必须清楚。** 安装器只升级和卸载自己管理的依赖；用户自行安装或修改的插件不会被静默覆盖。
-5.  **结论必须可验证。** 插件进入默认集合前，要经过安装、真实任务、失败恢复和升级兼容验证。
+1. **稳定核心向内收。**工作流、Skills、安装规则、验证方法和迁移契约进入公共仓库。
+2. **环境差异向外插拔。**模型网关、公司 SSO、内部平台和本机凭据只存在于 Provider 或 Overlay。
+3. **运行时只保留一个。**DeepSeek Harness 负责 Agent Loop、工具、会话和权限；Personal Harness 负责装配，不重复实现第二套 Agent Runtime。
+4. **所有权必须清楚。**安装器只升级和卸载自己管理的依赖；用户自行安装或修改的插件不会被静默覆盖。
+5. **结论必须可验证。**插件进入默认集合前，要经过安装、真实任务、失败恢复和升级兼容验证。
 
 # 总体架构
 
-下方架构说明回答两个问题：一次研发任务如何从用户进入工作台并调用外部能力；换到新环境时，哪些部分随仓库迁移，哪些部分需要重新接入。
+下面的架构图回答两个问题：一次研发任务如何从用户进入工作台并调用外部能力；换到新环境时，哪些部分随仓库迁移，哪些部分需要重新接入。
 
-工作台保留一套运行时，将方法、执行工具和外部接口分别装配。迁移保留公共定义，本机账号、会话和私有数据留在原环境。下方模块表说明职责，后文给出任务反馈链路。
+![原稿结构图](/assets/content/personal-harness-workbench/sync-01.webp)
+
+迁移时只搬走中间的 **Personal Harness 可迁移核心**，公司账号和本地数据留在边界外。0.5.0 落地了接缝清单、准入流水线与 Profile 分层，0.6.0 补齐了跨会话记忆和可移植检查（上图保留为 0.5 边界示意）。
 
 | 层 | 负责什么 | 不负责什么 |
 |-|-|-|
-| DeepSeek Harness Runtime | Agent Loop、文件与终端工具、会话、权限、Desktop UI、Cordis 插件生命周期 | 个人方法、环境账号和业务判断 |
-| Personal Workbench | 把 Prompt、目标、计划、会话、工具和委派策略组合成日常入口 | 模型鉴权和外部平台实现 |
+| DeepSeek Harness Runtime | Agent Loop、文件与终端工具、会话、权限、Desktop UI、Cordis 插件生命周期 | 个人方法、公司账号和业务判断 |
+| Personal Workbench | 把 Prompt、目标、计划、会话、工具和委派策略组合成日常入口 | 模型鉴权和公司平台实现 |
 | iLoop、VDD、OPC 与 Skills | 需求、设计、研发、验证、文档和交付的方法 | 替代宿主的沙箱、会话和插件机制 |
 | 生产力扩展 | 工作区隔离、代码理解、子智能体、桌面操作和 3D 创作 | 把所有市场插件都纳入默认集合 |
 | 组合治理（0.5.0 已交付） | 接缝所有权清单、插件准入流水线、Profile 分层，以及上下文、成本与轨迹的本机度量 | 替插件做业务判断，或让未经对照的插件直接进入主力 Profile |
-| Provider、MCP 与 Overlay | 连接模型、浏览器、Apple 工具链和环境专属能力 | 把凭据和环境私有数据写入公共仓库 |
+| Provider、MCP 与 Overlay | 连接模型、浏览器、Apple 工具链和公司内部能力 | 把凭据和环境私有数据写入公共仓库 |
 
 # 任务如何运行
 
 Personal Harness 不是在 DeepSeek Harness 外再套一层对话机器人。它通过 Preset 和插件，把一次任务装配成稳定的执行链。
 
-1.  **用户从 Personal Workbench 发起任务。** DeepSeek Harness 建立会话，提供文件、终端、权限和 Session 能力。
-2.  **方法层先确定做法。** iLoop 负责反馈闭环和证据，VDD 约束完成声明，OPC 与个人 Skills 处理需求、设计、文档和专项任务。
-3.  **生产力扩展执行具体工作。** Worktree 隔离代码改动，Code Graph 和 LSP 理解代码，Subagent 并行处理，Computer Use 与 Blender 连接桌面和 3D 场景。
-4.  **适配层连接外部能力。** Provider Adapter 选择模型，MCP Pack 接入浏览器和 Apple 工具链，环境 Overlay 连接只在当前环境存在的能力。
-5.  **结果回到同一会话验收。** 测试、截图、UI 状态、日志和独立评审形成可复查证据；失败时由安装和状态层提供回退。
+1. **用户从 Personal Workbench 发起任务。**DeepSeek Harness 建立会话，提供文件、终端、权限和 Session 能力。
+2. **方法层先确定做法。**iLoop 负责反馈闭环和证据，VDD 约束完成声明，OPC 与个人 Skills 处理需求、设计、文档和专项任务。
+3. **生产力扩展执行具体工作。**Worktree 隔离代码改动，Code Graph 和 LSP 理解代码，Subagent 并行处理，Computer Use 与 Blender 连接桌面和 3D 场景。
+4. **适配层连接外部能力。**Provider Adapter 选择模型，MCP Pack 接入浏览器和 Apple 工具链，公司 Overlay 连接只在当前环境存在的能力。
+5. **结果回到同一会话验收。**测试、截图、UI 状态、日志和独立评审形成可复查证据；失败时由安装和状态层提供回退。
 
 # 工作流与方法层
 
@@ -85,15 +87,15 @@ Personal Harness 不是在 DeepSeek Harness 外再套一层对话机器人。它
 | 自动化与创作 | macOS Computer Use、Blender Production | 按应用读取和控制桌面 UI；建模、绑骨、动画、渲染与导出 |
 | 按需工具包 | Playwright MCP、XcodeBuildMCP | 浏览器自动化，以及 iOS/macOS 构建、运行和调试 |
 
-插件是否进入默认集合，不以数量为标准。它必须解决高频问题，与现有能力不重复，并且具备明确的权限边界、安装与卸载路径、真实任务验证和失败降级方式。后文先给出候选插件，再讨论组合与准入方式。
+插件是否进入默认集合，不以数量为标准。它必须解决高频问题，与现有能力不重复，并且具备明确的权限边界、安装与卸载路径、真实任务验证和失败降级方式。第 7 节给出基于生态调研的候选名单，第 8 节说明插件之间怎样组合，第 9 节把这些条件落成可执行的准入流水线。
 
 # 插件生态调研：哪些扩展真正提效
 
-DeepSeek Harness 的插件生态在开源后迅速扩张。截至 2026-09-28，社区注册表 awesome-dsh-plugin 收录了 4382 个可以通过 `dsh plugin add` 安装的插件，分为 23 类，每个条目都校验过 `dsh.bundle` 清单。本次调研先用注册表的结构化数据（星标、近 30 天 npm 下载量、权限声明和能力红线）初筛，再按研发工作流的主题精读 66 个候选插件的 README，逐个核对它挂在哪个事件接缝、有没有量化证据、兼容哪条宿主版本线、存在哪些风险，最后结合外部一手研究给出结论。
+截至 2026-09-28，`awesome-dsh-plugin` 注册表收了 4382 个插件。筛选时先看星标、近 30 天下载和红线清单，再精读其中 66 个 README 对照事件接缝和量化实证。
 
-**数量繁荣不等于可用。** 4382 个插件里只有 699 个星标达到 10、240 个达到 50；2131 个没有 npm 下载记录，只能从源码安装；下载量还会被桌面客户端的捆绑安装放大，不能直接当作质量信号。注册表为 455 个插件标出了能力红线，其中 362 个同时读取凭据并能联网。注册表自己也写明：安装插件等于以你的权限运行第三方代码，工具审批沙箱不住插件代码，入选列表也不代表通过了安全评审。
+热度往往失真：4382 个里 2131 个没有任何 npm 下载记录，362 个同时碰凭据加外网。注册表自己明确提示安装插件等效授权运行第三方代码，先看实证别迷信星标。
 
-**有对照实验的插件屈指可数。** 在精读的 66 个插件中，只有下表几个给出了可复查的对照或实测数据，其余大多只有测试用例数量或功能描述。因此本章的推荐只代表“值得进入评估”，进入默认集合仍须用实际任务验证。
+**有对照实验的插件屈指可数。**在精读的 66 个插件中，只有下表几个给出了可复查的对照或实测数据，其余大多只有测试用例数量或功能描述。因此本章的推荐只代表“值得进入评估”，进入默认集合仍要按第 2 节原则 5 在真实任务上验证。
 
 | 插件 | 可复查的证据 | 局限 |
 |-|-|-|
@@ -105,9 +107,9 @@ DeepSeek Harness 的插件生态在开源后迅速扩张。截至 2026-09-28，�
 | GraphFlow | 同口径对照 token 节省 95.6%；技能飞轮开启与关闭的任务成功率为 100% 对 61.5%（26 个任务） | 全部为作者自建基准；默认改写超出预算的工具结果 |
 | dsh-review | 一次发布前审计调度 73 个 agent：49 个发现被确认，14 个被驳回 | 没有 A/B，也没有误报率基线；单次成本高 |
 
-**Harness 定制有真实收益，但也有上限。** Can Bölük 在 2026 年 2 月只替换编辑工具的格式，就让 16 个模型中的 14 个编辑成功率上升，其中 Grok Code Fast 1 从 6.7% 升到 68.3%。另一方面，独立复现发现对当代模型而言编辑格式已不是主要瓶颈，Terminal-Bench 2.0 的作者也认为模型选择通常比 Harness 的差异更重要。对 Personal Harness 的含义是：先选对模型，再用插件消除具体的、可以测量的瓶颈。
+**Harness 定制有真实收益，但也有上限。**Can Bölük 在 2026 年 2 月只替换编辑工具的格式，就让 16 个模型中的 14 个编辑成功率上升，其中 Grok Code Fast 1 从 6.7% 升到 68.3%。另一方面，独立复现发现对当代模型而言编辑格式已不是主要瓶颈，Terminal-Bench 2.0 的作者也认为模型选择通常比 Harness 的差异更重要。对 Personal Harness 的含义是：先选对模型，再用插件消除具体的、可以测量的瓶颈。
 
-**提效来自闭环，而不是更多工具。** 把候选插件放回研发流程看，真正改变效率的是四类闭环能力：让上下文与成本可见，才能有依据地调整压缩、路由和预算；把“完成”变成可验证的门禁，才能减少返工；隔离与回滚到位，放手让 Agent 执行才是安全的默认；通知与远程审批，把人从盯着屏幕中解放出来。浏览器、桌面操作、3D 创作这类新增能力价值很高，但更适合作为按项目启用的工具包。下表按能力分组给出评估名单，“建议进入评估”一列优先选择本地运行、机制清楚、与官方能力不冲突的插件。
+**真正带来提效的四类闭环能力：**观测上下文与成本、用门禁兜住完成声明、隔离执行支持回滚、配合远程审批释放人力。下表优先把本地运行、机制透明的插件列进待评估区：
 
 | 能力 | 建议进入评估 | 备选或观望 | 判断依据 |
 |-|-|-|-|
@@ -126,15 +128,17 @@ DeepSeek Harness 的插件生态在开源后迅速扩张。截至 2026-09-28，�
 | 跨 Harness 资产复用 | dsh-skills-anywhere；dsh-movein（一次性迁移） | dsh-agent-plugins-market 观望 | 只读挂载、按 commit 锁定；后者会引入第三方 hook，且工具限制不生效 |
 | 插件治理 | 现有 Plugin Market；现有 Better Sidebar（需复核版本） | dsh-plugin-gating-hub（仅 Observer 模式，勿与 Market 并用）；upstream-radar | Better Sidebar 自 0.23.0 起文件路由不再限制在工作区内 |
 
-**宿主版本是隐藏的组合约束。** 大量插件只声明兼容 DSH 0.1.7 开发预览版（依赖上限低于 0.2.0），另一批以 0.2.0 开发预览版 为基线；Better Sidebar 0.24.1 就要求 0.2.0 开发预览版 以上，留在 0.1.7 线必须钉在 0.22.1。Personal Harness 应先选定一条宿主基线，再为每个插件选定版本，而不是逐个追最新。
+**宿主版本基线冲突：**部分插件仅适配 DSH `0.1.7-预览版`，另一批已切向 `0.2.0-预览版`（例如 Better Sidebar 0.24.1 要求 0.2.0+）；应当先定死宿主基线再逐个钉插件版本。
 
-**供应链风险已经从假设变成事件。** 2026 年，Socket 披露了 SANDWORM_MODE 蠕虫：至少 19 个恶意 npm 包，其中 3 个冒充 Claude Code，会向 Agent 配置写入恶意 MCP 服务器，再用提示注入诱导读取 SSH 与云凭据。Snyk 扫描了 3984 个 Agent Skills，13.4% 含严重问题，76 个被确认是恶意载荷；Koi Security 在 ClawHub 的 2857 个 skills 中发现 341 个恶意样本；JetBrains 市场上有 15 个冒充 AI 编程助手的恶意插件，累计约 7 万次安装，窃取包括 DeepSeek 在内的 API Key。具体到本次候选：Better Sidebar 自 0.23.0 起去掉了文件路由的工作区包含检查，可以读写宿主用户能访问的任意路径；billion-context 通过证书 MITM 代理改写模型流量，会按公告强制安装指定版本，作者也承认真实模型集成测试尚未完成。
+**第三方供应链实发风险：**2026 年已曝光 SANDWORM_MODE 恶意 npm 包、Snyk ToxicSkills（3984 个里 76 个确认恶意）与 ClawHub/JetBrains 盗密样本。具体到候选：Better Sidebar 0.23.0 后取消路径限制，`billion-context` 使用本地 MITM 代理改流；装第三方插件等同放开本机用户权限，必须过准入。
 
 主要依据：[awesome-dsh-plugin 注册表](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)；[DeepSeek Harness 仓库与文档](https://github.com/deepseek-ai/deepseek-harness)；[Anthropic：长任务 Harness](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)；[Anthropic：上下文工程](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)；[Claude Code Hooks 指南](https://code.claude.com/docs/en/hooks-guide)；[Can Bölük：The Harness Problem](https://blog.can.ac/2026/02/12/the-harness-problem/)；[Terminal-Bench 2.0](https://arxiv.org/abs/2601.11868)；[METR 2025 随机对照实验](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/)；[METR 2026 使用调查](https://metr.org/blog/2026-05-11-ai-usage-survey/)；[Faros AI 生产力悖论](https://www.faros.ai/blog/ai-software-engineering)；[Socket：SANDWORM_MODE](https://socket.dev/blog/sandworm-mode-npm-worm-ai-toolchain-poisoning)；[Snyk：ToxicSkills](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)；[DeepSeek 官方价格](https://api-docs.deepseek.com/quick_start/pricing)。
 
 # 插件如何组合：按事件接缝与研发阶段编排
 
-DeepSeek Harness 的插件之所以能自由组合，是因为所有能力都挂在同一条事件链上：组装系统提示、每步请求前、模型请求与流式返回、工具执行前后、审批、回合结束。组合的关键不是“装哪些”，而是“每个接缝上谁拥有决策权、谁只观察”。拥有者会改变 Agent 的行为，例如压缩上下文、替人审批、切换模型、推动续跑或注入记忆，同一个 Profile 里每个独占接缝只能有一个；观察者只读取事件做计费、观测或通知，可以有多个。下表给出建议的接缝分工。
+DeepSeek Harness 把所有能力挂在一条完整事件链上（系统提示组装、单步前后、流式返回、工具前后与回合结束）。装配的核心原则是分清每个接缝的唯一决策拥有者（`owner`）与多路只读观察者（`observer`）：
+
+![原稿结构图](/assets/content/personal-harness-workbench/sync-02.webp)
 
 | 接缝 | 触发时机 | 拥有者（独占，只选一个） | 可叠加（观察或只收紧） |
 |-|-|-|-|
@@ -153,13 +157,13 @@ DeepSeek Harness 的插件之所以能自由组合，是因为所有能力都挂
 
 在这张分工表背后，是五条组合规则：
 
-1.  **独占接缝只有一个拥有者，只收紧的守卫可以叠加。** 两个压缩后端会争抢同一个 compaction 服务；两个自动注入型记忆会双重注入，还可能把对方注入的内容当成对话再次采集，形成自我强化；dsh-github 与 dsh-code-review 都注册 /review，checkpoint-rewind 与 dsh-rewind 都注册 /rewind。相反，`tools/pre-execute` 上的守卫只能收紧、不能放宽，多个只做拒绝的守卫叠加不会互相推翻，代价只是误拦截增多，需要用拦截率来衡量。
-2.  **确定性在前，模型判定在后。** 官方管线先跑 `tools/pre-execute` 和守卫，再进入审批。让 dsh-permission-rules 的拒绝在这里直接终止调用，不耗 token，也不受提示注入影响；只有需要确认的调用才交给 AI 应答者，不可逆操作始终留给人。
-3.  **稳定前缀，易变尾部。** DeepSeek Flash 命中缓存的输入价是未命中的 1/50（低谷时段每百万 token 0.003 美元对 0.15 美元）。时间、记忆召回、任务状态这类每步都变的内容不要写进系统提示前缀，而应放在尾部消息，并用 dsh-context 和缓存命中率验证效果。
-4.  **所有自动续跑都要有上限。** `agent/turn-stopping` 是串行事件，任何一个监听器提出异议，回合就会继续，监听器顺序不影响结果。官方 Claude Code hook 桥也没有实现连续阻止上限，一个无条件阻止的 Stop hook 会让每一步都被强制续跑；Claude Code 自己则在连续阻止 8 次仍无进展时放行。完成门禁、goal 自动续跑和 Ralph 同一时间只开一个，并设最大轮数，例如连续阻止 3 次仍缺证据就交给人。
-5.  **先度量，再进入默认。** METR 2025 年的随机对照实验中，资深开源开发者使用 AI 后完成任务反而慢了 19%，事后却仍认为自己快了约 20%。每个候选插件都应在自己的任务集上做开关对照，比较 token、回合数、人工介入次数和完成率，再决定去留。
+1. **独占接缝只有一个拥有者，只收紧的守卫可以叠加。**两个压缩后端会争抢同一个 compaction 服务；两个自动注入型记忆会双重注入，还可能把对方注入的内容当成对话再次采集，形成自我强化；dsh-github 与 dsh-code-review 都注册 /review，checkpoint-rewind 与 dsh-rewind 都注册 /rewind。相反，`tools/pre-execute` 上的守卫只能收紧、不能放宽，多个只做拒绝的守卫叠加不会互相推翻，代价只是误拦截增多，需要用拦截率来衡量。
+2. **确定性在前，模型判定在后。**官方管线先跑 `tools/pre-execute` 和守卫，再进入审批。让 dsh-permission-rules 的拒绝在这里直接终止调用，不耗 token，也不受提示注入影响；只有需要确认的调用才交给 AI 应答者，不可逆操作始终留给人。
+3. **稳定前缀，易变尾部。**DeepSeek Flash 命中缓存的输入价是未命中的 1/50（低谷时段每百万 token 0.003 美元对 0.15 美元）。时间、记忆召回、任务状态这类每步都变的内容不要写进系统提示前缀，而应放在尾部消息，并用 dsh-context 和缓存命中率验证效果。
+4. **所有自动续跑都要有上限。**`agent/turn-stopping` 是串行事件，任何一个监听器提出异议，回合就会继续，监听器顺序不影响结果。官方 Claude Code hook 桥也没有实现连续阻止上限，一个无条件阻止的 Stop hook 会让每一步都被强制续跑；Claude Code 自己则在连续阻止 8 次仍无进展时放行。完成门禁、goal 自动续跑和 Ralph 同一时间只开一个，并设最大轮数，例如连续阻止 3 次仍缺证据就交给人。
+5. **先度量，再进入默认。**METR 2025 年的随机对照实验中，资深开源开发者使用 AI 后完成任务反而慢了 19%，事后却仍认为自己快了约 20%。每个候选插件都应在自己的任务集上做开关对照，比较 token、回合数、人工介入次数和完成率，再决定去留。
 
-**按研发阶段编排。** 把拥有者和观察者放回 Personal Harness 已有的方法层，就得到下面的阶段组合。每个阶段都产出可复查的证据，由下一个阶段消费；这也是 Anthropic 在长任务 Harness 实践中强调的做法：用进度文件、功能清单和逐项提交让下一轮能接得上。
+**按研发阶段编排。**把拥有者和观察者放回 Personal Harness 已有的方法层，就得到下面的阶段组合。每个阶段都产出可复查的证据，由下一个阶段消费；这也是 Anthropic 在长任务 Harness 实践中强调的做法：用进度文件、功能清单和逐项提交让下一轮能接得上。
 
 | 阶段 | 方法层 | 插件组合 | 产出的证据 |
 |-|-|-|-|
@@ -168,10 +172,10 @@ DeepSeek Harness 的插件之所以能自由组合，是因为所有能力都挂
 | 实现 | 个人 Skills | Worktree 隔离会话；弱档模型实现；dsh-lsp-actions 做诊断与重命名；dsh-todo-continuity 保持计划可见 | 每个回合的 workspace-changes 快照 |
 | 验证 | VDD | doublecheck 先红后绿；XcodeBuildMCP 或项目测试命令作为红绿信号；dsh-verify 做浏览器验收；Computer Use 截图 | 测试结果、截图与浏览器验收回执 |
 | 评审 | iLoop 独立验收 | /review 交给独立子智能体（dsh-code-review）；发布前再跑对抗式评审（dsh-review） | 经过复核的缺陷清单 |
-| 交付 | OPC 表达 | Worktree 人工确认后交付；dsh-lark 飞书卡片审批与通知（独立渠道扩展） | 交付记录与审批记录 |
+| 交付 | OPC 表达 | Worktree 人工确认后交付；dsh-lark 飞书卡片审批与通知（Company Overlay） | 交付记录与审批记录 |
 | 学习 | 个人 Skills 演进 | dsh-experience-memory 只收候选经验；验证通过的规则由人晋升到 AGENTS.md 或 Skill；dsh-trajectory-governance 诊断死循环与目标漂移 | 经验库、规则变更与轨迹报告 |
 
-**用 Profile 分层，而不是一个 Profile 装全部。** 插件以用户权限运行，独占接缝又互斥，把所有插件装进一个 Profile 会同时放大风险和冲突。DeepSeek Harness 的每个 Profile 都有独立的插件集合，建议按使用场景拆成四个 Profile，共享同一套 Skills、Provider 和 Overlay：
+**用 Profile 分层，而不是一个 Profile 装全部。**插件以用户权限运行，独占接缝又互斥，把所有插件装进一个 Profile 会同时放大风险和冲突。DeepSeek Harness 的每个 Profile 都有独立的插件集合，建议按使用场景拆成四个 Profile，共享同一套 Skills、Provider 和 Overlay：
 
 | Profile | 用途 | 相对日常 Profile 的差异 | 权限边界 |
 |-|-|-|-|
@@ -180,7 +184,7 @@ DeepSeek Harness 的插件之所以能自由组合，是因为所有能力都挂
 | ph-night | 无人值守与低谷批处理 | dsh-lowtide 或定时任务；只跑可以机器验收的任务；结果推送到飞书 | 禁用 danger-full-access；审批无人应答即拒绝 |
 | ph-lab | 新插件试验场 | 独立的 DSH_HOME，不放任何密钥；在这里做开关对照 | 与主力环境隔离，结论通过后才晋升 |
 
-**常见反模式。** 下面这些做法在插件文档和社区评测中反复出现，Personal Harness 应在安装器和准入流程里直接拦住：
+**常见反模式。**下面这些做法在插件文档和社区评测中反复出现，Personal Harness 应在安装器和准入流程里直接拦住：
 
 | 反模式 | 后果 | 改为 |
 |-|-|-|
@@ -194,7 +198,7 @@ DeepSeek Harness 的插件之所以能自由组合，是因为所有能力都挂
 
 # 基于个人工作流的定制
 
-通用插件解决的是所有人的问题，Personal Harness 真正的差异化在于把 iLoop、VDD、OPC 和个人 Skills 从“写在提示里的约定”变成“挂在事件接缝上的机制”。Claude Code 的官方最佳实践对此有准确的概括：CLAUDE.md 里的指令是建议性的，hook 才是确定性的，能保证动作一定发生。DeepSeek Harness 的接缝比 hook 更细，而且允许改写而不只是拦截，这正是它相对 Codex 等宿主的定制优势。下表是方法层到机制的映射，其中 VDD 门禁和 iLoop 证据索引需要自研，其余可以用现有插件组合实现。
+Personal Harness 的差异化在于把 iLoop、VDD 和 Skills 从提示词约定做成事件接缝上的硬机制：指令是建议，hook 和接缝才保必行。下表列出方法向机制的映射（VDD 门禁与 iLoop 证据索引自研，其余组合现有插件）：
 
 | 方法 | 现在的形态 | 机制化方案 | 接缝 |
 |-|-|-|-|
@@ -205,7 +209,7 @@ DeepSeek Harness 的插件之所以能自由组合，是因为所有能力都挂
 | 个人 Skills | 仓库内的 SKILL.md | 仓库保持唯一来源；dsh-skills-anywhere 只读挂载给 DSH，同时作为本地 MCP 服务器提供给 Claude Code 等其他宿主 | `ctx.skills`、MCP |
 | Apple 开发闭环 | SourceKit LSP、XcodeBuildMCP | 官方 ctx.lsp 负责导航，dsh-lsp-actions 配置 sourcekit-lsp 提供诊断、格式化与重命名；把 xcodebuild test 登记为门禁认可的测试命令 | `ctx.lsp`、门禁的测试命令模式 |
 
-**接缝所有权清单。** 第 2 节原则 4 已经规定安装器只升级和卸载自己管理的依赖。插件组合起来之后，所有权还需要从“依赖”扩展到“决策”：仓库新增一份接缝所有权清单，声明每个 Profile 在每个独占接缝上由哪个插件负责；安装器写入 Profile 前先检查，两个插件声明同一个独占接缝时拒绝安装并说明冲突。下面是清单的示意格式，字段名还需要结合安装器的实现确定：
+**接缝所有权清单。**第 2 节原则 4 已经规定安装器只升级和卸载自己管理的依赖。插件组合起来之后，所有权还需要从“依赖”扩展到“决策”：仓库新增一份接缝所有权清单，声明每个 Profile 在每个独占接缝上由哪个插件负责；安装器写入 Profile 前先检查，两个插件声明同一个独占接缝时拒绝安装并说明冲突。下面是清单的示意格式，字段名还需要结合安装器的实现确定：
 
 ```yaml
 # 实际落地为 config/seams.json（JSON，非 YAML）；下列 YAML 是 0.5 设计阶段示意，字段语义已保留
@@ -231,48 +235,51 @@ observers:                       # 只读事件，可以叠加
   - dsh-trajectory-governance
 ```
 
-**落地差异（0.5/0.6 已实现）。** 清单实际写成 config/seams.json，安装器在写 Profile 前做单 owner 冲突校验，guard/observer 可叠加、斜杠命令唯一归属；准入由 plugin-admit 四闸执行并锁定 admitted.json。设计阶段设想的 dsh-todo-continuity、dsh-trajectory-governance 在 npm 上核验为不存在，未纳入交付，相关需求改由自研 VDD 门禁和 seams 覆盖；本文其他位置出现这两个包名仅为设计时设想。
+**落地校准（0.5/0.6 已实现）：**清单实际存成 `config/seams.json`，安装前即校验单 owner 冲突，准入经 `plugin-admit` 四闸写入 `admitted.json`。设计稿里的 `dsh-todo-continuity` 与 `dsh-trajectory-governance` 在 npm 上实测不存在，由自研门禁和 seams 接管。
 
-**插件准入流水线。** 第 6 节已经列出进入默认集合前要证明的条件，这里把它落成四道可执行的闸门：装前静态检查、包结构检查、隔离试用与开关对照、钉死版本。前三道可以直接用现成工具完成：
+**插件准入流水线。**第 6 节已经列出进入默认集合前要证明的条件，这里把它落成四道可执行的闸门：装前静态检查、包结构检查、隔离试用与开关对照、钉死版本。前三道可以直接用现成工具完成：
 
 ```bash
-# 装前静态检查：能力披露与红线。退出码 0 未检出、1 需确认、2 有红线、3 扫描失败
+# 1. 装前静态检查：能力披露与红线。退出码 0 未检出、1 需确认、2 有红线、3 扫描失败
 npx dsh-trust-check --dir ./candidate --exit-code
 
-# 包结构与 Cordis 契约检查：离线运行，不执行第三方代码
+# 2. 包结构与 Cordis 契约检查：离线运行，不执行第三方代码
 npx --yes @perrylink/dsh-plugin-doctor@0.4.0 --repo ./candidate --no-smoke --only "R,K"
 
-# 在不含密钥的 ph-lab 中安装精确版本，做开关对照
+# 3. 在不含密钥的 ph-lab 中安装精确版本，做开关对照
 DSH_HOME=~/.dsh-lab dsh plugin --profile ph-lab add <plugin>@<exact-version>
 
-# 对照通过后把精确版本写入锁定清单，再进入 ph-daily
+# 4. 对照通过后，把精确版本写入 Personal Harness 的锁定清单，再进入 ph-daily
 ```
 
 有两处容易踩坑：trust-check 返回 0 只代表本次静态扫描没有检出，不代表安全；plugin-doctor 要用带作用域的包名 @perrylink/dsh-plugin-doctor，npm 上不带作用域的同名包属于其他作者。从 git 安装的插件还应钉到具体 commit。
 
-**成本感知的调度。** 如果主力模型走 DeepSeek 官方 API，要注意它的峰谷时段几乎和工作时间重合：工作日（不含中国法定节假日）北京时间 09:00–12:00 和 14:00–18:00 是高峰，其余时间半价。交互式工作留在白天；回归测试、大范围重构、文档生成和调研这类可以机器验收的任务，白天提交、低谷批量执行，可以用 dsh-lowtide，也可以用 dsh-llm-fallbacks 的时段路由在高峰时切到便宜的模型。Pro 与 Flash 的价差也支持分档：未命中缓存时，Pro 的输入单价约为 Flash 的 4.4 倍，输出约为 3.3 倍，适合“强档规划和评审、弱档实现”的分工。Provider 的成本规则需按实际服务验证，不能把一家供应商的价格套到其他来源。
+**分时段与分档调度：**DeepSeek 官方 API 工作日 09:00–12:00 和 14:00–18:00 为高峰（其余半价），Pro 未命中缓存单价约为 Flash 的四倍。可将自动化重任务挪去低谷并用强弱分档省费；当前主验 Provider TRAE GPT-5.6 Sol 不受此峰谷定价影响。
 
-**通知渠道独立接入。** 会话通知、工具审批和远程交互可以由渠道扩展提供。会话内容可能进入第三方服务，渠道应按环境启用；关闭渠道后，核心方法和本地工作台仍应能使用。
+**飞书接入属 Company Overlay：**`dsh-lark` 走飞书长连接回调，无需公网服务器，但会话内容会进飞书云，因此明确隔在企业 Overlay 中不进公共核心。
 
 # 客户端全栈与 OPC：插件落地与一键恢复
 
-前几节回答了哪些插件值得评估、怎样组合。这一节把结论落到仓库：以 iOS、Android、HarmonyOS 和服务端为主线，覆盖 OPC 从想法到上线，并保证迁移到新设备时，用同一个仓库就能恢复工作台。
+前几节回答了哪些插件值得评估、怎样组合。这一节把结论落到仓库：以 iOS、Android、HarmonyOS 和服务端为主线，覆盖 OPC 从想法到上线，并保证换电脑或换公司时，用同一个仓库就能恢复工作台。
 
-项目工具按需接入，浏览器、Apple、Android、HarmonyOS、Go 和文档检索分别声明自己的依赖。安装、协议握手、设备操作和项目构建是不同层次的验证，不能相互替代。
+结论是沿用仓库已有的 capability 机制，新增 6 个按需 pack 和 1 个公司 Overlay pack，默认插件集合保持不变；另有几个候选，等对应阶段出现真实需求时再评估。依据是 2026-09-29 的实测：在 Linux 沙箱中用仓库自己的命令真实安装，由 DSH `0.1.7-预览版` 校验生成的配置，并按生成的命令逐个完成 MCP 握手。对应改动与下文的迁移修正都在仓库的 MR !1 中。
 
-| 方向 | 连接方式 | 项目验证依赖 |
-| --- | --- | --- |
-| iOS／macOS | XcodeBuildMCP、Apple 文档检索 | Xcode、模拟器或签名设备 |
-| Android | mobile-mcp | adb、设备与项目 Gradle |
-| HarmonyOS | DevEco CLI | DevEco 工具链与工程目录 |
-| Go | gopls MCP | Go 工具链与工程目录 |
-| 通用文档 | Context7 | 服务可达和检索结果核对 |
+**按平台的选择。**下表列出每个平台接入的 pack、实测结果和候选。
 
-**为什么做成按需 pack。** MCP 的工具描述会常驻上下文，进程也常驻；平台 SDK 和设备也不是每台机器都有。按需启用让 iOS、Android、HarmonyOS 和服务端的工具只在需要时出现，符合第 2 节的最小默认集合原则。环境 Overlay 在自己的目录里声明 pack，核心清单不引用它，更换环境时整体不启用即可。
+| 平台 | 接入方式 | 实测 | 候选 |
+|-|-|-|-|
+| iOS／macOS | `apple`：xcodebuildmcp 2.7.0（已有）；`apple-docs`：sosumi 远程文档 | sosumi 握手得到 4 个工具；xcodebuildmcp 此前在 macOS 握手得到 24 个 | MobileBuildMCP 2.7.1（上游改名，旧包不再更新，需在 Mac 上复核工具契约）；App Store Connect CLI |
+| Android | `android`：mobile-mcp 1.0.4，关闭遥测 | 握手得到 32 个工具；从公司 npm 镜像安装成功 | Google Android CLI 与 android/skills；Maestro |
+| HarmonyOS | `harmony`：DevEco CLI 1.3.4 的 `serve mcp`，启用时绑定工程 | 安装和配置生成通过；Linux 上缺少 DevEco 工具链，服务无法启动 | dsh-hdc-bridge |
+| 服务端 | `go`：gopls v0.23.0 的 MCP 模式，启用时绑定工程 | 握手得到 8 个工具；绑定工程后 `go_workspace` 返回该模块 | DBHub、kubernetes-mcp-server（均只读） |
+| 通用文档 | `docs`：Context7 远程服务，本机零安装 | 握手得到 2 个工具 | — |
+| 公司层 | `company-cli`：`bytedcli mcp`，只放行 11 个平台域 | 握手得到 2 个元工具 `list_commands` 和 `run_command` | — |
 
-**项目级 pack。** gopls 按进程的工作目录识别 Go 工作区，DevEco CLI 读 `PROJECT_PATH` 或 MCP roots；而 DSH 的 MCP 客户端初始化时不声明 roots。因此 `go` 和 `harmony` 启用时必须用 `--project` 绑定一个工程，否则 gopls 会回答“This is not a Go workspace”。当前一次只绑定一个工程，换工程要重新启用。
+**为什么做成按需 pack。**MCP 的工具描述会常驻上下文，进程也常驻；平台 SDK 和设备也不是每台机器都有。按需启用让 iOS、Android、HarmonyOS 和服务端的工具只在需要时出现，符合第 2 节的最小默认集合原则。公司 Overlay 在自己的目录里声明 pack，核心清单不引用它，换公司时整体不启用即可。
 
-**OPC：从想法到上线。** OPC 的前半程已经由仓库里的 Skills 覆盖，后半程按阶段接入 pack，候选只在对应阶段出现真实需求时再评估：
+**项目级 pack。**gopls 按进程的工作目录识别 Go 工作区，DevEco CLI 读 `PROJECT_PATH` 或 MCP roots；而 DSH 的 MCP 客户端初始化时不声明 roots。因此 `go` 和 `harmony` 启用时必须用 `--project` 绑定一个工程，否则 gopls 会回答“This is not a Go workspace”。当前一次只绑定一个工程，换工程要重新启用。
+
+**OPC：从想法到上线。**OPC 的前半程已经由仓库里的 Skills 覆盖，后半程按阶段接入 pack，候选只在对应阶段出现真实需求时再评估：
 
 | 阶段 | 已有能力 | 候选 |
 |-|-|-|
@@ -281,13 +288,60 @@ DSH_HOME=~/.dsh-lab dsh plugin --profile ph-lab add <plugin>@<exact-version>
 | 实现 | iLoop／VDD、Worktree、Code Graph、SourceKit LSP；`go`、`harmony`、`docs`、`apple-docs` | — |
 | 验证 | iLoop 验收；`browser`、`apple`、`android` | Maestro、qa-skills |
 | 发布 | 项目自己的签名和发布脚本 | App Store Connect CLI、fastlane |
-| 线上 | 项目自己的日志与监控入口 | 按平台权限独立接入 |
+| 线上 | 公司 Overlay 的平台 MCP（稳定性、日志、部署等） | Sentry MCP（需要令牌） |
 
 候选的许可证都已核对：spec-kit、qa-skills 和 App Store Connect CLI 是 MIT，Maestro 和 android/skills 是 Apache-2.0。harmony-next.skills 的仓库没有许可证文件，按仓库规则不纳入。
 
-**一键恢复。** 仓库保存工具清单和精确版本；本机保存模型选择、凭据引用与运行状态。新设备重新安装宿主与工作台，再选择可用模型、启用所需项目工具，最后用真实工具往返确认。
+**一键恢复。**仓库只保存 pack 清单和精确版本；工具装到本机 `~/.personal-harness/tools/<pack>`，凭据留在各自的所有者那里，例如 TRAE、bytedcli 登录态和系统钥匙串。新机器上的恢复顺序如下：
 
-宿主版本、插件 peer 范围、包管理器布局、工具工程目录和可选依赖都影响安装。安装通过只能证明配置结构；真实桌面会话、设备操作和项目构建仍需分别验证。
+```bash
+git clone <personal-harness 仓库> && cd personal-harness
+bash install.sh
+bin/personal-harness capability enable apple
+bin/personal-harness capability enable android
+bin/personal-harness capability enable go --project ~/code/api
+bin/personal-harness capability enable harmony --project ~/code/app
+bin/personal-harness capability enable docs
+# 仅公司环境
+python3 overlays/company/manage.py setup
+bin/personal-harness capability enable company-cli
+bin/personal-harness capability doctor
+```
+
+**实测发现的恢复隐患。**下面的问题大多在本轮实测中复现过，少数来自代码核查；处理方式都已写进仓库：
+
+| 隐患 | 影响 | 处理 |
+|-|-|-|
+| DSH 的 MCP 客户端不声明 roots | gopls 和 DevEco CLI 在 tools 目录启动，找不到工程 | pack 标为项目级，启用时 `--project` |
+| pnpm 11 起入口从 `bin/pnpm.cjs` 改为 `bin/pnpm.mjs` | Desktop 内置 pnpm 升级后，安装器误报找不到运行时 | 安装器同时识别两个入口 |
+| 公司 npm 镜像滞后：mobile-mcp 1.0.5 发布 6 天仍未同步，pnpm 12 又优先读用户级 `.npmrc` | 新机器在公司网络里装不上 | 钉两边都有的 1.0.4，镜像同步后再升级；临时换源用 `PERSONAL_HARNESS_NPM_REGISTRY` |
+| DSH `0.2.0-预览版` 在安装时按 peer 范围检查插件 | 8 个默认插件中 5 个被拒，见下表 | Desktop 暂留 `0.1.7-预览版`，插件出新版后按宿主线分别钉版本 |
+| pnpm 12 默认拒绝未批准的构建脚本（`ERR_PNPM_IGNORED_BUILDS`） | 带 protobufjs 的插件（如 dsh-lark-channel）装不上 | 在 Profile 的 `pnpm-workspace.yaml` 里给 `allowBuilds` 写明布尔值 |
+| `desktop` Profile 由 Electron 独占 | CLI 不能直接加载它来校验配置 | 把同一托管块放进同模板的 Profile，用 `--dump-config` 校验 |
+| 默认的 Blender 插件要求本机已装 Blender | 没有 Blender 的新机器整次安装失败 | 缺 Blender 时只跳过这一个插件，`doctor` 注明原因，装好后重跑安装补齐 |
+| 安装器只在 `/Applications` 查找 Desktop | Desktop 装在别处时误报找不到运行时 | 同时查找 `~/Applications`，也可用 `PERSONAL_HARNESS_DSH_APP` 指定 |
+| 公司网络检查 HTTPS 流量 | Desktop 自带的 Node 不读 macOS 钥匙串，npm 下载因证书校验失败 | 安装前设置 `NODE_EXTRA_CA_CERTS` 指向公司根证书 |
+| GitHub 连接被代理瞬断 | iLoop 或 Code Graph 引擎拉取失败，整次安装回滚 | 这两步自动重试三次；实测两次瞬断都在重试后完成 |
+| pnpm 10、11 的隔离布局漏装共享的可选依赖，DevEco CLI 还引用未声明的依赖 | 装出的 DevEco CLI 启动即报缺模块 | 工具包改用 hoisted 布局，旧布局的目录先清空再装 |
+
+**升级到 DSH 0.2.0 之前。**npm 上 `@deepseek-ai/dsh` 的 `next` 已是 `0.2.0-预览版`。用两条宿主线各自的插件管理器安装默认插件，结果如下；“被拒”指 DSH 在安装时按 peer 范围拒绝：
+
+| 插件 | 0.1.7-预览版 | 0.2.0-预览版 |
+|-|-|-|
+| dshmarket 1.66.3 | 通过 | 被拒；1.66.5 两条线都通过 |
+| dsh-tool-lsp 0.1.2 | 通过 | 通过 |
+| dsh-better-sidebar 0.22.1 | 通过 | 被拒；0.24.1 只支持 0.2.x，需按宿主线分开钉版本 |
+| dsh-git-worktree 0.9.3 | 通过 | 被拒，暂无新版本 |
+| dsh-subagent-workspace-ui 1.9.0 | 通过 | 通过 |
+| @hoyyang/dsh-code-graph 0.2.0 | 通过 | 通过 |
+| @anionex/dsh-computer-use 0.3.2 | 通过 | 被拒，暂无新版本 |
+| dsh-blender 0.2.2 | 通过 | 被拒，暂无新版本 |
+
+安装检查只证明 peer 范围，不证明运行正确。Worktree、Computer Use 和 Blender 出新版之前，Desktop 不应升级到 0.2.x。
+
+**验证边界：**上述 pack 只在 Linux x64 沙箱用同版本 Node/pnpm 与 CLI 完成配置与握手，尚未在真实 Mac Desktop 会话、HarmonyOS DevEco 或 Android 真机上端到端跑通。
+
+独立 HOME 目录迁移实测中，仅走 `PERSONAL_HARNESS_NPM_REGISTRY` 公网源或仅走字节镜像均已完整装卸通过，仍待空白 Mac 真机最终补验。
 
 # 模型与环境适配
 
@@ -302,9 +356,9 @@ provider id
 + optional health endpoint
 ```
 
-模型接入应分别验证文本、流式返回、工具参数与结果回传；没有通过这些检查的来源，不能写成当前可用。
+当前正式环境已验证 TRAE GPT-5.6 Sol 的文本与工具调用。公共架构也支持 OpenAI、Anthropic 和本地兼容服务的接入方式。豆包工作加强套餐尚未找到可复用的外接接口；Xeart Router 的个人授权与工具往返尚未完成，因此二者都没有被写成当前可用来源。
 
-环境专属能力放在独立 Overlay。关闭它后，工作流、Skills 和其他模型来源应保持可用。
+公司能力统一放在 Company Overlay。Overlay 可以包含 SSO、本机代理、代码平台、日志和 CI，但不能反向污染公共核心。离开当前公司时，禁用对应 Overlay，工作流、Skills 和安装机制保持不变。
 
 # 安装、状态与迁移
 
@@ -315,120 +369,233 @@ provider id
 | Git 仓库 | Preset、Skills、插件目录、Provider 模板、安装与验证代码 | 可评审、可版本化、可在新环境重新安装 |
 | \~/.personal-harness | 当前版本、Provider 选择、路由、插件所有权、伴随运行时和兼容设置 | 只在本机保存，升级时备份，失败后恢复 |
 | \~/.dsh | DeepSeek Harness Profile、会话与用户自行安装的插件 | 安装器只修改自己拥有的区块，不覆盖用户改动 |
-| 环境凭据 | 模型 Key、SSO、设备状态和环境私有数据 | 不进入仓库，不随迁移包复制 |
+| 环境凭据 | 模型 Key、SSO、设备状态和公司私有数据 | 不进入仓库，不随迁移包复制 |
 
 迁移到新环境时，执行顺序保持简单：
 
 1. 安装 DeepSeek Harness Desktop。
 2. 克隆 Personal Harness 仓库并运行安装器。
 3. 选择一个在当前环境可用的 Provider。
-4. 按需安装环境 Overlay 和项目工具包。
+4. 按需安装公司 Overlay 和项目工具包。
 5. 运行回归、Doctor 和一次真实模型工具调用。
 
 安装器固定插件版本、记录所有权并保留失败回滚。它不会把“命令退出码为 0”直接当成可用，而是继续核对 Bundle、伴随运行时、兼容补丁和真实行为。
 
-**恢复与兼容。** 新环境应先检查宿主版本与必要工具，再恢复托管配置。模型未配置、可选工具缺失与核心安装失败必须分别报告。网络来源、证书和工具路径由使用者按环境配置，不进入可迁移内容。
+**换电脑或换公司。**新机器只需要 macOS、Python 3.9+、Git 和 Desktop `0.1.7-预览版`，其余由安装器完成。安装器在 `/Applications` 和 `~/Applications` 查找 Desktop，也可以用 `PERSONAL_HARNESS_DSH_APP` 指定；本机没有 Blender 时只跳过 Blender 插件，其余工作台照常可用。核心就绪但还没有可用模型时，`doctor` 输出 `degraded`；只有核心缺项才输出 `blocked`。
+
+安装会访问下表这些来源。换到网络受限的公司时，只按表中的变量换源，不改仓库：
+
+| 来源 | 用途 | 受限网络下的做法 |
+|-|-|-|
+| npm 源 | Personal Harness 包、默认插件和 MCP 工具包 | 默认沿用本机 `~/.npmrc`；公司镜像缺版本时用 `PERSONAL_HARNESS_NPM_REGISTRY` 只为本套件换源 |
+| GitHub | 开源 iLoop、Code Graph 引擎的原生二进制 | 失败自动重试三次；离线时用 `--iloop-source` 指向本地 iLoop |
+| PyPI | Blender 分析环境 | `PIP_INDEX_URL` |
+| Playwright CDN | `browser` 工具包的 Chromium | `PLAYWRIGHT_DOWNLOAD_HOST` |
+| Go 模块代理 | `go` 工具包的 gopls | `GOPROXY` |
+
+公司网络检查 HTTPS 流量时，Desktop 自带的 Node 不读 macOS 钥匙串，要先设置 `NODE_EXTRA_CA_CERTS` 指向公司根证书。当前全部固定版本及其完整依赖树，在公网 npm 和字节镜像上都能解析。
+
+**代码仓分布：**本轮变更仅推至公司 GitLab，GitHub 地址 `Job-Yang/personal-harness` 对外当前 404。跨公司迁移前需先把公共核心同步至 GitHub 并确认合规，公司 Overlay 单独剥离留内网。
 
 # 版本演进
 
-0.1–0.4 四个版本补齐了“可安装、可运行、可扩展、可交付”四类能力；0.5.0 交付第五类“组合得稳、用得省”，0.6.0 在此之上把可迁移、可维护和发布隔离做实。后续版本继续沿同一结构演进，不另起入口。
+0.1 到 0.4 打通安装、运行、扩展和交付基础；0.5.0 加上接缝与准入治理，0.6.0 把宿主适配、跨会话记忆和可移植性做实。
 
 | 版本 | 解决的问题 | 新增能力 |
 |-|-|-|
 | 0.1.0 | 先把个人方法装进同一个宿主 | Personal Workbench、Provider 声明、iLoop/OPC/VDD/个人 Skills、安装/诊断/卸载 |
-| 0.2.0 | 让模型和伴随服务真正可运行、可恢复 | 模型接口适配、命名路由、模型探针、内容寻址安装、失败恢复、Browser/Apple MCP Pack |
+| 0.2.0 | 让模型和伴随服务真正可运行、可恢复 | TRAE native 代理、命名路由、模型探针、内容寻址安装、失败恢复、Browser/Apple MCP Pack |
 | 0.3.0 | 开放插件生态并改善日常工作界面 | Plugin Market、SourceKit LSP、Better Sidebar、插件所有权、直接模型选择 |
 | 0.4.0 | 补齐并行、隔离、代码理解和跨应用执行 | Git Worktree、Subagent UI、Code Graph、Computer Use、Blender、兼容与持久化修正 |
-| 0.5.0（已交付） | 插件多了以后组合得稳、用得省 | 接缝所有权清单、插件准入流水线、Profile 分层、VDD 门禁插件化、上下文与成本观测、独立通知渠道 |
-| 0.6.0（已交付） | 基线拉齐后把可迁移与可维护做实 | host 适配层（版本与补丁数据化）、OpenRouter 默认模型通路、环境模型层 Overlay 模板、跨会话记忆、desktop 日常 VDD 门禁、能力标识解耦与 doctor 降级提示、check-portable 可移植门 |
+| 0.5.0（已交付） | 插件多了以后组合得稳、用得省 | 接缝所有权清单、插件准入流水线、Profile 分层、VDD 门禁插件化、上下文与成本观测、飞书 Company Overlay |
+| 0.6.0（已交付） | 基线拉齐后把可迁移与可维护做实 | host 适配层（版本与补丁数据化）、OpenRouter 默认模型通路、公司模型层 Overlay 模板、跨会话记忆、desktop 日常 VDD 门禁、能力标识解耦与 doctor 降级提示、check-portable 可移植门 |
 
-## 从设计到可验证的机制
+**MVP 收口结果：**在 0.4.0 基础上补齐了 Android、HarmonyOS、Go 与文档工具包、按工程绑定与 Overlay 包，并解决换源、缺 Blender 降级、GitHub 重试与 hoisted 依赖布局问题，全部提交见 MR !1。
 
-接缝所有权清单、插件准入、分层 Profile、完成声明的有界提醒，以及模型和工具的独立接入，把约定逐步变成可执行机制。机制可以用离线夹具检查冲突与默认行为，实际效果仍须回到真实任务。
+**宿主升级条件。**Desktop 继续锁定 `0.1.7-预览版`。升级到 `0.2.x` 需要同时满足：Worktree、Computer Use 和 Blender 发布支持 `0.2.x` 的版本；dshmarket 升到 `1.66.5`，Better Sidebar 按宿主线分开钉版本；并在全新 HOME 重跑安装和第 10 节的准入检查。
 
-完成门禁只根据已有证据提醒，不代表能自动判定所有任务都成功。插件安装检查、MCP 握手、真实模型工具往返与项目交付各有自己的验收范围。
+## 跨宿主与跨会话机制落地状态（0.6.0）
+
+0.5.0 的组合治理与 0.6.0 的可迁移基线均已落地并通过回归（117 项 Python、26 项 Node），实际表现与前文设计差异如下：
+
+- **接缝所有权与准入已可执行**：独占接缝、宿主内置 owner、guard/observer 规则落在 config/seams.json，写 Profile 前冲突即拒；plugin-admit 四闸（trust-check、plugin-doctor、隔离精确安装与 peer 校验、锁定）支持离线 fixture。
+- **Profile 分层落地，但 Desktop 0.1.x 只加载 desktop**：ph-daily/deep/night/lab 可离线渲染、CLI/headless 可用；因主进程写死 profiles/desktop 且无选择器，完成门禁另以默认 remind 的覆盖行进 desktop 日常入口，不靠 ph-\* 目录。
+- **VDD 完成门禁是自有 Cordis 插件**：挂 agent/turn-stopping，只认持久会话日志里的测试/构建/截图证据，连续提醒有上限、达上限交人，纯规则零额外 LLM；可用 vdd-gate status|off|remind|warn|block 调节。
+- **模型层可迁移**：新装默认 seed 一个关闭的 OpenRouter provider，provider enable 强制 OPENROUTER_API_KEY 并跑真实流式+工具往返；公司内部网关走 overlays/\_template 四步接入，核心 config 不含任何公司信息。
+- **维护成本收敛**：版本、desktop 路径、peer 范围、compat 补丁收进 config/hosts/<version>.json，升宿主改为加一个适配文件；插件按 capability 解耦，doctor 报 ready/回退/降级/跳过/建议并给自建造提示。
+- **跨会话记忆**：核实 DSH 的 instructions 原样读取全局 AGENTS.md、不展开 @path 引用，因此记忆以带标记的文本块并入全局基线，首次播种、用户编辑跨升级保留。
+- **发布前有可移植门**：make check-portable 默认拦运行时代码里的密钥与公司标识，--strict 在含公司 overlay 或文档提及公司时失败；npm 包只打 overlays/\_template，不打公司目录。
+
+**仍待真机/真任务补证。**ph-\* 在正式 Desktop 会话切换、VDD 长任务的提醒与误报率、admit 对真实第三方插件的联网端到端、OpenRouter 真 key 联网冒烟，都还没跑；这些不阻塞安装，但在宣称“更高效”前需要真实任务的完成率、人工介入和成本数据。
 
 ```mermaid
 flowchart TB
-  Task[用户任务] --> Host[DeepSeek Harness 运行时]
-  Method[iLoop / VDD / Skills] --> Host
-  Host --> Tools[文件 / Worktree / LSP / 桌面工具]
-  Model[独立模型来源] --> Host
-  Tools --> Evidence[构建 / 测试 / UI / 日志]
-  Evidence --> Gate[完成声明核对与有界提醒]
-  Gate --> Review[人工评审与交付]
-  Gate -->|证据不足| Host
-  Install[安装与组合治理] --> Method
-  Install --> Tools
-  Install --> Model
+  classDef core fill:#E8F1FF,stroke:#2F6BFF,stroke-width:2px,color:#0B2A6B;
+  classDef mech fill:#E9FBF0,stroke:#16A34A,stroke-width:2px,color:#0C5A2E;
+  classDef ext fill:#F4F5F7,stroke:#9AA4B2,color:#334155;
+  classDef gate fill:#FFF3E0,stroke:#F59E0B,stroke-width:2px,color:#8A4B08;
+
+  subgraph CORE["可迁移核心 · 随人走 · 零公司信息"]
+    direction TB
+    HB["方法层
+iLoop · VDD · Skills"]:::core
+    GA["组合治理
+seams 冲突校验 + 准入四闸"]:::mech
+    GATE["ph-vdd-gate 完成门禁
+证据判定 · 有界提醒"]:::mech
+    HA["host 适配层
+版本 / peer / 补丁数据化"]:::mech
+    CAP["能力注册表
+ready / 回退 / 降级"]:::mech
+    MEM["跨会话记忆
+AGENTS 基线标记块"]:::mech
+    INST["安装 · doctor · 状态 · 回滚"]:::core
+  end
+
+  subgraph HOST["DeepSeek Harness Desktop 0.1.7-预览版"]
+    direction TB
+    LOOP["Agent Loop · 沙箱 · 审批"]:::ext
+    DESK["desktop 日常 Profile（UI 唯一加载）"]:::ext
+    PHS["ph-daily/deep/night/lab（CLI/headless）"]:::ext
+  end
+
+  subgraph OUT["可插拔边界 · 按需可换"]
+    direction TB
+    OR["OpenRouter（自带 key）"]:::gate
+    OV["公司模型层 overlay
+_template 四步接入"]:::gate
+    OBS["dsh-context / cost-meter 观察者"]:::gate
+    PLUG["worktree · LSP · computer-use
+capability 实现，可回退可自建"]:::gate
+  end
+
+  PORT["make check-portable
+发布公开核心前剥离 overlay"]:::gate
+
+  HB --> LOOP
+  HA --> GA
+  GA --> DESK
+  GA --> PHS
+  GATE -.默认 remind.-> DESK
+  CAP --> PLUG
+  HB --> MEM
+  INST --> HA
+  OR --> LOOP
+  OV -.公司环境启用·禁用核心仍绿.-> LOOP
+  OBS -.只读.-> GA
+  CORE -.发布前过闸.-> PORT
 ```
 
 # 如何继续扩展
 
-新增能力时，先判断它改变的是方法、执行能力、模型来源、特定环境还是安装生命周期。选对层，比直接把代码塞进仓库更重要。
+新增能力时，先判断它改变的是方法、执行能力、模型来源、公司环境还是安装生命周期。选对层，比直接把代码塞进仓库更重要。
 
 | 新增内容 | 应该接入 | 进入默认前要证明 |
 |-|-|-|
-| 新的工作方法或专项流程 | Skill | 真实任务中比通用提示更稳定，且不绑定具体环境 |
+| 新的工作方法或专项流程 | Skill | 真实任务中比通用提示更稳定，且不绑定具体公司 |
 | 新的常驻运行能力或界面 | Cordis 插件 | 权限、版本、卸载、失败降级和宿主升级兼容 |
 | 拦截或改写 Agent 行为的能力 | Cordis 插件，并登记到接缝所有权清单 | 独占接缝无冲突、确定性规则优先、自动续跑有上限，开关对照显示净收益 |
 | 新的项目工具 | MCP Pack 或项目命令 | 实际项目的构建、运行或验证结果 |
 | 新的模型服务 | Provider Adapter | 模型目录、文本、工具调用、错误分类和凭据保护 |
-| 只在特定环境存在的能力 | Company Overlay | 禁用后公共核心仍可正常运行 |
+| 只在某家公司存在的能力 | Company Overlay | 禁用后公共核心仍可正常运行 |
 | 安装、升级或状态规则 | Installer 与本机状态层 | 重复安装、失败回滚、用户改动保护和卸载边界 |
 
 # 当前边界
 
-不能只凭安装、配置解析或测试夹具，宣称工作台在全部宿主和项目里更高效。可用性以模型往返、真实会话与项目验证为准。
+截至 0.6.0，工作台的基本执行闭环、组合治理和可迁移基线都已落地，并由 117 项 Python、26 项 Node 自动化测试守护，但仍不能据此宣称“全面优于 Codex 或 TRAE”。结论只覆盖已经运行或自动化验证过的能力；下列边界除特别说明外仍然成立。
 
-- 工具安装和握手不等于 Android、HarmonyOS 或 Apple 工程已经交付。
-- 简单骨骼动画验证不代表复杂角色自动绑骨的质量。
-- 宿主升级可能破坏插件兼容，必须复核 peer 范围与运行行为。
-- 项目级工具的工作目录、Profile 加载方式和伴随服务所有权都有宿主限制。
-- 插件候选的社区对照只能支持进入评估，不能代替自己的任务完成率、人工介入与成本对照。
-- 完成提醒、跨会话记忆和准入流程也需要真实任务验证，不能只依据功能存在下结论。
+- 默认模型通路已切到 OpenRouter（自带 key），安装与状态切换可跑，但用真实 OPENROUTER_API_KEY 的联网流式与工具往返冒烟还没执行；当前唯一真实验证过的 Provider 仍是公司 TRAE 代理。
+- 公司内部模型层通过 overlays/\_template 四步接入，核心配置与公开包不含任何公司信息；但“外部新公司网关能否快速接好”只在模板和三协议契约层验证过，没有在第二家真实环境里走过。
+- 尚未用本套件构建真实 Android 或 HarmonyOS 业务工程。
+- Blender 已通过双骨骼动画冒烟，但复杂角色自动绑骨仍需真实资产验收。
+- 长期稳定性和跨团队效率增益，需要继续用真实任务数据验证。
+- 第 7–9 节的插件结论来自注册表数据（截至 2026-09-28）、README 核查和外部研究；除少数自带对照实验的插件外，尚未在本工作台的真实任务上做开关对照。
+- 社区插件大多只在 DSH 0.1.7-预览版 或 0.2.0-预览版 其中一条版本线上验证过，宿主升级后需要重新过准入流水线。
+- 第 10 节新增的 pack 只在 Linux 沙箱中完成了安装、配置校验和 MCP 握手；HarmonyOS 服务的实际调用、真机和模拟器上的 Android 操作，以及正式 Desktop 会话中的工具调用尚未验证。
+- 8 个默认插件中有 5 个在 DSH 0.2.0-预览版 上被安装检查拒绝，其中 Worktree、Computer Use 和 Blender 暂无新版本；它们更新之前，Desktop 不应升级到 0.2.x。
+- DeepSeek Harness 仍是开发者预览版：官方明确提示会有破坏兼容的变更，SAFETY.md 也说明它尚未经过安全审计。
+- 新机器迁移只在 Linux 沙箱中用模拟的 Desktop 运行时走通；尚未在一台全新的 Mac 和正式 Desktop 上从零实跑，Computer Use 授权、Blender 和 Desktop 首次启动仍需真机补验。
+- Desktop 0.1.x 主进程写死 `profiles/desktop` 且 UI 没有 profile 选择器，`ph-daily/deep/night/lab` 只能在 CLI/headless 生效；日常完成门禁已单独覆盖进 desktop，UI 端切换要等宿主放开，超出了本套件能自行绕过的边界。
+- VDD 完成门禁和 plugin-admit 都做了事件级与离线 fixture 验证，但前者在长任务上的提醒/误报率、后者对真实联网第三方插件的端到端准入，还没有在真实任务里跑完。
 
 # 维护方式
 
 这份文档应当随着架构演进持续更新。新增默认插件、改变 Provider 契约、调整状态目录或修改迁移步骤时，必须同时复核架构图、模块表、接缝所有权清单、版本演进和当前边界。
 
-后续迭代优先积累三类事实：真实任务完成率、人工介入次数，以及升级后的回归结果。引入插件组合后，再补充每个任务的 token 与成本、缓存命中率、自动续跑与门禁拦截次数，以及评审发现中被确认的比例。前几项由 dsh-context、dsh-cost-meter 和 dsh-trajectory-governance 在本机采集，评审质量由人工抽样记录，避免依赖主观感受。只有这些事实持续变好，Personal Harness 才真正成为更高效的工作台，而不只是更复杂的工具集合。
+后续迭代重点盯三类数字：真实任务完成率、人工介入次数与升级回归结果。接入插件组合后，再用 `dsh-context`、`dsh-cost-meter` 和 `dsh-trajectory-governance` 记录 token 成本、缓存命中率及连续拦截次数，靠实测数据而非主观手感评估效果。
 
-仓库：[Job-Yang/personal-harness](https://github.com/Job-Yang/personal-harness)
+仓库：[GitHub：Job-Yang/personal-harness](https://github.com/Job-Yang/personal-harness)　｜　仓库镜像
 
-# 多模型决策与执行的边界
+# 多模型决策与执行分层：核心机制与双路由边界
 
-多模型分工需要同时区分任务范围、决策来源和执行来源。主模型持续统筹，顾问只给建议；批准来自用户确认，不能由模型假设或顾问意见代替。
+本节整理多模型分层验证结论（参考内部《Local Codex MCP 技术方案》的纪律思路但不复用实现），核心源码 0.6.4，终态时间 2026-10-29。
 
-| 任务范围 | 决策层 | 执行层 |
-| --- | --- | --- |
-| 已允许外发的个人任务 | 优先公司来源；只有公司来源不可用、尚未输出内容且范围允许外发时，才兜底到原生 DeepSeek | 按已授权配置使用个人 DeepSeek |
-| 企业受限或范围未知 | 只使用已声明的公司来源 | 不调用个人或未分类来源 |
+<callout emoji="✅">
+**0.6.4 双路由验证结论：**个人与企业受限双任务范围配合 AgentScope 主路由已在真实签名模块跑通：企业受限与未定范围任务禁用个人源，个人任务优先公司 API，仅在不可用且尚未输出并允许外发时兜底原生 DeepSeek。
+本机已核实源码、本机与桌面包 scoped guard SHA（`8f613`）一致，`HEAD = origin/main = 16c7c14`。早期原生账号连通测试确有少量计费调用（短连通加工具测试 19×23=437），不称零付费；后续回归全部走本地与 mock，不产生计费。
+</callout>
 
-认证失败、限流、超时和服务错误，仍要按任务范围及输出前切换条件处理。权限或内容拒绝不能靠换来源绕过。不同角色的路由验证，只能证明已测试的组合；跨 Provider、前台续跑和后台通知需要各自验证，不能从一个成功样例外推。
+## 实测矩阵
 
-## 0.6.5：薄任务记录与只读顾问
+| 项 | 实证 | 状态 |
+|-|-|-|
+| planner / worker HTTP | 正确 target 真实 HTTP：planner=big、worker=mini/medium，结果回收（c1db0e3 / 265a992 背景单次 run） | PASS |
+| fork / workflow | disabled 生效，未在 tools 暴露 | PASS |
+| 显式同模型 foreground | main=mini / worker=mini，独立读 raw SSE 13–22 一致（cc1c9de） | PASS |
+| 后台硬门 / 路由锁 | hardgate=true 实际拒绝；modelSelectionSettings:false 拒绝逐调用改模型 | PASS |
+| CLI disable / reload | 正确 path 清文件、requires reload PASS；旧 runtime roles null、重新 boot roles registered 曾实证 | PASS |
+| copy install 白名单 | 排除 runtime + skin + DerivedData/releases；Python 202/202、Node 50/50 | PASS |
+| worker mini×6 + main big 重试 | 返回 500 status + parent error，尚未录至 partial | PARTIAL 未录 |
+| 前台工具续跑 | 前台工具实际一次性 start；本轮未执行原生 send_message 续跑，不断言此版本不可能 | 未达 / 未断言 |
+| 后台 settled 通知续跑 | 后台续跑路径：历史上报告过一次格式错误，本轮根因原始材料已丢失、未重新复现，按隔离实验对待（不再断言根因已证） | 隔离实验 |
 
-0.6.5 在双路由之上增加任务记录和默认关闭、按需启用的只读顾问。两者都不改变主模型的统筹位置。
+说明：不同 provider 间 big/mini 为同一 role transform 机制；本轮未对跨 provider 全 case 逐项重跑 runtime，PASS 限于已实测项，不外推为全部组合。
 
-任务记录保存稳定身份、源码版本、仓库检查点、批准范围和资源范围；聊天会话不是它的身份。会话丢了，记录仍在，但旧子代理句柄不会自动恢复。上次动作的回执如果未知，就先核对文件与仓库检查点；核对不出，停下等人确认。
+## 环境与版本边界
 
-<img src="/assets/content/personal-harness-workbench/image-01.webp" alt="薄任务记录与宿主会话、子代理句柄及恢复核对的关系" width="1200" height="825" loading="lazy" decoding="async" />
+- 本机 PH 安装基线为 0.4.0；宿主 DSH 锁定 `0.1.7-预览版`，不另起第二套运行时或强制升级宿主。
 
-恢复走只读核对。记录不持有运行中的句柄，核对本身也不批准新目标、不自动重跑动作。
+```mermaid
+flowchart TB
+  subgraph HOST["DSH 0.1.7-预览版 runtime owner"]
+    H1["loader / descriptor / 权限锁"]
+  end
+  subgraph PH["PH 角色路由 0.6.4 committed"]
+    P1["注册前 role transform"]
+    P2["big planner / mini worker 两条真实 HTTP"]
+    P3["fork/workflow disabled"]
+  end
+  subgraph GAP["未达边界"]
+    G1["重试 500 PARTIAL"]
+    G2["后台 settled 破坏 v4 session zstd"]
+  end
+  H1 --> P1 --> P2
+  P1 --> P3
+  P2 -. 未达 .-> G1
+  P2 -. 未达 .-> G2
+```
 
-<img src="/assets/content/personal-harness-workbench/image-02.webp" alt="只读顾问、主模型、决策层与执行层的分工和批准边界" width="1200" height="954" loading="lazy" decoding="async" />
+关系说明：DSH 充当 runtime owner；PH 注册前 `role transform` 已在正确 target 上验证通过，后续续跑限制来自宿主会话机制边界。
 
-顾问默认关闭、只读，不开 shell、不驱动控制器、不建账户。用户确认、模型假设和顾问建议分开保存；只有用户确认可以构成批准。
+## 薄任务记录与只读顾问（0.6.5）
 
-| 命令 | 职责 |
-| --- | --- |
-| `create` | 创建任务记录 |
-| `read`、`recover` | 读取与核对，不自动执行 |
-| `revise` | 记录新版本与已批准的范围 |
-| `feedback` | 保存反馈 |
-| `disable` | 关闭对应能力 |
+在双路由之上加了两块薄能力：一是把「谁在干、改到哪一版、批准了什么」记下来以便重启后核对，二是一个默认关闭的只读顾问（只给建议不做批准），主模型继续统筹全局。
 
-JSON 输入的 manifest 包含 `task_id`、源码版本、检查点、批准范围、`roots` 和 `resources`。主模型持续统筹复杂任务，顾问只在需要时启用，不默认全开。
+任务记录就像一张工单，只认任务身份与版本号，不绑死单次聊天会话；上次执行回执若标记为「未知」，会先只读比对文件与仓库 checkpoint，核对不上就停下来等人确认。
 
-字段读取、路径拒绝和路由定向验证，不能代替运行中的角色配置验收。安装包、源码与实际运行时需要分别核对；运行时重载后的角色观测和必要的后续配置，仍要单独确认。
+![这张图的主题是薄任务记录与运行时的关系，直观呈现相关运行规则与分层逻辑。图中上方模块显示：DSH会话可派生子代理句柄，仅生成稳定ID、目标版本、批准范围、回执含未知项的薄任务记录，子代理句柄仅在当前进程有效，不支持自动恢复。图中下方模块标注恢复的本质是只读核对而非自动重跑，先读取文件与Git状态不做修改，判断回执为已知/成功/失败/未知状态，若回执为未知则停下等待人工确认。最后补充说明未核对通过就不继续执行，通过manifest记录文件摘要，随运行同步核对Git版本与执行源码版本。](/assets/content/personal-harness-workbench/sync-03.webp)
+
+图：薄任务记录与运行时的关系。句柄由宿主会话派生，记录只做关联而不持有它；恢复时只做只读核对。
+
+路由严格遵循双规则：个人任务决策层优先走公司 API，仅在公司通道不可用、尚未产生输出且任务允许外发时兜底原生 DeepSeek，执行层按授权配个人 DeepSeek；企业受限或范围未知的任务禁用个人及未分类来源，限流、超时或鉴权异常均不绕过范围校验。
+
+![这张图直观呈现了顾问、决策与执行的分工规则，对应文档中明确的分层机制内容。图的上半部分分为主模型统筹、顾问（按需）、决策层三个模块，分别标注了各自的功能定义；随后单独高亮标注执行层，明确该层授权使用个人DeepSeek的运行边界与任务执行约束；下方的区域进一步补充说明批准仅来自控制面板的三项规则，以及可支持的任务命令范围，清晰对应了文档中提及的双路由边界与任务校验要求。](/assets/content/personal-harness-workbench/sync-04.webp)
+
+图：顾问、决策与执行分工。顾问默认关闭且只读，不开 shell、不驱动控制器、不建账户；用户确认、模型假设与顾问建议分存，批准动作只来自控制面。
+
+已接入 `create / read / recover / revise / feedback / disable` 六条命令，JSON manifest 携带 `task_id`、版本、checkpoint、`approved scope`、roots 与 resources；其中 `read` 与 `recover` 只读。顾问模式默认关闭、按需配置，不替换用户主模型。
+
+<callout emoji="📌">
+**0.6.5 当前验证状态：**已发布安装，源码、本机与桌面包 11 个模块及 CLI 逐字节一致（`HEAD = origin/main = 0b523d1`），旧生产 root 选择与路由未改动。
+新字段独立回归全过（Python 214/214、Node 223/223，roles 含新 slots 定向用例 35 项）；`configure --file` 与 Node 侧读取、企业受限别名和非法路径拦截均符合预期。现用进程待用户重开 App 后生效，已批准范围内操作无需再额外授权。
+</callout>
