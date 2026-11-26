@@ -2,7 +2,7 @@
 title: "macOS 下 Google 账号防送中与 Antigravity / Gemini 稳定使用指南"
 description: "合并拆清定位清零、三场景网络切换与双代理防冲突、三类地区概念、家庭组共享、地区 400 / 认证 401 排障及七合一脚本与 AI 执行协议。"
 publishedAt: 2026-11-25
-updatedAt: 2026-11-25
+updatedAt: 2026-11-26
 category: "方法与工具"
 tags: ["macOS", "Chrome", "Antigravity", "网络分流", "效率工具"]
 draft: false
@@ -35,7 +35,7 @@ flowchart TD
 |-|-|-|-|
 | **定位权限层** | 平时在日常窗口给 `google.com` 或部分站点点过「允许获取位置」 | 浏览器直接调用 macOS 定位服务上报经纬度，代理 IP 再干净也没用 | 全本机 Chrome Profile 默认策略改为**禁止**，清空允许白名单，并在系统设置关掉浏览器和 AI 客户端定位 |
 | **Profile 容器层** | 主窗口登录工作号，又顺手「添加其他账号」把个人 Gmail 挂在同一个 Chrome Profile | 同一 Profile 共享 Cookie、设备标识和站点权限；在公司环境浏览会顺带给同窗个人号打上国内特征 | **工作 Profile 只登工作号**；个人号放到独立个人 Profile，各自维护权限与扩展 |
-| **分流漏网层** | 代理插件只填了 `gemini.google.com` 等少数 AI 域名 | 访问 `policies.google.com`（条款与申诉表）、`accounts.google.com`、`www.google.com`、`*.googleapis.com` 全部直连默认出口，Chrome 变体配置接口直接返回 `x-country: cn` | 覆盖 `*.google.com`、`*.googleapis.com`、`*.gstatic.com`、`*.youtube.com` 等全部可用主域，并避开代理不支持的超时域名 |
+| **分流漏网层** | 代理插件只填了 `gemini.google.com` 等少数 AI 域名 | 访问 `policies.google.com`（条款与申诉表）、`accounts.google.com`、`www.google.com`、`*.googleapis.com` 全部直连默认出口，Chrome 变体配置接口直接返回 `x-country: cn` | 只覆盖 `*.google.com`、`*.googleapis.com`、`*.gstatic.com`、`*.antigravity.google`、`*.recaptcha.net` 5 条防漂移核心域，刻意放行流媒体与无 Cookie 下载 CDN |
 | **出口与目标错配** | 连的中转代理实际出口在新加坡，切区表单却填日本或美国 | Google 后台核验近一段时间的真实出口特征，IP 所在国与申诉目标国对不上就会直接拒绝 | 先用脚本实测代理的真实国家判定，**申诉目标国家必须与稳定使用的出口国家保持一致** |
 
 # 二、网络方案二选一：精细分流与个人代理
@@ -47,9 +47,9 @@ flowchart TD
 如果工作环境不方便常开全局海外 VPN（会拖慢内网访问），最稳的方式是不改 macOS 全局代理和系统 DNS，把客户端和浏览器拆开各自接管：
 
 - **桌面端与 CLI（按进程透明代理）：** 用应用级透明代理工具（例如 Antify）只接管桌面 AI 客户端和 `agy` CLI 路径，开启远程 DNS 解析，同时**关闭「派生子进程继承」**。这样 AI 客户端自己的流量走代理，它拉起的 `git`、`ssh` 等子进程依然直连内网。
-- **浏览器（按域名精细分流）：** 在 Chrome 或 Firefox 里给需要访问 Google 的 Profile 安装 FoxyProxy，切到「按规则代理」并开启远程 DNS（`proxyDNS: true`），只把实测可用的 Google 全量核心域名送进代理，办公系统与国内网站全部保持直连。
+- **浏览器（按域名精细分流）：** 在 Chrome 或 Firefox 里给需要访问 Google 的 Profile 安装 FoxyProxy，切到「按规则代理」并开启远程 DNS（`proxyDNS: true`），只把真正承载账号登录与地区判定的 **5 条防漂移核心域名**（`*.google.com`、`*.googleapis.com`、`*.gstatic.com`、`*.antigravity.google`、`*.recaptcha.net`）送进代理，办公系统与国内网站全部保持直连。
 
-这里有两个硬禁忌：第一，**不要为了省事把整个 Chrome 进程塞进应用级代理**，如果开发代理只放行白名单域名或对非白名单流量回落国内，整进程代理会让普通网页卡顿甚至超时；第二，换到新代理后要**现场并发探测一遍域名连通性**，剔除代理不支持或会超时的边缘域名，不要生搬硬套固定清单。
+这里有三个硬禁忌：第一，**不要为了省事把整个 Chrome 进程塞进应用级代理**，如果开发代理只放行白名单域名或对非白名单流量回落国内，整进程代理会让普通网页卡顿甚至超时；第二，**不要把流媒体、无 Cookie 下载 CDN 与第三方托管域塞进多出口轮换/白名单代理**——实测在出口 IP 逐连接轮换或带严格白名单的中转代理上，把 `youtube.com` / `googlevideo.com` 送入代理会破坏视频流 IP 绑定导致无法播放，把 `googleusercontent.com` / `gvt1.com`（如 Chrome 扩展安装包与组件更新 CDN）及 `withgoogle.com` 送入代理会触发 `504 Gateway Timeout` 让 Chrome 应用商店一直转圈下不下来，而 `appspot.com` / `firebaseapp.com` / `chromium.org` 也不承担账号地区信号，全部刻意放行；第三，换到新代理后要**现场并发探测一遍核心域名连通性**，不要生搬硬套未经实测的庞大清单。
 
 ## 2.2 独立个人 Mac 方案：OpenSurge / Mihomo 规则模式 TUN 分流
 
@@ -121,7 +121,7 @@ chmod +x ~/antify-network-setup/google-clean-kit.sh
 - **`discover [--json] [--candidate <proxy_url>]...`：** 主动嗅探本机合法出口候选（默认直连路由、环境变量代理、macOS `scutil --proxy` 与 PAC 脚本、git/curl 用户代理、本机回环常见代理端口以及已有分流配置文件），只对 Google / Gemini / Antigravity 官方公开端点发只读探测（**安全边界：绝不扫描公司内网网段或探测未公开服务**），同时核查本机 DNS 是否把后台域名解析到国内节点，最后按干净度打分排序给出推荐命令。
 - **`auto [--candidate <proxy_url>]... [--output <json_path>] [--antify-output <json_path>]`：** 自动跑完 `discover` 选出最优干净出口；若直连已干净直接提醒清定位，若命中可用代理则串联完成兼容域名探测、FoxyProxy 配置生成与 4 项出口验收；追加 `--antify-output` 时顺便按本机客户端路径生成 Antify 备份。
 - **`clean-chrome`：** 自动备份全部 Chrome Profile 的 `Preferences` 到 `~/.google-clean-kit-backups/`，优雅退出 Chrome，把所有 Profile 的默认定位改为禁止（`2`）并删光允许白名单，恢复启动 Chrome 复核无回弹后，自动为你打开 macOS「定位服务」设置页。
-- **`build-foxyproxy <host> <port> [type] [output] [title]`：** 通过指定代理并发探测 18 个常见 Google 生态域名（5 秒超时），只把实测连通的域名写进 FoxyProxy v8/v9 配置文件，并清楚列出被自动排除的超时域名。
+- **`build-foxyproxy <host> <port> [type] [output] [title]`：** 通过指定代理并发探测 5 个防漂移核心 Google 域名（5 秒超时）并生成 FoxyProxy v8/v9 配置文件；刻意排除不承载账号地区且易在轮换/白名单代理上失效的流媒体、无 Cookie 下载 CDN 与第三方托管域。
 - **`build-antify <host> <port> [type] [output] [proxy_name]`：** 动态扫描本机实际安装的 `Antigravity.app`、`Antigravity IDE.app`、`Gemini.app`、嵌套 Helper、内置命令行工具及 `agy` 多版本真实路径，自动生成可直接导入 Antify 的完整备份 JSON（预设远程 DNS、屏蔽失败连接并关闭派生子进程继承），不用手动挨条配置路径。
 - **`verify <proxy_url> [country_keyword] [country_code]`：** 实测 `policies.google.com/terms`、`www.google.com`、`clientservices.googleapis.com` 和 `www.youtube.com` 四项指标，确认 Google 后台已经把当前出口稳定识别为目标国家。
 
@@ -154,11 +154,11 @@ Google 账号定位清零、出口主动嗅探、状态体检与精细分流复�
       重启 Chrome 复核持久化生效后，自动打开 macOS 定位服务设置页。
 
   google-clean-kit.sh build-foxyproxy <proxy_host> <proxy_port> [proxy_type] [output_json] [title]
-      并发探测 18 个常见 Google 生态域名在指定代理下的连通性，仅将实测通过的域名写入 FoxyProxy v8/v9 配置文件，
-      自动剔除不兼容或超时域名。
+      并发探测 5 个防漂移核心 Google 域名在指定代理下的连通性，写入 FoxyProxy v8/v9 配置文件；
+      刻意排除流媒体与无 Cookie 下载 CDN，避免轮换代理池导致 YouTube 播放失败或 Chrome 应用商店下载 504 超时。
       - proxy_type  默认: http（可选: http / https / socks5 / socks4）
       - output_json 默认: ./foxyproxy-google-full.json
-      - title       默认: Google 全量 · 分流代理
+      - title       默认: Google 核心 · 分流代理
 
   google-clean-kit.sh build-antify <proxy_host> <proxy_port> [proxy_type] [output_json] [proxy_name]
       动态扫描本机实际安装的 Antigravity / Antigravity IDE / Gemini 及其 Helper、内置可执行文件与 agy CLI 路径，
@@ -1089,7 +1089,7 @@ PY
   cc="$(printf '%s' "$decision" | cut -f7)"
 
   echo "=== auto 步骤 1/2：命中干净出口 ${proxy_url}（识别地区: ${kw} / ${cc}），开始探测并生成 FoxyProxy 配置 ==="
-  cmd_build_foxyproxy "$host" "$port" "$ptype" "$output_json" "Google 全量 · ${kw} 分流代理"
+  cmd_build_foxyproxy "$host" "$port" "$ptype" "$output_json" "Google 核心 · ${kw} 分流代理"
   if [ -n "$antify_output_json" ]; then
     echo ""
     echo "=== auto 附加步骤：动态扫描本机客户端路径并生成 Antify 备份配置 ==="
@@ -1231,7 +1231,7 @@ cmd_build_foxyproxy() {
   local port="$2"
   local ptype="${3:-http}"
   local out_file="${4:-./foxyproxy-google-full.json}"
-  local title="${5:-Google 全量 · 分流代理}"
+  local title="${5:-Google 核心 · 分流代理}"
 
   python3 - "$host" "$port" "$ptype" "$out_file" "$title" <<'PY'
 import concurrent.futures
@@ -1246,24 +1246,11 @@ curl_scheme = "socks5h" if ptype_lower == "socks5" else ptype_lower
 proxy_url = f"{curl_scheme}://{host}:{port}"
 
 candidates = [
-    ("google.com", "https://www.google.com/", "Google 主域全站（搜索/登录/账号/条款申诉/Gemini/One/Play/Maps）"),
-    ("googleapis.com", "https://clientservices.googleapis.com/chrome-variations/seed?osname=mac", "Google APIs（含 clientservices/update/fonts）"),
-    ("gstatic.com", "https://www.gstatic.com/generate_204", "Google 静态资源 (gstatic)"),
-    ("googleusercontent.com", "https://lh3.googleusercontent.com/", "Google 用户内容 (googleusercontent)"),
-    ("antigravity.google", "https://antigravity.google/", "Antigravity 官方与登录"),
-    ("youtube.com", "https://www.youtube.com/", "YouTube 主站与登录同步"),
-    ("googlevideo.com", "https://manifest.googlevideo.com/", "YouTube 视频流 (googlevideo)"),
-    ("withgoogle.com", "https://experiments.withgoogle.com/", "WithGoogle"),
-    ("recaptcha.net", "https://www.recaptcha.net/recaptcha/api.js", "Google reCAPTCHA"),
-    ("gvt1.com", "https://edgedl.me.gvt1.com/", "Chrome 组件与更新 (gvt1)"),
-    ("appspot.com", "https://appengine.google.com/", "Google App Engine (appspot)"),
-    ("firebaseapp.com", "https://firebase.google.com/", "Firebase 应用与认证"),
-    ("chromium.org", "https://www.chromium.org/", "Chromium 官方"),
-    ("ytimg.com", "https://i.ytimg.com/", "YouTube 缩略图 (ytimg)"),
-    ("ggpht.com", "https://yt3.ggpht.com/", "Google 头像与图片 (ggpht)"),
-    ("youtu.be", "https://youtu.be/", "YouTube 短链 (youtu.be)"),
-    ("google.dev", "https://ai.google.dev/", "Google 开发者站点 (google.dev)"),
-    ("chrome.com", "https://www.chrome.com/", "Chrome 官网 (chrome.com)"),
+    ("google.com", "https://www.google.com/", "Google 主域全站（搜索/登录/账号/服务条款与切区申诉/Gemini/AI Studio/One/Mail/Drive/Docs/Maps/应用商店页面）"),
+    ("googleapis.com", "https://clientservices.googleapis.com/chrome-variations/seed?osname=mac", "Google APIs（含 clientservices 变体/Gemini/CloudCode/更新与字体 API）"),
+    ("gstatic.com", "https://www.gstatic.com/generate_204", "Google 核心静态资源与连通检测 (gstatic)"),
+    ("antigravity.google", "https://antigravity.google/", "Antigravity 官方与 OAuth 登录"),
+    ("recaptcha.net", "https://www.recaptcha.net/recaptcha/api.js", "Google reCAPTCHA 人机校验"),
 ]
 
 def probe(item):
@@ -1284,10 +1271,10 @@ def probe(item):
         return domain, desc, False, status_line or "invalid status"
     return domain, desc, True, status_line
 
-print(f"=== 正在通过 {proxy_url} 并发探测 {len(candidates)} 个 Google 域名 ===")
+print(f"=== 正在通过 {proxy_url} 并发探测 {len(candidates)} 个防漂移核心 Google 域名 ===")
 included = []
 excluded = []
-with concurrent.futures.ThreadPoolExecutor(max_workers=9) as pool:
+with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
     for domain, desc, ok, detail in pool.map(probe, candidates):
         if ok:
             included.append((domain, desc, detail))
@@ -1298,9 +1285,15 @@ print(f"\n[已纳入规则: {len(included)} 条]")
 for domain, _, detail in included:
     print(f"  + *://*.{domain}/*  ({detail})")
 
-print(f"\n[已自动排除（代理不兼容或超时）: {len(excluded)} 条]")
-for domain, _, detail in excluded:
-    print(f"  - {domain}  ({detail})")
+if excluded:
+    print(f"\n[探测失败（未纳入）: {len(excluded)} 条]")
+    for domain, _, detail in excluded:
+        print(f"  - {domain}  ({detail})")
+
+print("\n[已刻意排除（不承载账号地区且易在轮换/白名单代理上失效）]")
+print("  - 流媒体: youtube.com / googlevideo.com / ytimg.com / ggpht.com / youtu.be（避免轮换出口破坏视频流 IP 绑定导致无法播放）")
+print("  - 无 Cookie 下载 CDN: googleusercontent.com / gvt1.com（避免 clients2.googleusercontent.com 504 卡死 Chrome 应用商店与组件更新）")
+print("  - 非账号核心/三方托管: withgoogle.com / appspot.com / firebaseapp.com / chromium.org / google.dev / chrome.com")
 
 if not any(d == "google.com" for d, _, _ in included):
     print("\nERROR: 代理未能打通 google.com，请检查代理地址、端口或当前网络是否可达。")
@@ -1773,7 +1766,7 @@ esac
    - 打开 [Google Payments](https://pay.google.com/) 确认无多余中国区付款资料（保留已有海外付费钱包）；
    - 打开 [Google 服务条款](https://policies.google.com/terms) 确认页面国家版本已显示为目标国。
 
-# 七、实战避坑：6 个最容易踩翻车的细节
+# 七、实战避坑：7 个最容易踩翻车的细节
 
 1. **误踢挂着终端 CLI 授权的旧设备会话，命令行会立刻报 `401`：** 在 Google「您的设备」页清理历史 Mac 会话时，如果那条旧会话下面列着 `Google Antigravity` 等本地开发工具，退出它会当场吊销本机正在用的 OAuth Token，终端工具会立刻出现 `UNAUTHENTICATED (code 401)`。真要洗掉旧会话，先确认海外代理已经接稳，再退出旧会话并立即重跑终端命令重新授权，新的授权记录就会挂到干净的目标国家会话上。
 2. **网页登了个人号，不等于 Chrome 书签就会同步过去：** 在 Google 网页右上角切换成个人号，影响的只是网页里的登录态；书签、历史和密码归 Chrome 最右上角「Profile 顶层同步账号」管。换绑前先到 `chrome://bookmarks/` 导出一份书签备份，再去 `chrome://settings/people` 关闭原同步（弹窗里别勾清除本地数据），重新登录个人号合并同步，避免换机丢书签。
@@ -1781,6 +1774,7 @@ esac
 4. **刚切到新出口连续进敏感页，高频弹二次验证是正常现象：** 代理刚切到海外，短时间内连续点进活动控件、设备管理和付款设置等高敏页面，Google 会频繁要求手机确认数字或验证码。不用怀疑规则写错，只要「您的设备」里当前会话已经标出目标国，过几天风控降下来就会恢复正常；另外，短期过渡用的公用电脑或公司电脑没必要绑定 Touch ID 通行密钥（Passkey），等换到长期自用的新主力机再加。
 5. **手机端把「国内收验证」和「出国开导航」拆开管：** 人在国内时，用来收登录确认通知的 Google 主应用、Chrome、Gmail、YouTube 和 Photos 定位权限全设成「永不」；Google Maps 可以平时设「永不」（出国落地后再改「使用 App 期间」），或者保持「使用 App 期间」但国内绝不点开，同时关掉 Maps 里的时间轴备份。等真正在海外旅行或出差时开定位导航，GPS 本来就在海外，不会拖累地区判定。
 6. **分清「出口秒变」和「账号地区慢变」两套节奏：** 分流生效后，未登录时看服务条款和「您的设备」当前会话里的地点都会立刻切到代理所在国；但账号自身历史绑定的归属地不会秒改，往往要在干净出口下稳跑 1～2 周再提交切区申诉，通过率才高。
+7. **别把流媒体和无 Cookie 下载 CDN 塞进轮换或白名单代理：** FoxyProxy 只需兜住 `google.com`、`googleapis.com`、`gstatic.com`、`antigravity.google`、`recaptcha.net` 这 5 条与账号、登录态、条款及变体接口强相关的域名即可。若强行代理 `youtube.com` / `googlevideo.com`，多出口轮换 IP 池会破坏视频流会话的 IP 绑定导致无法播放；若强行代理 `googleusercontent.com` / `gvt1.com`，Chrome 应用商店安装扩展（跳转到无 Cookie 下载域名获取 `.crx` 安装包）或组件更新时极易因上游 `504` 超时一直转圈下不下来。放行这些无 Cookie CDN 与 `appspot.com` / `firebaseapp.com` / `withgoogle.com` 等周边域名，不会引起账号地区漂移。
 
 # 八、给 AI Agent 的标准执行协议
 
