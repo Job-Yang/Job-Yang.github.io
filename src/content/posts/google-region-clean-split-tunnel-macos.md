@@ -1,6 +1,6 @@
 ---
 title: "macOS 下 Google 账号防送中与 Antigravity / Gemini 稳定使用指南"
-description: "定位与分流治理、三类地区与家庭组共享、agy 1.5.18 地区补丁和升级实测、400/401 排障，以及可下载的网络体检与补丁脚本。"
+description: "Apple Silicon 新 Mac 的 agy 1.5.18 固定版安装指南：依赖、分流、登录授权、验收与回退，附完整源码。"
 publishedAt: 2026-11-25
 updatedAt: 2026-11-26
 category: "方法与工具"
@@ -9,7 +9,7 @@ draft: false
 source: public-rewrite
 ---
 
-<callout emoji="💡"><p><b>当前验证版：agy CLI 1.5.18，macOS Apple Silicon。</b>本地地区补丁只解除客户端的一处资格拦截，模型调用仍需要可用的网络出口。2026 年 11 月 26 日，同一份补丁副本在原分流下报地区 400，切到新加坡全局后 Neon、Carbon、文件工具、跨版本会话恢复和 ACP 历史回放均通过。</p><p>正式升级后，还要把新的 <code>managed-1.5.18/agy</code> 路径加入 Antify。只保留旧版路径和外层启动器规则，可能漏掉真正发请求的程序。本文保留定位治理、网络切换和官方账号路线，并补入客户端补丁机制、升级方法与<a href="#工具下载">脚本下载</a>。补丁不改变账号关联国家或服务端权益，也不能保证未来版本继续兼容。</p></callout>
+<callout emoji="💡"><p><b>当前验证版：agy CLI 1.5.18，macOS Apple Silicon。</b> 新 Mac 从<a href="#fresh-mac">安装清单</a>开始。顺序是：下载并校验 → 让固定版本的实际程序落盘 → 配好网络规则 → 本人登录 → 真实请求验收 → 启用固定入口。<a href="#工具下载">完整脚本和 README</a>都在下载区。</p><p>只给 AI 这篇网址就能开始。网络接入、符合服务条件的账号和系统授权需要本人准备。源码和候选程序在已有 Mac 的隔离目录验过，未做全新 Mac 首次登录与系统授权的端到端验收。</p></callout>
 
 # 一、为什么总被判回中国：四层泄漏面
 
@@ -48,12 +48,12 @@ flowchart TD
 
 **CLI 更新后必须核对路径。** `~/.local/bin/agy` 可以只是包装脚本，最终执行的是 `~/.gemini/antigravity-cli/bin/managed-1.5.18/agy`。
 
-路径规则只覆盖包装脚本或 `managed-1.5.13`，不代表新二进制也被接管。本次正式切换后，给 Antify 新增实际 1.5.18 路径，入口真实请求才恢复成功。
+先让目标二进制落盘，再生成 Antify 配置。只覆盖包装脚本不够：导入后在 Antify 的生效规则里确认 `managed-1.5.18/agy` 指向选定代理。
 
 Antify 也会提示版本目录在下次升级时失效，并建议改用父目录规则。若选择目录匹配，要确认目录内有哪些程序；按单个版本路径匹配更明确，但每次升级需刷新。附带的 `build-antify` 命令会扫描本机多版本 CLI 路径，导入后仍要核对当前生效规则。
 
 - 不要为了省事代理整个 Chrome 进程。如果上游只放行白名单域名，整进程代理可能让普通网页卡顿或超时。对轮换出口或白名单代理，换代理后先实测核心域名。
-- 流媒体和无 Cookie 下载 CDN 可单独处理。本机曾遇到代理 `youtube.com` / `googlevideo.com` 后视频无法播放，以及代理 `googleusercontent.com` / `gvt1.com` / `withgoogle.com` 后扩展下载返回 504。
+- 流媒体和扩展下载可单独处理。若代理下视频无法播放或扩展下载返回 504，分别检查这些域名的可达性，再决定是否分流。
 
 这些域名不必与账号核心域名使用同一组规则；具体是否直连，取决于网络可达性与使用需求。
 
@@ -73,7 +73,7 @@ Antify 也会提示版本目录在下次升级时失效，并建议改用父目�
 | **家、咖啡厅或手机热点** | OpenSurge / Mihomo 规则模式 TUN | 残留的 Antify 和 FoxyProxy 旧代理 | 停用不可达旧代理，测试出口及目标模型 |
 | **海外可用直连** | 无分流直接访问 | 未停用的代理或 TUN | `discover` 检查当前路由，再测试目标模型 |
 
-**全局 VPN 可用于诊断对照。** 本次新加坡全局模式下，新版模型恢复了，但这是改变整机路由的诊断条件。回到精细分流后仍要核对实际程序路径、DNS 和目标接口；不能把一次全局成功当成旧分流配置也已正确。
+**全局 VPN 可用于诊断对照。** 只有在网络策略允许时才切换整机路由。切回精细分流后，要用实际程序重新发一条最小请求，确认程序路径、DNS 和规则都生效。
 
 # 三、账号与地区：官方路线与本地补丁
 
@@ -92,27 +92,9 @@ Google 与 Apple 生态中至少有三类地区信息：
 
 家庭组的管理员与成员需要符合 Google 的国家条件。保留正常扣费的钱包，避免反复创建、关闭资料。改区和切换家庭组的时间限制，以账号页面和 [Google 家庭组帮助](https://support.google.com/families/answer/7103337)为准。
 
-## 3.1 两个开源方案的实现不同
+## 3.1 当前 CLI 副本
 
-本次客户端补丁参考了以下公开来源：
-
-| 方案 | 核对版本 | 改动范围 | 对 CLI 的作用 |
-|-|-|-|-|
-| [liuhanzhang Gist](https://gist.github.com/liuhanzhang/bd36e89cce9a4354898b9c2c2ec0ccca) | 2026-11-19，`a84aa96d547b` | 通过本机 CDP 临时替换桌面 `main.js` 的资格与引导页判断 | 依赖 Electron 窗口，不能直接应用到终端 CLI |
-| [antigravity-hakimi](https://github.com/cli117/antigravity-hakimi) | 2026-11-25，`4a4225211fb0` | 动态解析 Go 函数表，修改 `ValidateAndOnboardAccount` 中 `ineligibleTiers` 的 `free-tier` 分支 | 上游明确支持 macOS ARM64 和 Linux CLI；本次在 1.5.18 核验 |
-| 本文的 `reapply_checked.py` | `1.0.0`，本次验证 CLI 1.5.18 | 默认只读；唯一匹配后，只在指定新副本中改一条指令并保留签名权限 | 用于保守适配和升级前隔离验证，未知结构拒绝修改 |
-
-Gist 读取 `HasAuthToken`、`GetAuthStatus`，必要时刷新模型缓存，再让桌面页面进入主界面；它没有把后端 `hasValidAuth` 改成 `true`。能进入界面不等于生成请求一定会被放行。
-
-哈基米修改 Go 二进制中的本地资格判断，同时保留 `allowedTiers` 检查。补丁不更改账号地区、不提供订阅权益，也不解除生成服务的网络地区限制。作者的成功记录可以提供线索，自己使用的版本和网络仍需验证。
-
-## 3.2 地址变化，靠特征重新定位
-
-1.5.13 的补丁点为文件偏移 `0x1c9d228`，1.5.18 为 `0x1f73a78`。**不要把旧地址直接写到新文件。** 脚本先解析 Mach-O 和 Go 函数表，再验证完整 `free-tier` 字符串、当前函数内的回跳与相邻类型调用，只接受一个语义候选。
-
-本次最新上游 Node、Python 检查器与本机脚本都命中新版同一位置，写入 `c8 ff ff 17`。修改范围是一条四字节指令；重签名还会改变签名元数据，不能把“只改四字节指令”理解为“整个文件只有四字节变化”。
-
-本次只需要这处地区补丁。排查时尝试过另一个 Orchestrator 兼容改动，但它没有解决错误；切换网络后，最小地区补丁副本已成功，因此正式版没有加入该实验改动。也没有改内置系统提示词、工具声明或会话正文。
+可用官方原件时，优先使用原件。需要维护现有本地副本时，只以本文固定的 macOS ARM64 1.5.18 和配套说明为准。`reapply_checked.py` 默认只读，遇到未知结构会拒绝处理。本地改动不会改变账号归属、订阅权益或生成服务的地区要求。
 
 # 四、400、401 与版本升级
 
@@ -125,27 +107,18 @@ Gist 读取 `HasAuthToken`、`GetAuthStatus`，必要时刷新模型缓存，再
 | **认证 `401`，续期后异常** | 长任务突然出现 `UNAUTHENTICATED` | 保存相关日志，先在原会话尝试一次“继续”；若仍失败，只退出故障进程并精确恢复，不关其他正常窗口 |
 | **认证 `401`，授权被撤销** | 在账号设备页退出了关联 CLI 的授权会话 | 凭据可能已失效；确认网络可用后通过官方入口重新登录，不能仅靠重复“继续”解决 |
 
-小时级续期异常有 [Google 开发者论坛的公开报告](https://discuss.ai.google.dev/t/bug-antigravity-cli-1-3-6-a-running-turn-fails-with-401-unauthenticated-right-after-the-hourly-token-refresh/190499)，但不能据此断言所有 401 都是同一竞态。
+地区 `400` 偶发时，记下失败和成功的时间，对照同一程序的 Antify 连接与实际出口。小时流量汇总只能证明有连接走过代理，不能说明哪条请求走了哪条路。[Gemini API 错误定义](https://ai.google.dev/gemini-api/docs/api-errors)可辅助区分认证、限流和过载。
 
-本次没有做长时间或每小时续期验证。[Gemini API 错误定义](https://ai.google.dev/gemini-api/docs/api-errors)可帮助区分认证、限流和过载，不代替 CLI 的具体日志。
+## 4.1 1.5.18 验收标准
 
-## 4.1 1.5.18 升级实测
+| 检查 | 怎么验 | 通过条件 |
+|-|-|-|
+| 程序与分流 | 核对 SHA-256、签名和 Antify 生效规则 | 校验通过；分流覆盖发请求的实际程序 |
+| 模型调用 | 在独立目录登录后，用日常需要的模型发一条短请求 | 收到真实文本响应，JSON 中有 `status: SUCCESS` |
+| 正式入口 | 新开终端核对 PATH，再从正式入口做一次短请求 | 命中固定版，启动日志确认自动更新关闭，模型返回成功 |
+| 可选功能 | 在单独测试会话里验证文件工具、恢复或 ACP | 按实际用途核对返回值；ACP 能回放历史不代表能生成 |
 
-2026 年 11 月 26 日，同一份补丁二进制在原分流下生成失败，新加坡全局模式下恢复。公开出口查询显示 SG；Antify 的具体失败规则未逐条定位。旧版成功不能单独证明新版请求已走正确出口。
-
-| 测试 Case | 验证思路 | 验证证据 | 最终结论 |
-|-|-|-|-|
-| 最新上游补丁与本机副本 | 比较指令范围及签名前后摘要 | 新版唯一补丁点一致，严格签名检查通过 | 通过 |
-| 原网络下 1.5.18 | 独立目录发起最小 Neon 请求 | 返回生成地区 400 | 未通过 |
-| 新加坡全局下 Neon／Carbon | 同一二进制，分别发真实请求 | 两者均 `SUCCESS` | 通过 |
-| 新加坡全局下 1.5.13 对照 | 同账号、同类最小请求 | `SUCCESS` | 通过 |
-| 文件工具和流输出 | 要求读取测试文件里的随机字符串 | `read_file` 有 `ACTIVE`／`DONE`，最终返回正确内容 | 通过 |
-| 1.5.13→1.5.18 会话恢复 | 新版恢复旧版创建的独立测试会话 | 同一会话 ID，记住上一条回复，`SUCCESS` | 通过 |
-| ACP 历史回放 | 初始化并加载测试会话，不发生成提示词 | 4 条历史更新，原回复正确回放 | 通过 |
-| 正式切换后的 Antify 路径 | 补入 `managed-1.5.18/agy`，再从统一入口请求 | 入口运行 1.5.18，返回“升级验证通过” | 通过 |
-| 原任务保护 | 比较文件指纹、进程启动时间与路径 | 原四个 1.5.13 任务继续运行，相关配置未改 | 通过 |
-
-以上是本机特定版本与网络的结果。会话恢复使用独立测试数据；ACP 验证了初始化和回放，没有重新测试 ACP 生成。长任务与每小时续期仍需实际运行观察，不承诺未来版本自动适配。
+当前版已在已有 Mac 验证 Neon、Carbon、文件读取、独立会话恢复及 ACP 历史回放。未验证长任务、每小时续期、ACP 生成或跨机迁移。
 
 ## 4.2 安全升级与回退
 
@@ -161,11 +134,7 @@ Gist 读取 `HasAuthToken`、`GetAuthStatus`，必要时刷新模型缓存，再
 
 ### 下载原件并生成副本
 
-先下载官方原件并核对发布清单的哈希，再生成新副本。`https://antigravity.google/cli/install.sh` 可能取得更高版本，不能把今天的下载地址当成永久 1.5.18。
-
-官方安装脚本即使指定 `--dir`，仍可能使用共享缓存并配置 shell。需要隔离时，先阅读脚本，按 [官方发布清单](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/darwin_arm64.json)取包并校验。
-
-测试安装不能覆盖正在使用的入口。
+固定版按[包内下载说明](/assets/downloads/google-region-20261126/README.md)提取和核对官方原件。当前发布清单会变动，不要拿它代替包内锁定的 1.5.18 下载记录。测试安装不得覆盖正在使用的入口。
 
 本文脚本的最短用法：
 
@@ -182,7 +151,7 @@ python3 reapply_checked.py --source "/路径/官方/agy" \
 普通 CLI 本次实测的隔离参数是：
 
 ```bash
-AGY_CLI_DISABLE_AUTO_UPDATE=true "/新副本目录/agy" \
+AGY_CLI_DISABLE_AUTO_UPDATE=true "$HOME/.gemini/antigravity-cli/bin/managed-1.5.18/agy" \
   --gemini_dir "/绝对路径/测试配置" \
   --app_data_dir antigravity-cli \
   --model "Orchestrator (Neon)" \
@@ -190,11 +159,11 @@ AGY_CLI_DISABLE_AUTO_UPDATE=true "/新副本目录/agy" \
   --output-format json
 ```
 
-`--gemini_dir` 是绝对路径，`--app_data_dir` 是其下的相对目录。仅设置目录环境变量，本次普通 CLI 仍回退到正式存储；须从日志确认 `appDataDir` 指向测试区。测试工作目录也应独立，必要时加系统写保护，防止误写正式配置。
+先在独立工作目录用相同程序和目录参数交互启动（不加 `--print`），由本人完成 Google 登录和验证码，再发短请求。`--gemini_dir` 是绝对路径，`--app_data_dir` 是其下的相对目录。日志中的 `appDataDir` 必须指向测试区；目录隔离不保证系统钥匙串里的账号凭据独立。
 
 ### 切换固定入口并保留旧版
 
-验收通过后，将程序放在版本目录，统一入口保持禁自动更新：
+让程序先落在下方版本目录；只有独立验收通过并获确认，才在 `~/.local/bin/agy` 写入统一入口：
 
 ```sh
 #!/bin/sh
@@ -202,9 +171,9 @@ export AGY_CLI_DISABLE_AUTO_UPDATE=true
 exec "$HOME/.gemini/antigravity-cli/bin/managed-1.5.18/agy" "$@"
 ```
 
-**变量值使用字符串 `true`。** 仅在 `.zshrc` 设置它，不能覆盖桌面应用或脚本直接调用 CLI 的情况。手动重装仍可能覆盖包装入口，升级后同时核对版本、指纹和补丁状态。
+给入口执行权限，按当前 shell 的启动文件把 `~/.local/bin` 加到 PATH 前部。新开终端用 `command -v agy` 和 `type -a agy` 确认第一项是这个入口，核对它确实指向 1.5.18 并设置 `AGY_CLI_DISABLE_AUTO_UPDATE=true`，再发实际请求确认生效。
 
-切换入口只影响新启动的任务，已经运行的旧版进程继续使用原程序。保留旧程序和入口备份；若新版有异常，先恢复入口供后续任务使用，不终止其他正常进程。Antify 分流还要覆盖新版本的真实路径。
+改动前备份已有入口、程序和分流配置；新机若原本没有入口，就记录「原本不存在」。回退时恢复原有配置和入口；若没有旧入口，只撤销本次新增项，再在新终端验证。不清空账号数据，不终止正常进程。
 
 ### 多窗口精确恢复
 
@@ -222,37 +191,30 @@ agy --conversation <完整会话ID>
 
 <a id="工具下载"></a>
 
-**原来的完整源码没有删除，只是从正文移到了下面的源文件下载区。** 两份脚本都能直接下载和阅读，ZIP 内也是完整源文件，不是伪代码。新 AI 应先读取 README 和源码，再执行；不依赖作者的本地仓库、旧会话或内部平台。
+两份完整脚本可单独下载，ZIP 内有相同源码及 README。新 AI 应先读说明和脚本，再执行；不依赖作者的机器、仓库或会话。
 
 | 下载 | 用途 | 验证与边界 |
 |-|-|-|
-| [网络体检脚本 google-clean-kit.sh 完整源码](/assets/downloads/google-region-20261126/google-clean-kit.sh) | 状态检查、出口探测、定位清理、FoxyProxy／Antify 配置生成 | 从本文原七合一脚本移出，源码保留；会读本地配置，修改类命令按用途执行 |
+| [网络体检脚本 google-clean-kit.sh 完整源码](/assets/downloads/google-region-20261126/google-clean-kit.sh) | 状态检查、出口探测、定位清理、FoxyProxy／Antify 配置生成 | 会读取本地配置；修改类命令按需执行 |
 | [地区补丁脚本 reapply_checked.py 完整源码](/assets/downloads/google-region-20261126/reapply_checked.py) | 默认只读检查，在指定新副本中适配并重签 | 本次验证 macOS ARM64、CLI 1.5.18；未知结构拒绝，不能当作长期版本保证 |
 | [完整源码包与说明](/assets/downloads/google-region-20261126/google-region-tools-20261126.zip) | 两份完整脚本、使用说明、固定版本信息及校验文件 | 使用前解压阅读 README，先检查后修改 |
 | [固定 1.5.18 官方原件信息](/assets/downloads/google-region-20261126/agy-1.5.18-darwin-arm64.json) | 官方下载URL、归档SHA-512、原件及补丁SHA-256 | 供新 AI 复现固定版，不自动选择最新版本 |
 | [下载说明](/assets/downloads/google-region-20261126/README.md)／[SHA-256](/assets/downloads/google-region-20261126/SHA256SUMS.txt) | 查看依赖、动作范围及核对文件 | 完整性校验不代替阅读脚本或目标版本验证 |
 
-## 5.1 新 AI 下载后就能执行的起步步骤
+## 5.1 下载与完整性校验
 
 `google-clean-kit.sh` 依赖 Bash、Python 3、curl 和部分命令所需的 osascript；补丁生成依赖 macOS codesign。先新建独立目录，将网站源码下载到本机：
 
 ```bash
-tool_dir="$(mktemp -d "${TMPDIR:-/tmp}/google-region-tools.XXXXXX")"
-curl -fL "https://jobyang.cn/assets/downloads/google-region-20261126/google-region-tools-20261126.zip" \
-  -o "$tool_dir/tools.zip"
-unzip "$tool_dir/tools.zip" -d "$tool_dir"
-cd "$tool_dir"
-shasum -a 256 -c SHA256SUMS.txt
-bash google-clean-kit.sh --help
-bash google-clean-kit.sh status --json
-python3 reapply_checked.py --help
+tool_dir="$(mktemp -d "${TMPDIR:-/tmp}/google-region-tools.XXXXXX")" &&
+  curl -fL "https://jobyang.cn/assets/downloads/google-region-20261126/google-region-tools-20261126.zip" \
+    -o "$tool_dir/tools.zip" &&
+  unzip -q "$tool_dir/tools.zip" -d "$tool_dir" &&
+  (cd "$tool_dir" && shasum -a 256 -c SHA256SUMS.txt) &&
+  printf '校验通过，目录：%s\n' "$tool_dir"
 ```
 
-校验失败时停止。没有官方原件的新机，从固定版本JSON读取 `url` 和 `sha512`，下载校验归档，再只提取 `antigravity` 到 `official/agy`，核对 `original_binary_sha256`；接着按第4.2节生成并验证新副本。账号和网络仍需按新机情况准备，不能因为脚本可运行就跳过登录或模型验证。
-
-**本次已从网站下载源码到新目录实际执行。** 网络体检正常返回 JSON，并生成16条示例Antify规则；补丁完成官方原件检查、独立副本生成与重签，再检查识别为已修补。生成的二进制指纹与已通过模型验证的1.5.18一致，正式入口及其他配置没有被这次测试修改。
-
-测试没有导入示例代理配置，也没有运行浏览器偏好修改或新机登录。对新的设备，先运行只读检查，再根据反馈处理环境问题。
+只有看到「校验通过」，才进入打印出的目录，读完 README 和源码后运行。固定版的官方原件下载、签名核对和副本准备见[下载说明](/assets/downloads/google-region-20261126/README.md)。
 
 ## 5.2 七个网络命令的作用
 
@@ -268,26 +230,19 @@ python3 reapply_checked.py --help
 
 # 六、换新电脑或新网络的落地顺序
 
-1. **先按第5.1节下载并校验完整源码，做状态与出口检查：**
-   ```bash
-   bash google-clean-kit.sh status
-   bash google-clean-kit.sh discover
-   ```
-   有明确代理地址时可用 `--candidate http://proxy.example.com:8118`。先分清直连、代理和 TUN，不同时叠加多个接管方案。
-2. **核对定位与浏览器 Profile：**
-   ```bash
-   bash google-clean-kit.sh clean-chrome
-   ```
-   保存工作后再执行修改类命令。系统定位开关由本人确认；工作号与个人号放到独立 Profile。
-3. **需要分流时生成配置：**
+<a id="fresh-mac"></a>
+
+1. **新机预检。** 确认 `uname -m` 为 `arm64`，准备 Python 3.9+、Bash、curl、unzip、tar、shasum 和 macOS codesign。先选一种网络方式：可用直连、Antify 按路径分流，或已获准使用的 TUN。需要代理时由本人提供获准使用的配置；没有配置或网络扩展被管理策略禁止，就停在这一步。
+2. **下载校验，再让程序落盘。** 按第 5.1 节校验源码，按 README 获取并核对固定 1.5.18。将要验收的程序放到 `~/.gemini/antigravity-cli/bin/managed-1.5.18/agy`，确认可执行。如果同路径已有不同程序，先保留原文件，停下来核对。此时不改正式入口，不启动程序。
+3. **让实际程序命中网络规则。** 进入工具包目录，用 `bash google-clean-kit.sh status --json` 检查冲突，再用 `bash google-clean-kit.sh discover --json` 查看候选。选择直连时可跳过导入；`auto` 认定可用直连时也不会生成配置。使用 Antify 时，在目标程序已落盘后再生成配置：
    ```bash
    bash google-clean-kit.sh auto \
      --output ./foxyproxy-generated.json \
      --antify-output ./antify-generated.json
    ```
-   FoxyProxy 导入后保存并选择“按规则代理”；Antify 导入后确认当前策略、远程 DNS、派生子进程设置，以及新 CLI 的实际路径。
-4. **逐个账号核对云端与付款状态：** 查看 [活动控件](https://myactivity.google.com/activitycontrols)、[数据与隐私](https://myaccount.google.com/data-and-privacy)、[已登录设备](https://myaccount.google.com/device-activity)与 [Payments](https://pay.google.com/)。按需求管理定位，保留在用订阅的钱包和关联正常 CLI 的授权。
-5. **安装或迁移 CLI：** 保留官方原件和已验证备份；补丁先在新副本检查，配置与会话不覆盖。目标模型、工具调用和恢复验证通过后再切统一入口。
+   导入前备份现有规则。本人批准网络扩展后，确认 Antify 生效规则覆盖实际程序路径。Chrome 才需要 FoxyProxy：在个人 Profile 导入并选择按规则代理，和工作账号分开。`clean-chrome` 会备份并修改全部可见的 Chrome Profile，按需执行；先保存浏览器工作。
+4. **本人登录，独立验收。** 按第 4.2 节从实际路径在独立目录启动，由本人完成 Google 登录、MFA 或系统授权。确认日志里的配置目录正确，再发目标模型短请求。资格、地区或认证错误按第 4 节分别处理；失败就保持原入口。
+5. **验收通过后再启用正式入口。** 记录所用版本、文件指纹、实际路径、网络方式、模型回执和回退点。确认后按第 4.2 节启用固定入口，新开终端核对 PATH、版本和禁自动更新状态，再发一条短请求。回退时恢复留存的入口和规则；旧会话迁移另行验证。
 
 # 七、实战中容易混淆的细节
 
@@ -301,7 +256,7 @@ python3 reapply_checked.py --help
 
 # 八、给 AI Agent 的执行约定
 
-将本文和脚本交给 Coding Agent 时，说明工程目录、当前网络、准确目标版本，以及哪些任务正在运行。
+把本文网址交给 Coding Agent 时，可以直接说：「按新 Mac 安装清单执行当前固定版本。到账号登录、系统授权或缺少合规网络配置时停下来告诉我；给我看实际版本、分流命中和模型回执，确认后再切入口。」
 
 1. **先检查再修改：** 只读核对当前版本、实际程序路径、分流覆盖及出口。源码、日志和本轮回执优先，历史成功记录不代表当前可用。
 2. **固定版本，升级先评估：** 自动更新持续关闭。先说明发布内容对当前使用是否有明确收益；值得升级时，按新版特征重新检查并适配补丁，在独立副本验收，保留升级记录与回退材料。用户确认后才切正式入口，不覆盖原配置、会话或正在跑的任务。
@@ -313,10 +268,6 @@ python3 reapply_checked.py --help
 # 九、公开参考与版本说明
 
 - [Antigravity 官方 CLI 安装脚本](https://antigravity.google/cli/install.sh)与 [macOS ARM64 发布清单](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/darwin_arm64.json)：下载前检查当前版本及校验值。
-- [Antigravity 官方更新记录](https://antigravity.google/docs/changelog)：本次页面列到 1.5.16，实际下载清单提供 1.5.18，两者更新时间可能不同。
-- [liuhanzhang 的桌面地区提示页方案](https://gist.github.com/liuhanzhang/bd36e89cce9a4354898b9c2c2ec0ccca)：本次核对 11 月 19 日修订。
-- [哈基米固定提交的 CLI 地区脚本](https://github.com/cli117/antigravity-hakimi/blob/4a4225211fb0f8d0072dc28c9c9584dd2de0837d/unlock/agy-cli/agy-patch.py)与 [项目 README](https://github.com/cli117/antigravity-hakimi/blob/4a4225211fb0f8d0072dc28c9c9584dd2de0837d/README.md)：本次核对 11 月 25 日主仓提交；上游更新后重新阅读。
+- [Antigravity 官方更新记录](https://antigravity.google/docs/changelog)：评估是否值得升级时参考。本文安装步骤使用锁定的 1.5.18 原件。
+- [本地工具的上游来源](https://github.com/cli117/antigravity-hakimi)。
 - [Google 国家关联申诉](https://policies.google.com/country-association-form)、[家庭组帮助](https://support.google.com/families/answer/7103337)与 [Google One](https://one.google.com/)：账号、家庭与订阅条件以官方页面为准。
-- [小时级认证异常的社区报告](https://discuss.ai.google.dev/t/bug-antigravity-cli-1-3-6-a-running-turn-fails-with-401-unauthenticated-right-after-the-hourly-token-refresh/190499)与 [API 错误说明](https://ai.google.dev/gemini-api/docs/api-errors)：作为排查线索，不泛化为本机故障根因。
-
-本文合并了使用、升级与排障材料，公开版保留本机验证范围和可复用方法。当前 CLI 固定为已验证的 1.5.18，自动更新持续关闭；以后按“评估升级收益、按新版适配补丁、隔离验收、用户确认切换”执行，并保留升级与回退记录。
