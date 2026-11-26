@@ -222,21 +222,39 @@ agy --conversation <完整会话ID>
 
 <a id="工具下载"></a>
 
-完整脚本放在附件中，正文保留用途和必要短示例。下载包没有账户令牌、私人代理地址或原会话；也没有预先改好的客户端二进制。
+**原来的完整源码没有删除，只是从正文移到了下面的源文件下载区。** 两份脚本都能直接下载和阅读，ZIP 内也是完整源文件，不是伪代码。新 AI 应先读取 README 和源码，再执行；不依赖作者的本地仓库、旧会话或内部平台。
 
 | 下载 | 用途 | 验证与边界 |
 |-|-|-|
-| [网络体检脚本 google-clean-kit.sh](/assets/downloads/google-region-20261126/google-clean-kit.sh) | 状态检查、出口探测、定位清理、FoxyProxy／Antify 配置生成 | 从本文原七合一脚本移出，脚本内容保留；会读本地配置，修改类命令按用途执行 |
-| [地区补丁脚本 reapply_checked.py](/assets/downloads/google-region-20261126/reapply_checked.py) | 默认只读检查，在指定新副本中适配并重签 | 本次验证 macOS ARM64、CLI 1.5.18；未知结构拒绝，不能当作长期版本保证 |
-| [完整脚本包与说明](/assets/downloads/google-region-20261126/google-region-tools-20261126.zip) | 两份脚本、使用说明及校验文件 | 使用前解压阅读 README，先检查后修改 |
+| [网络体检脚本 google-clean-kit.sh 完整源码](/assets/downloads/google-region-20261126/google-clean-kit.sh) | 状态检查、出口探测、定位清理、FoxyProxy／Antify 配置生成 | 从本文原七合一脚本移出，源码保留；会读本地配置，修改类命令按用途执行 |
+| [地区补丁脚本 reapply_checked.py 完整源码](/assets/downloads/google-region-20261126/reapply_checked.py) | 默认只读检查，在指定新副本中适配并重签 | 本次验证 macOS ARM64、CLI 1.5.18；未知结构拒绝，不能当作长期版本保证 |
+| [完整源码包与说明](/assets/downloads/google-region-20261126/google-region-tools-20261126.zip) | 两份完整脚本、使用说明、固定版本信息及校验文件 | 使用前解压阅读 README，先检查后修改 |
+| [固定 1.5.18 官方原件信息](/assets/downloads/google-region-20261126/agy-1.5.18-darwin-arm64.json) | 官方下载URL、归档SHA-512、原件及补丁SHA-256 | 供新 AI 复现固定版，不自动选择最新版本 |
 | [下载说明](/assets/downloads/google-region-20261126/README.md)／[SHA-256](/assets/downloads/google-region-20261126/SHA256SUMS.txt) | 查看依赖、动作范围及核对文件 | 完整性校验不代替阅读脚本或目标版本验证 |
 
-`google-clean-kit.sh` 依赖 `bash`、Python 3、`curl` 和部分命令所需的 `osascript`。先运行只读命令：
+## 5.1 新 AI 下载后就能执行的起步步骤
+
+`google-clean-kit.sh` 依赖 Bash、Python 3、curl 和部分命令所需的 osascript；补丁生成依赖 macOS codesign。先新建独立目录，将网站源码下载到本机：
 
 ```bash
+tool_dir="$(mktemp -d "${TMPDIR:-/tmp}/google-region-tools.XXXXXX")"
+curl -fL "https://jobyang.cn/assets/downloads/google-region-20261126/google-region-tools-20261126.zip" \
+  -o "$tool_dir/tools.zip"
+unzip "$tool_dir/tools.zip" -d "$tool_dir"
+cd "$tool_dir"
+shasum -a 256 -c SHA256SUMS.txt
+bash google-clean-kit.sh --help
 bash google-clean-kit.sh status --json
-bash google-clean-kit.sh discover --json
+python3 reapply_checked.py --help
 ```
+
+校验失败时停止。没有官方原件的新机，从固定版本JSON读取 `url` 和 `sha512`，下载校验归档，再只提取 `antigravity` 到 `official/agy`，核对 `original_binary_sha256`；接着按第4.2节生成并验证新副本。账号和网络仍需按新机情况准备，不能因为脚本可运行就跳过登录或模型验证。
+
+**本次已从网站下载源码到新目录实际执行。** 网络体检正常返回 JSON，并生成16条示例Antify规则；补丁完成官方原件检查、独立副本生成与重签，再检查识别为已修补。生成的二进制指纹与已通过模型验证的1.5.18一致，正式入口及其他配置没有被这次测试修改。
+
+测试没有导入示例代理配置，也没有运行浏览器偏好修改或新机登录。对新的设备，先运行只读检查，再根据反馈处理环境问题。
+
+## 5.2 七个网络命令的作用
 
 七个子命令的范围：
 
@@ -250,7 +268,7 @@ bash google-clean-kit.sh discover --json
 
 # 六、换新电脑或新网络的落地顺序
 
-1. **先下载脚本，做状态与出口检查：**
+1. **先按第5.1节下载并校验完整源码，做状态与出口检查：**
    ```bash
    bash google-clean-kit.sh status
    bash google-clean-kit.sh discover

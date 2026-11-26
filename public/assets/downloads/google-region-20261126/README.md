@@ -8,9 +8,40 @@ https://jobyang.cn/writing/google-region-clean-split-tunnel-macos/
 
 - `google-clean-kit.sh`：从文章原七合一代码移出的网络与定位工具。
 - `reapply_checked.py`：本机保守地区补丁工具，版本 `1.0.0`。
-- `SHA256SUMS.txt`：两份脚本和本说明的 SHA-256。
+- `agy-1.5.18-darwin-arm64.json`：固定版本官方原件下载地址、包与二进制校验值。
+- `SHA256SUMS.txt`：两份脚本、本说明和固定版本信息的 SHA-256。
 
 文件不含代理账号、令牌、私人配置、原会话或改好的客户端二进制。目录中的 ZIP 包与单文件下载提供相同脚本。
+
+## 新 AI 从网站开始运行
+
+两份脚本都是完整源文件。ZIP 内包含全部脚本、说明和固定版本信息，不依赖作者电脑上的仓库、旧会话、内部工具或飞书登录。
+
+在 macOS 新建独立目录，下载、解压和校验：
+
+```bash
+tool_dir="$(mktemp -d "${TMPDIR:-/tmp}/google-region-tools.XXXXXX")"
+curl -fL "https://jobyang.cn/assets/downloads/google-region-20261126/google-region-tools-20261126.zip" \
+  -o "$tool_dir/tools.zip"
+unzip "$tool_dir/tools.zip" -d "$tool_dir"
+cd "$tool_dir"
+shasum -a 256 -c SHA256SUMS.txt
+bash google-clean-kit.sh --help
+bash google-clean-kit.sh status --json
+python3 reapply_checked.py --help
+```
+
+校验失败时停止。`status` 可正常执行但仍报告网络配置问题；这是诊断结果，不等于脚本没有运行。
+
+如果新机还没有官方原件，从 `agy-1.5.18-darwin-arm64.json` 读取 `url` 与 `sha512`，下载并校验归档，再只解包其中的 `antigravity` 到新目录 `official/agy`，按 `original_binary_sha256` 复核。它是固定1.5.18，不要改成安装脚本的最新版本或执行 `agy update`。
+
+之后按下方“再检查本地资格补丁”生成副本并重签，按“独立验证”核对目录和真实模型回执。代理、账号登录和系统权限需要在新机按实际情况准备，不能从本文凭空推定已就绪。
+
+## 源码已实际执行验证
+
+2026-11-26，从公开网站下载源文件到一个新目录，验证网络脚本的帮助、只读JSON体检及示例Antify配置生成；下载的补丁源码对官方1.5.18完成原件检查、副本生成、严格签名验证和已修补状态识别。
+
+生成副本的SHA-256与已通过模型验证的候选一致。示例代理配置没有导入，未执行浏览器偏好修改，也未重新登录；实际网络可用性仍以新机目标模型回执为准。
 
 ## 先检查网络
 
